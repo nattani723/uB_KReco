@@ -1,0 +1,111 @@
+#include "mchitmodules.fcl"
+#include "mctrutht0matching.fcl"
+#include "/uboone/app/users/taniuchi/51_pandora/srcs/ubana/ubana/Filters/CCKaonFilter/rerun_pandora/reco_uboone_data_mcc9_8_driver_common_rerun.fcl"
+#include "reco_uboone_mcc9_8_reducer_stage2.fcl"
+
+process_name: OverlayRecoStage2CCKaonProducer
+
+services.DetectorClocksService.InheritClockConfig:  false
+services.TFileService.fileName: "reco_stage_2_hist.root"
+services.DetectorClocksService.InheritClockConfig:  false
+
+physics.producers.trajcluster.TrajClusterAlg.MatchTruth: [ -1, -1, -1, -1 ]
+physics.producers.trajcluster.DoRawDigitAssns: false
+
+physics.producers.trajclusterTruthMatch: @local::standard_mcparticlehitmatching
+physics.producers.trajclusterTruthMatch.OverrideRealData: true
+physics.producers.trajclusterTruthMatch.HitParticleAssociations:                    @local::IndirectHitParticleAssnsTool
+physics.producers.trajclusterTruthMatch.HitParticleAssociations.HitPartAssnsLabel:  "gaushitTruthMatch"
+physics.producers.trajclusterTruthMatch.HitParticleAssociations.HitModuleLabel:     "trajcluster"
+
+physics.producers.wcopflash.OpDataProducerBeam:                                     "mixer"
+
+#physics.reco:                   [ @sequence::microboone_reco_ovrl_stage2,trajclusterTruthMatch ]
+#physics.reco:                   [ @sequence::microboone_reco_ovrl_stage2_nocc_rebuild ]
+physics.reco:                   [ @sequence::microboone_reco_ovrl_stage2_nocc ]
+physics.ana:                    [ ]
+physics.trigger_paths:          [ reco ]
+physics.end_paths:              [ stream1 ]
+outputs.out1.fileName:          "%ifb_%tc_reco2.root"
+outputs.out1.dataTier:          "reconstructed"
+outputs.out1.outputCommands:    @local::stage2ReducedOutputCommands
+source.inputCommands:           ["keep *_*_*_*", "drop *_*_*_Data*RecoStage2", "drop *_*_*_MC*RecoStage2"]
+
+microboone_tfile_metadata:
+{
+  JSONFileName:          ["reco_stage_2_hist.root.json", "Pandora_Events.pndr.json"]
+  GenerateTFileMetadata: [true, true]
+  dataTier:              ["root-tuple", "pandora_debug"]
+  fileFormat:            ["root", "pndr"]
+}
+
+physics.producers.pandora.SliceIdTool: @local::flash_neutrino_id_tool_overlay
+# flash-matching score preservation module
+physics.producers.flashmatch: @local::FlashMatch_overlay
+
+physics.filters.crtveto: @local::UBCRTCosmicFilterBNBOFF
+physics.producers.crthitcorrFirstPass.IsOverlay: true
+physics.producers.crthitcorr.CrtHitsIn_Label1: "crthitcorrFirstPass"
+
+
+#physics.producers.pandoraKalmanTrack.inputCollection:                                            "CCKaonProducer"
+#physics.producers.pandoraKalmanTrack.trackInputTag:                                              "CCKaonProducer"
+#physics.producers.pandoraKalmanShower.inputCollection:                                           "CCKaonProducer" 
+#physics.producers.pandoraKalmanShower.showerInputTag:                                            "CCKaonProducer"
+
+physics.producers.pandoraKalmanTracktag.TrackModuleLabel:                                      "CCKaonProducer"
+physics.producers.pandoraKalmanTrackcalo.TrackModuleLabel:                                     "CCKaonProducer"
+#physics.producers.pandoraKalmanTrackcalo.SpacePointModuleLabel:                                "CCKaonProducer"  
+physics.producers.pandoraKalmanTrackpid.ProducerLabels.CalorimetryLabel:                       "pandoraKalmanTrackcalo"
+physics.producers.pandoraKalmanTrackpid.ProducerLabels.TrackLabel:                             "CCKaonProducer"
+physics.producers.pandoraKalmanTrackcali.TrackModuleLabel:                                     "CCKaonProducer" 
+physics.producers.pandoraKalmanTrackcali.CalorimetryModuleLabel:                               "pandoraKalmanTrackcalo"
+physics.producers.pandoraKalmanTrackcalipid.ProducerLabels.TrackLabel:                         "CCKaonProducer"
+physics.producers.pandoraKalmanTrackcalipid.ProducerLabels.CalorimetryLabel:                   "pandoraKalmanTrackcali" 
+
+physics.producers.pandoraKalmanShowertag.TrackModuleLabel:                                     "CCKaonProducer"
+physics.producers.pandoraKalmanShowercalo.TrackModuleLabel:                                    "CCKaonProducer" 
+#physics.producers.pandoraKalmanShowercalo.SpacePointModuleLabel:                               "CCKaonProducer" 
+physics.producers.pandoraKalmanShowerpid.ProducerLabels.CalorimetryLabel:                      "pandoraKalmanShowercalo"
+physics.producers.pandoraKalmanShowerpid.ProducerLabels.TrackLabel:                            "CCKaonProducer" 
+physics.producers.pandoraKalmanShowercali.TrackModuleLabel:                                    "CCKaonProducer" 
+physics.producers.pandoraKalmanShowercali.CalorimetryModuleLabel:                              "pandoraKalmanShowercalo"
+physics.producers.pandoraKalmanShowercalipid.ProducerLabels.TrackLabel:                        "CCKaonProducer"
+physics.producers.pandoraKalmanShowercalipid.ProducerLabels.CalorimetryLabel:                  "pandoraKalmanShowercali"
+
+
+physics.producers.pandoratag.TrackModuleLabel:                                                 "CCKaonProducer"
+
+physics.producers.pandoracalo.TrackModuleLabel:                                                "CCKaonProducer"
+physics.producers.pandoracalo.SpacePointModuleLabel:                                           "pandora"
+
+physics.producers.pandorapid.ProducerLabels.TrackLabel:                                        "CCKaonProducer"
+physics.producers.pandorapid.ProducerLabels.CalorimetryLabel:                                  "pandoracalo"
+
+physics.producers.pandoracali.TrackModuleLabel:                                                "CCKaonProducer"
+physics.producers.pandoracali.CalorimetryModuleLabel:                                          "pandoracalo"
+
+physics.producers.pandoraMCSMu.inputs.inputLabel: 					       "CCKaonProducer" 
+
+physics.producers.pandoracalipid.ProducerLabels.TrackLabel:                                    "CCKaonProducer"
+physics.producers.pandoracalipid.ProducerLabels.CalorimetryLabel:                              "pandoracali"
+
+physics.producers.pandorapidSCE.ProducerLabels.TrackLabel:                                        "CCKaonProducer"
+physics.producers.pandorapidSCE.ProducerLabels.CalorimetryLabel:                                  "pandoracaloSCE"
+
+physics.producers.pandoracaloSCE.TrackModuleLabel:                                                "CCKaonProducer"
+physics.producers.pandoracaloSCE.SpacePointModuleLabel:                                           "pandora"
+physics.producers.pandoracaloSCE.CorrectSCE:                                                      true
+
+physics.producers.pandoracaliSCE.TrackModuleLabel:                                                "CCKaonProducer"
+physics.producers.pandoracaliSCE.CalorimetryModuleLabel:                                          "pandoracaloSCE"
+physics.producers.pandoracaliSCE.CorrectSCE:                                                      true
+
+physics.producers.pandoracalipidSCE.TrackModuleLabel:                                             "CCKaonProducer"
+physics.producers.pandoracalipidSCE.CalorimetryModuleLabel:					  "pandoracaliSCE"
+
+physics.producers.pandoracalipidSCE.ProducerLabels.CaloTrackAssn:		                  "pandoracaliSCE"
+physics.producers.pandoracalipidSCE.ProducerLabels.CalorimetryLabel:                              "pandoracaliSCE"
+physics.producers.pandoracalipidSCE.ProducerLabels.HitTrackAssn:				  "CCKaonProducer"
+physics.producers.pandoracalipidSCE.ProducerLabels.TrackLabel:                                    "CCKaonProducer"
+

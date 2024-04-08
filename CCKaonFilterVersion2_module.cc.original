@@ -1,0 +1,1871 @@
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/SubRun.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "art/Framework/Services/Optional/TFileService.h"
+#include "art/Framework/Services/Optional/TFileDirectory.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "canvas/Persistency/Common/FindManyP.h"
+#include "canvas/Persistency/Common/PtrVector.h"
+#include "messagefacility/MessageLogger/MessageLogger.h"
+#include "fhiclcpp/ParameterSet.h"
+#include "lardata/Utilities/AssociationUtil.h"
+
+#include "larcore/Geometry/Geometry.h"
+#include "nusimdata/SimulationBase/MCTruth.h"
+#include "nusimdata/SimulationBase/MCFlux.h"
+#include "nusimdata/SimulationBase/MCParticle.h"
+#include "lardataobj/Simulation/SimChannel.h"
+#include "lardataobj/Simulation/AuxDetSimChannel.h"
+#include "lardataobj/AnalysisBase/Calorimetry.h"
+#include "lardataobj/AnalysisBase/ParticleID.h"
+#include "lardataobj/RawData/BeamInfo.h"
+#include "lardata/Utilities/AssociationUtil.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larcoreobj/SummaryData/POTSummary.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/EndPoint2D.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "larreco/RecoAlg/TrackMomentumCalculator.h"
+#include "lardataobj/AnalysisBase/CosmicTag.h"
+#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
+
+#include "uboone/ParticleID/Algorithms/FiducialVolume.h"
+#include "uboone/ParticleID/Algorithms/dQdxSeparatorMarco.h"
+#include "uboone/ParticleID/Algorithms/Bragg_Likelihood_Estimator.h"
+#include "uboone/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
+
+#include "uboone/UBXSec/DataTypes/SelectionResult.h"
+#include "uboone/UBXSec/DataTypes/TPCObject.h"
+#include "uboone/UBXSec/Algorithms/FiducialVolume.h"
+
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TDirectory.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TF1.h"
+#include "TProfile.h"
+#include "TROOT.h"
+#include "TStyle.h"
+#include "TMath.h"
+#include "TGraphErrors.h"
+#include "TMinuit.h"
+#include "TString.h"
+#include "TTimeStamp.h"
+#include "TVectorD.h"
+#include "TCanvas.h"
+#include "TFrame.h"
+#include "TLine.h"
+#include "TAxis.h"
+#include "TTimeStamp.h"
+
+#include <vector>
+#include <fstream>
+#include "TPaveStats.h"
+#include <iostream>
+#include <string>
+#include "math.h"
+#include "stdio.h"
+#include <iterator>
+
+const int kMaxTracks=1000;
+
+using namespace std;
+
+namespace microboone{
+	
+// ====================================================================== Local Function Definition to get the reco origin ======================
+art::Ptr<simb::MCTruth>TrackIDToMCTruth(art::Event const & evt, std::string _geant_producer, int geant_track_id)
+{
+	lar_pandora::MCTruthToMCParticles truthToParticles;
+	lar_pandora::MCParticlesToMCTruth particlesToTruth;
+
+	lar_pandora::LArPandoraHelper::CollectMCParticles(evt, _geant_producer, truthToParticles, particlesToTruth);
+
+	for (auto iter : particlesToTruth) {
+		if (iter.first->TrackId() == geant_track_id) {
+			return iter.second;
+		}
+	}
+
+	art::Ptr<simb::MCTruth> null_ptr;
+	return null_ptr;
+}	
+//================================================================================================================================================	
+
+class CCKaonFilterVersion2 : public art::EDAnalyzer {
+public:
+
+    explicit CCKaonFilterVersion2(fhicl::ParameterSet const& pset);
+    virtual ~CCKaonFilterVersion2();
+
+    void beginJob();
+    void analyze(const art::Event& evt);
+    void reset();
+    double length(const simb::MCParticle& part, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi);
+    
+private:
+    TTree* fEventTree;
+    Int_t   run;                  
+    Int_t   subrun;               
+    Int_t   event;
+    Int_t   k_can_trkid;
+    Int_t   mu_can_trkid;
+    Float_t k_mu_can_dis;
+    Float_t k_mu_open_angle;
+    Float_t k_vtx_dis;
+    
+    Int_t mtc_k_5cm;
+    Int_t mtc_k_10cm;
+    Float_t mtc_k_endE;
+    Int_t mtc_mu_5cm;
+    Int_t mtc_mu_10cm;	
+    Int_t mtc_mu_pid;
+    
+    Int_t k_geant_ID;
+    Int_t k_origin;
+    Int_t k_pdg;
+    Int_t k_isPri;
+    Float_t k_endE;
+    Int_t k_ness;
+    
+    Float_t kaon_vtx_dis;
+    Float_t k_plen;
+    Float_t k_phi;
+    Float_t k_theta;
+    Int_t k_in_5_TPC;
+    Int_t k_in_CC_TPC;
+    Int_t k_hit;
+    Float_t k_range;
+    Float_t k_KE;
+    Float_t k_large_dedx;
+    Float_t k_small_dedx;
+    Float_t k_chi_p;
+    Float_t k_chi_k;
+    Float_t k_chi_pi;
+    Float_t k_chi_mu;
+    Float_t k_p_max;
+    Float_t k_k_max;
+    Float_t k_pi_max;
+    Float_t k_mu_max;
+    Float_t k_mip_max;
+    Float_t k_L1_ratio;
+    Float_t k_LL1;
+    Float_t k_L2_ratio;
+    Float_t k_LL2;
+    Float_t k_Lp_ratio;
+    Float_t k_LLp;
+    Float_t k_Lk_ratio;
+    Float_t k_LLk;
+    Float_t k_pida_mean;
+    Float_t k_pida_med;
+    Float_t k_kde;
+    Float_t k_trm_dqdx;
+    Float_t k_trm_dedx;
+    Float_t k_dedx[3][3000];
+    Float_t k_rr[3][3000];
+    Float_t mu_dedx[3][3000];
+    Float_t mu_rr[3][3000];
+    
+    Int_t  mu_pdg;
+    Int_t  mu_isDec;
+    Int_t  mu_origin;
+    Int_t  mu_k_is_Mother;
+    Int_t  mu_mom_k_inelas;
+    Int_t  mu_ness;
+    Float_t mu_plen;
+    Float_t mu_phi;
+    Float_t mu_theta;
+    Int_t   mu_in_5_TPC;
+    Int_t   mu_in_CC_TPC;
+    Float_t mu_KE;
+    Int_t   mu_hit;
+    Float_t mu_range;
+    Float_t mu_large_dedx;
+    Float_t mu_small_dedx;
+    Float_t mu_chi_p;
+    Float_t mu_chi_k;
+    Float_t mu_chi_pi;
+    Float_t mu_chi_mu;
+    Float_t mu_p_max;
+    Float_t mu_k_max;
+    Float_t mu_pi_max;
+    Float_t mu_mu_max;
+    Float_t mu_mip_max;
+    Float_t mu_L1_ratio;
+    Float_t mu_LL1;
+    Float_t mu_L2_ratio;
+    Float_t mu_LL2;
+    Float_t mu_Lp_ratio;
+    Float_t mu_LLp;
+    Float_t mu_Lk_ratio;
+    Float_t mu_LLk;
+    Float_t mu_pida_mean;
+    Float_t mu_pida_med;
+    Float_t mu_kde;
+    Float_t mu_trm_dqdx;
+    Float_t mu_trm_dedx;
+    std::string mu_mom_process;
+    
+    Int_t cc_mu_trkid;
+    Float_t cc_mu_tlen;
+    Float_t cc_mu_phi;
+    Float_t cc_mu_theta;
+    Float_t cc_mu_range;
+    Float_t cc_mu_KE;
+    Int_t   cc_mu_hit;
+    Float_t cc_mu_large_dedx;
+    Float_t cc_mu_small_dedx;
+    Float_t cc_dis_vtx;
+    Int_t cc_mu_pdg;
+    Float_t cc_mu_chi_p;
+    Float_t cc_mu_chi_k;
+    Float_t cc_mu_chi_pi;
+    Float_t cc_mu_chi_mu;
+    Float_t cc_mu_p_max;
+    Float_t cc_mu_k_max;
+    Float_t cc_mu_pi_max;
+    Float_t cc_mu_mu_max;
+    Float_t cc_mu_mip_max;
+    Float_t cc_mu_L1_ratio;
+    Float_t cc_mu_LL1;
+    Float_t cc_mu_L2_ratio;
+    Float_t cc_mu_LL2;
+    Float_t cc_mu_Lp_ratio;
+    Float_t cc_mu_LLp;
+    Float_t cc_mu_Lk_ratio;
+    Float_t cc_mu_LLk;
+    Float_t cc_mu_pida_mean;
+    Float_t cc_mu_pida_med;
+    Float_t cc_mu_kde;
+    Float_t cc_mu_trm_dqdx;
+    Float_t cc_mu_trm_dedx;
+    Int_t pri_Mu_is;
+    
+    Int_t Tr_pri_mu_pdg;
+    Int_t Tr_pri_mu_is;
+    Int_t Tr_pri_st_k_is;
+    Int_t Tr_K_Inelas;
+    Float_t Tr_k_plen;
+    Float_t Tr_k_endE;
+    Float_t Tr_k_theta;
+    Float_t Tr_k_phi;
+    Int_t Tr_dec_mu_is;
+    Int_t Tr_dec_mu_pi_pdg;
+    Float_t Tr_mu_plen;
+    Float_t Tr_mu_theta;
+    Float_t Tr_mu_phi;
+    Int_t Tr_k_inTPC;
+    Int_t Tr_mu_inTPC;
+    Int_t Tr_k_in_5_TPC;
+    Int_t Tr_k_in_CC_TPC;
+    Int_t Tr_mu_in_5_TPC;
+    Int_t Tr_mu_in_CC_TPC;
+    Float_t Tr_kmu_open_ang;
+    
+    Int_t longest_trkid;
+    Float_t longest_trklen;
+    Int_t vtx_mult;
+    Int_t vtx_5cm_mult;
+    Float_t vtx_dis_trks[kMaxTracks];
+    Float_t k_start_dedx;
+    Float_t k_end_dedx;
+    Float_t mu_start_dedx;
+    Float_t mu_end_dedx;
+    
+    Int_t  kinelas_has_traks;
+    Int_t  kinelas_reco_trkID;
+    Float_t kinelas_tlen;
+    Float_t True_kinelas_KE;
+    Float_t True_kinelas_tlen;
+    
+    Int_t cut_1;
+    Int_t cut_2;
+    Int_t cut_3;
+    Int_t cut_4;
+    Int_t cut_5;
+    Int_t cut_6;
+    Int_t cut_7;
+    Int_t cut_8;
+    Int_t cut_9;
+    Int_t cut_10;
+    Int_t cut_11;
+    Int_t cut_12;
+    
+    std::string fDigitModuleLabel;
+    std::string fHitsModuleLabel;
+    std::string fLArG4ModuleLabel;
+    std::string fGenieGenModuleLabel;
+    std::string fTrackModuleLabel;
+    std::string fPOTModuleLabel;
+    std::string fCalorimetryModuleLabel;
+    std::string fSelectionLabel;
+    std::string fSelectionTPCObjAssn;
+    std::string fPIDLabel;
+    std::string fHitTruthAssns;
+    std::string fHitTrackAssns;
+    
+    bool  fSaveCaloInfo;
+    bool  fSaveTrackInfo;
+    bool  fSaveGenieInfo;
+    float fG4minE;
+    int fplane;
+}; // class CCKaonFilterVersion2
+
+//========================================================================
+CCKaonFilterVersion2::CCKaonFilterVersion2(fhicl::ParameterSet const& pset) :
+EDAnalyzer(pset),
+  fDigitModuleLabel         (pset.get< std::string >("DigitModuleLabel","")        ),
+  fHitsModuleLabel          (pset.get< std::string >("HitsModuleLabel","pandoraCosmicHitRemoval::UBXSec")         ),
+  fLArG4ModuleLabel         (pset.get< std::string >("LArG4ModuleLabel","")     ),
+  fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel","")     ),  
+  fTrackModuleLabel         (pset.get< std::string >("TrackModuleLabel","pandoraNu::UBXSec")        ),
+  fPOTModuleLabel           (pset.get< std::string >("POTModuleLabel","")          ),
+  fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","")  ),
+  fSelectionLabel           (pset.get< std::string >("SelectionLabel","UBXSec")    ),
+  fSelectionTPCObjAssn      (pset.get< std::string >("SelectionTPCObjAssn","UBXSec")),
+  fPIDLabel                 (pset.get< std::string >("PIDLabel","ParticleIdLabel")),
+  fHitTruthAssns            (pset.get< std::string >("HitTruthAssn","pandoraCosmicHitRemoval::UBXSec")), 
+  fHitTrackAssns            (pset.get< std::string >("HitTrackAssn","pandoraNu::UBXSec")), 
+  fSaveCaloInfo             (pset.get< bool>("SaveCaloInfo",false)),
+  fSaveTrackInfo            (pset.get< bool>("SaveTrackInfo",false)),  
+  fSaveGenieInfo            (pset.get< bool>("SaveGenieInfo",false)),
+  fG4minE                   (pset.get< float>("G4minE",0.01)),
+  fplane                    (pset.get< int >("plane",2))
+{
+  if (fSaveTrackInfo == false) fSaveCaloInfo = false;
+  fhicl::ParameterSet const p_labels = (pset.get<fhicl::ParameterSet>("ProducerLabels"));
+  fhicl::ParameterSet const p_bragg  = (pset.get<fhicl::ParameterSet>("BraggAlgo"));
+}
+ 
+//========================================================================
+CCKaonFilterVersion2::~CCKaonFilterVersion2(){
+  //destructor
+}
+//========================================================================
+
+//========================================================================
+void CCKaonFilterVersion2::beginJob(){
+  std::cout<<"job begin..."<<std::endl;
+  art::ServiceHandle<art::TFileService> tfs;
+  fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
+  fEventTree->Branch("event", &event,"event/I");
+  fEventTree->Branch("run", &run,"run/I");
+  fEventTree->Branch("subrun", &subrun,"surbrun/I");
+  fEventTree->Branch("k_can_trkid", &k_can_trkid,"k_can_trkid/I");
+  fEventTree->Branch("mu_can_trkid", &mu_can_trkid,"mu_can_trkid/I");
+  fEventTree->Branch("k_mu_can_dis", &k_mu_can_dis,"k_mu_can_dis/F");
+  fEventTree->Branch("k_mu_open_angle", &k_mu_open_angle,"k_mu_open_angle/F");
+  fEventTree->Branch("k_vtx_dis", &k_vtx_dis,"k_vtx_dis/F");
+  fEventTree->Branch("mtc_k_5cm", &mtc_k_5cm,"mtc_k_5cm/I");
+  fEventTree->Branch("mtc_k_10cm", &mtc_k_10cm,"mtc_k_10cm/I");
+  fEventTree->Branch("mtc_k_endE", &mtc_k_endE,"mtc_k_endE/F");
+  fEventTree->Branch("mtc_mu_5cm", &mtc_mu_5cm,"mtc_mu_5cm/I");
+  fEventTree->Branch("mtc_mu_10cm", &mtc_mu_10cm,"mtc_mu_10cm/I");
+  fEventTree->Branch("mtc_mu_pid", &mtc_mu_pid,"mtc_mu_pid/I");
+  fEventTree->Branch("k_geant_ID", &k_geant_ID,"k_geant_ID/I");
+  fEventTree->Branch("k_origin", &k_origin,"k_origin/I");
+  fEventTree->Branch("k_pdg", &k_pdg,"k_pdg/I");
+  fEventTree->Branch("k_isPri", &k_isPri,"k_isPri/I");
+  fEventTree->Branch("k_endE", &k_endE,"k_endE/F");
+  fEventTree->Branch("k_ness", &k_ness,"k_ness/I");
+  fEventTree->Branch("kaon_vtx_dis", &kaon_vtx_dis,"kaon_vtx_dis/F");
+  fEventTree->Branch("k_plen", &k_plen,"k_plen/F");
+  fEventTree->Branch("k_phi", &k_phi,"k_phi/F");
+  fEventTree->Branch("k_theta", &k_theta,"k_theta/F");
+  fEventTree->Branch("k_in_5_TPC", &k_in_5_TPC,"k_in_5_TPC/I");
+  fEventTree->Branch("k_in_CC_TPC", &k_in_CC_TPC,"k_in_CC_TPC/I");
+  fEventTree->Branch("k_hit", &k_hit,"k_hit/I");
+  fEventTree->Branch("k_range", &k_range,"k_range/F");
+  fEventTree->Branch("k_KE", &k_KE,"k_KE/F");
+  fEventTree->Branch("k_large_dedx", &k_large_dedx,"k_large_dedx/F");
+  fEventTree->Branch("k_small_dedx", &k_small_dedx,"k_small_dedx/F");
+  fEventTree->Branch("k_chi_p", &k_chi_p,"k_chi_p/F");
+  fEventTree->Branch("k_chi_k", &k_chi_k,"k_chi_k/F");
+  fEventTree->Branch("k_chi_pi", &k_chi_pi,"k_chi_pi/F");
+  fEventTree->Branch("k_chi_mu", &k_chi_mu,"k_chi_mu/F");
+  fEventTree->Branch("k_p_max", &k_p_max,"k_p_max/F");
+  fEventTree->Branch("k_k_max", &k_k_max,"k_k_max/F");
+  fEventTree->Branch("k_pi_max", &k_pi_max,"k_pi_max/F");
+  fEventTree->Branch("k_mu_max", &k_mu_max,"k_mu_max/F");
+  fEventTree->Branch("k_mip_max", &k_mip_max,"k_mip_max/F");
+  fEventTree->Branch("k_L1_ratio", &k_L1_ratio,"k_L1_ratio/F");
+  fEventTree->Branch("k_LL1", &k_LL1,"k_LL1/F");
+  fEventTree->Branch("k_L2_ratio", &k_L2_ratio,"k_L2_ratio/F");
+  fEventTree->Branch("k_LL2", &k_LL2,"k_LL2/F");
+  fEventTree->Branch("k_Lp_ratio", &k_Lp_ratio,"k_Lp_ratio/F");
+  fEventTree->Branch("k_LLp", &k_LLp,"k_LLp/F");
+  fEventTree->Branch("k_Lk_ratio", &k_Lk_ratio,"k_Lk_ratio/F");
+  fEventTree->Branch("k_LLk", &k_LLk,"k_LLk/F");
+  fEventTree->Branch("k_pida_mean", &k_pida_mean,"k_pida_mean/F");
+  fEventTree->Branch("k_pida_med", &k_pida_med,"k_pida_med/F");
+  fEventTree->Branch("k_kde", &k_kde,"k_kde/F");
+  fEventTree->Branch("k_trm_dqdx", &k_trm_dqdx,"k_trm_dqdx/F");
+  fEventTree->Branch("k_trm_dedx", &k_trm_dedx,"k_trm_dedx/F");
+  fEventTree->Branch("k_dedx",k_dedx,"k_dedx[3][3000]/F");
+  fEventTree->Branch("k_rr",k_rr,"k_rr[3][3000]/F");
+  fEventTree->Branch("mu_pdg", &mu_pdg,"mu_pdg/I");
+  fEventTree->Branch("mu_isDec", &mu_isDec,"mu_isDec/I");
+  fEventTree->Branch("mu_origin", &mu_origin,"mu_origin/I");
+  fEventTree->Branch("mu_k_is_Mother", &mu_k_is_Mother,"mu_k_is_Mother/I");
+  fEventTree->Branch("mu_mom_k_inelas", &mu_mom_k_inelas,"mu_mom_k_inelas/I");
+  fEventTree->Branch("mu_ness", &mu_ness,"mu_ness/I");
+  fEventTree->Branch("mu_plen", &mu_plen,"mu_plen/F");
+  fEventTree->Branch("mu_phi", &mu_phi,"mu_phi/F");
+  fEventTree->Branch("mu_theta", &mu_theta,"mu_theta/F");
+  fEventTree->Branch("mu_in_5_TPC", &mu_in_5_TPC,"mu_in_5_TPC/I");
+  fEventTree->Branch("mu_in_CC_TPC", &mu_in_CC_TPC,"mu_in_CC_TPC/I");
+  fEventTree->Branch("mu_KE", &mu_KE,"mu_KE/F");
+  fEventTree->Branch("mu_hit", &mu_hit,"mu_hit/I");
+  fEventTree->Branch("mu_range", &mu_range,"mu_range/F");
+  fEventTree->Branch("mu_large_dedx", &mu_large_dedx,"mu_large_dedx/F");
+  fEventTree->Branch("mu_small_dedx", &mu_small_dedx,"mu_small_dedx/F");
+  fEventTree->Branch("mu_chi_p", &mu_chi_p,"mu_chi_p/F");
+  fEventTree->Branch("mu_chi_k", &mu_chi_k,"mu_chi_k/F");
+  fEventTree->Branch("mu_chi_pi", &mu_chi_pi,"mu_chi_pi/F");
+  fEventTree->Branch("mu_chi_mu", &mu_chi_mu,"mu_chi_mu/F");
+  fEventTree->Branch("mu_p_max", &mu_p_max,"mu_p_max/F");
+  fEventTree->Branch("mu_k_max", &mu_k_max,"mu_k_max/F");
+  fEventTree->Branch("mu_pi_max", &mu_pi_max,"mu_pi_max/F");
+  fEventTree->Branch("mu_mu_max", &mu_mu_max,"mu_mu_max/F");
+  fEventTree->Branch("mu_mip_max", &mu_mip_max,"mu_mip_max/F");
+  fEventTree->Branch("mu_L1_ratio", &mu_L1_ratio,"mu_L1_ratio/F");
+  fEventTree->Branch("mu_LL1", &mu_LL1,"mu_LL1/F");
+  fEventTree->Branch("mu_L2_ratio", &mu_L2_ratio,"mu_L2_ratio/F");
+  fEventTree->Branch("mu_LL2", &mu_LL2,"mu_LL2/F");
+  fEventTree->Branch("mu_Lp_ratio", &mu_Lp_ratio,"mu_Lp_ratio/F");
+  fEventTree->Branch("mu_LLp", &mu_LLp,"mu_LLp/F");
+  fEventTree->Branch("mu_Lk_ratio", &mu_Lk_ratio,"mu_Lk_ratio/F");
+  fEventTree->Branch("mu_LLk", &mu_LLk,"mu_LLk/F");
+  fEventTree->Branch("mu_pida_mean", &mu_pida_mean,"mu_pida_mean/F");
+  fEventTree->Branch("mu_pida_med", &mu_pida_med,"mu_pida_med/F");
+  fEventTree->Branch("mu_kde", &mu_kde,"mu_kde/F");
+  fEventTree->Branch("mu_trm_dqdx", &mu_trm_dqdx,"mu_trm_dqdx/F");
+  fEventTree->Branch("mu_trm_dedx", &mu_trm_dedx,"mu_trm_dedx/F");
+  fEventTree->Branch("mu_dedx",mu_dedx,"mu_dedx[3][3000]/F");
+  fEventTree->Branch("mu_rr",mu_rr,"mu_rr[3][3000]/F");
+  fEventTree->Branch("mu_mom_process",&mu_mom_process);
+  fEventTree->Branch("cc_mu_trkid", &cc_mu_trkid,"cc_mu_trkid/I");
+  fEventTree->Branch("cc_mu_tlen", &cc_mu_tlen,"cc_mu_tlen/F");
+  fEventTree->Branch("cc_mu_phi", &cc_mu_phi,"cc_mu_phi/F");
+  fEventTree->Branch("cc_mu_theta", &cc_mu_theta,"cc_mu_theta/F");
+  fEventTree->Branch("cc_mu_range", &cc_mu_range,"cc_mu_range/F");
+  fEventTree->Branch("cc_mu_KE", &cc_mu_KE,"cc_mu_KE/F");
+  fEventTree->Branch("cc_mu_hit", &cc_mu_hit,"cc_mu_hit/I");
+  fEventTree->Branch("cc_mu_large_dedx", &cc_mu_large_dedx,"cc_mu_large_dedx/F");
+  fEventTree->Branch("cc_mu_small_dedx", &cc_mu_small_dedx,"cc_mu_small_dedx/F");
+  fEventTree->Branch("cc_dis_vtx", &cc_dis_vtx,"cc_dis_vtx/F");
+  fEventTree->Branch("cc_mu_pdg", &cc_mu_pdg,"cc_mu_pdg/I");
+  fEventTree->Branch("cc_mu_chi_p", &cc_mu_chi_p,"cc_mu_chi_p/F");
+  fEventTree->Branch("cc_mu_chi_k", &cc_mu_chi_k,"cc_mu_chi_k/F");
+  fEventTree->Branch("cc_mu_chi_pi", &cc_mu_chi_pi,"cc_mu_chi_pi/F");
+  fEventTree->Branch("cc_mu_chi_mu", &cc_mu_chi_mu,"cc_mu_chi_mu/F");
+  fEventTree->Branch("cc_mu_p_max", &cc_mu_p_max,"cc_mu_p_max/F");
+  fEventTree->Branch("cc_mu_k_max", &cc_mu_k_max,"cc_mu_k_max/F");
+  fEventTree->Branch("cc_mu_pi_max", &cc_mu_pi_max,"cc_mu_pi_max/F");
+  fEventTree->Branch("cc_mu_mu_max", &cc_mu_mu_max,"cc_mu_mu_max/F");
+  fEventTree->Branch("cc_mu_mip_max", &cc_mu_mip_max,"cc_mu_mip_max/F");
+  fEventTree->Branch("cc_mu_L1_ratio", &cc_mu_L1_ratio,"cc_mu_L1_ratio/F");
+  fEventTree->Branch("cc_mu_LL1", &cc_mu_LL1,"cc_mu_LL1/F");
+  fEventTree->Branch("cc_mu_L2_ratio", &cc_mu_L2_ratio,"cc_mu_L2_ratio/F");
+  fEventTree->Branch("cc_mu_LL2", &cc_mu_LL2,"cc_mu_LL2/F");
+  fEventTree->Branch("cc_mu_Lp_ratio", &cc_mu_Lp_ratio,"cc_mu_Lp_ratio/F");
+  fEventTree->Branch("cc_mu_LLp", &cc_mu_LLp,"cc_mu_LLp/F");
+  fEventTree->Branch("cc_mu_Lk_ratio", &cc_mu_Lk_ratio,"cc_mu_Lk_ratio/F");
+  fEventTree->Branch("cc_mu_LLk", &cc_mu_LLk,"cc_mu_LLk/F");
+  fEventTree->Branch("cc_mu_pida_mean", &cc_mu_pida_mean,"cc_mu_pida_mean/F");
+  fEventTree->Branch("cc_mu_pida_med", &cc_mu_pida_med,"cc_mu_pida_med/F");
+  fEventTree->Branch("cc_mu_kde", &cc_mu_kde,"cc_mu_kde/F");
+  fEventTree->Branch("cc_mu_trm_dqdx", &cc_mu_trm_dqdx,"cc_mu_trm_dqdx/F");
+  fEventTree->Branch("cc_mu_trm_dedx", &cc_mu_trm_dedx,"cc_mu_trm_dedx/F");
+  fEventTree->Branch("longest_trkid", &longest_trkid,"longest_trkid/I");
+  fEventTree->Branch("longest_trklen", &longest_trklen,"longest_trklen/F");
+  fEventTree->Branch("Tr_pri_mu_pdg", &Tr_pri_mu_pdg,"Tr_pri_mu_pdg/I");
+  fEventTree->Branch("pri_Mu_is", &pri_Mu_is,"pri_Mu_is/I");
+  fEventTree->Branch("Tr_pri_st_k_is", &Tr_pri_st_k_is,"Tr_pri_st_k_is/I");
+  fEventTree->Branch("Tr_K_Inelas", &Tr_K_Inelas,"Tr_K_Inelas/I");
+  fEventTree->Branch("Tr_k_plen", &Tr_k_plen,"Tr_k_plen/F");
+  fEventTree->Branch("Tr_k_theta", &Tr_k_theta,"Tr_k_theta/F");
+  fEventTree->Branch("Tr_k_phi", &Tr_k_phi,"Tr_k_phi/F");
+  fEventTree->Branch("Tr_dec_mu_is", &Tr_dec_mu_is,"Tr_dec_mu_is/I");
+  fEventTree->Branch("Tr_dec_mu_pi_pdg", &Tr_dec_mu_pi_pdg,"Tr_dec_mu_pi_pdg/I");
+  fEventTree->Branch("Tr_mu_plen", &Tr_mu_plen,"Tr_mu_plen/F");
+  fEventTree->Branch("Tr_k_endE", &Tr_k_endE,"Tr_k_endE/F");
+  fEventTree->Branch("Tr_mu_theta", &Tr_mu_theta,"Tr_mu_theta/F");
+  fEventTree->Branch("Tr_mu_phi", &Tr_mu_phi,"Tr_mu_phi/F");
+  fEventTree->Branch("Tr_k_inTPC", &Tr_k_inTPC,"Tr_k_inTPC/I");
+  fEventTree->Branch("Tr_mu_inTPC", &Tr_mu_inTPC,"Tr_mu_inTPC/I");
+  fEventTree->Branch("Tr_k_in_5_TPC", &Tr_k_in_5_TPC,"Tr_k_in_5_TPC/I");
+  fEventTree->Branch("Tr_k_in_CC_TPC", &Tr_k_in_CC_TPC,"Tr_k_in_CC_TPC/I");
+  fEventTree->Branch("Tr_mu_in_5_TPC", &Tr_mu_in_5_TPC,"Tr_mu_in_5_TPC/I");
+  fEventTree->Branch("Tr_mu_in_CC_TPC", &Tr_mu_in_CC_TPC,"Tr_mu_in_CC_TPC/I");
+  fEventTree->Branch("Tr_kmu_open_ang", &Tr_kmu_open_ang,"Tr_kmu_open_ang/F");
+  fEventTree->Branch("vtx_mult", &vtx_mult,"vtx_mult/I");
+  fEventTree->Branch("vtx_dis_trks",vtx_dis_trks,"vtx_dis_trks[vtx_mult]/F");
+  fEventTree->Branch("vtx_5cm_mult", &vtx_5cm_mult,"vtx_5cm_mult/I");
+  fEventTree->Branch("k_start_dedx", &k_start_dedx,"k_start_dedx/F");
+  fEventTree->Branch("k_end_dedx", &k_end_dedx,"k_end_dedx/F");
+  fEventTree->Branch("mu_start_dedx", &mu_start_dedx,"mu_start_dedx/F");
+  fEventTree->Branch("mu_end_dedx", &mu_end_dedx,"mu_end_dedx/F");
+  fEventTree->Branch("cut_1", &cut_1,"cut_1/I");
+  fEventTree->Branch("cut_2", &cut_2,"cut_2/I");
+  fEventTree->Branch("cut_3", &cut_3,"cut_3/I");
+  fEventTree->Branch("cut_4", &cut_4,"cut_4/I");
+  fEventTree->Branch("cut_5", &cut_5,"cut_5/I");
+  fEventTree->Branch("cut_6", &cut_6,"cut_6/I");
+  fEventTree->Branch("cut_7", &cut_7,"cut_7/I");
+  fEventTree->Branch("cut_8", &cut_8,"cut_8/I");
+  fEventTree->Branch("kinelas_has_traks", &kinelas_has_traks,"kinelas_has_traks/I");
+  fEventTree->Branch("kinelas_reco_trkID", &kinelas_reco_trkID,"kinelas_reco_trkID/I");
+  fEventTree->Branch("kinelas_tlen", &kinelas_tlen,"kinelas_tlen/F");
+  fEventTree->Branch("True_kinelas_KE", &True_kinelas_KE,"True_kinelas_KE/F");
+  fEventTree->Branch("True_kinelas_tlen", &True_kinelas_tlen,"True_kinelas_tlen/F");
+}
+
+void CCKaonFilterVersion2::analyze( const art::Event& evt){
+     reset();  
+     bool isMC = !evt.isRealData();
+        
+     art::Handle< std::vector<simb::MCTruth> > mctruthListHandle;
+     std::vector<art::Ptr<simb::MCTruth> > mclist;
+     if(isMC){
+           if(evt.getByLabel(fGenieGenModuleLabel,mctruthListHandle))
+           art::fill_ptr_vector(mclist, mctruthListHandle);
+	   
+     } 
+  
+     art::Handle< std::vector<recob::Track> > trackListHandle;
+     std::vector<art::Ptr<recob::Track> > tracklist;
+     if(fSaveTrackInfo){
+         if(evt.getByLabel(fTrackModuleLabel,trackListHandle))
+         art::fill_ptr_vector(tracklist, trackListHandle);
+     }
+  
+     art::Handle< std::vector<recob::Hit> > hitListHandle;
+     std::vector<art::Ptr<recob::Hit> > hitlist;
+     if(evt.getByLabel(fHitsModuleLabel,hitListHandle))
+        art::fill_ptr_vector(hitlist, hitListHandle);
+     
+     art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
+     std::vector< art::Ptr<simb::MCParticle> > ptList;
+     if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle))
+         art::fill_ptr_vector(ptList, mcParticleHandle); 
+     
+     art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
+     art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns);
+     art::FindManyP<anab::ParticleID> trackPIDAssn(trackListHandle, evt, fPIDLabel);
+     
+     run=evt.run();
+     subrun=evt.subRun();
+     event=evt.id().event(); 
+     vtx_mult=0;
+     vtx_5cm_mult=0;
+     
+     if(isMC){
+        int NTracks=tracklist.size();
+	if(NTracks>=3){
+	   art::Handle< std::vector<ubana::SelectionResult> > selectionHandle;
+           evt.getByLabel(fSelectionLabel, selectionHandle);
+	   art::FindManyP<ubana::TPCObject> selectedTpcObjects(selectionHandle,evt,fSelectionTPCObjAssn);
+           art::Ptr<ubana::TPCObject> selectedTpcObject; 
+	   std::vector<int> kaon_can_trkID;
+	   std::vector<int> kaon_vtx_dis_vec;
+	   std::vector<int> muon_can_trkID;
+	   float mu_vtx_X=-3000;float mu_vtx_Y=-3000;float mu_vtx_Z=-3000; 
+	   if(selectedTpcObjects.at(0).size()== 1){
+	      selectedTpcObject = selectedTpcObjects.at(0).at(0);
+	      recob::Vertex selectedVertex=selectedTpcObject->GetVertex();
+	      double xyz[3]={0.0, 0.0, 0.0};
+	      selectedVertex.XYZ(xyz);
+	      mu_vtx_X=xyz[0];
+	      mu_vtx_Y=xyz[1];
+	      mu_vtx_Z=xyz[2];
+	   }
+	   
+	   if(mu_vtx_X!=-3000 && mu_vtx_Y!=-3000 && mu_vtx_Z!=-3000){
+	      float small_tlen=-5e20;
+	      for(int k=0; k<NTracks; k++){
+		  art::Ptr<recob::Track> ptrack(trackListHandle,k);
+	          const recob::Track& track = *ptrack;
+	          TVector3 pos,end;
+                  pos=track.Vertex();
+                  end=track.End();
+		  float st_vtx=TMath::Sqrt((mu_vtx_X-pos.X())*(mu_vtx_X-pos.X()) + (mu_vtx_Y-pos.Y())*(mu_vtx_Y-pos.Y()) + (mu_vtx_Z-pos.Z())*(mu_vtx_Z-pos.Z()));
+	          
+		  if(st_vtx<=5) vtx_5cm_mult++;
+		  
+		  if(st_vtx<=7){ 
+		     vtx_mult++;
+		     vtx_dis_trks[vtx_mult-1]=1;
+		  }
+		  if(track.Length()>small_tlen){ 
+		     small_tlen=track.Length();
+		     longest_trkid=track.ID();
+		  }
+	      }
+	      longest_trklen=small_tlen;
+	   }
+	   
+	   /*float long_vtx_dis=5e20;
+	   if(longest_trkid!=-9999){
+	       art::Ptr<recob::Track> ptrack_l(trackListHandle,longest_trkid);
+	       const recob::Track& track_l = *ptrack_l;
+	       TVector3 pos_l;
+	       pos_l=track_l.Vertex();
+	       long_vtx_dis=TMath::Sqrt((pos_l.X()-mu_vtx_X)*(pos_l.X()-mu_vtx_X) + (pos_l.Y()-mu_vtx_Y)*(pos_l.Y()-mu_vtx_Y) + (pos_l.Z()-mu_vtx_Z)*(pos_l.Z()-mu_vtx_Z));
+           }*/
+	   
+	  if(/*long_vtx_dis<=5 && */vtx_mult>=2 && (mu_vtx_X!=-3000 && mu_vtx_Y!=-3000 && mu_vtx_Z!=-3000)){
+	      cut_1=1;	  
+	      for(int i=0; i<NTracks; i++){
+	          art::Ptr<recob::Track> ptrack(trackListHandle,i);
+	          const recob::Track& track = *ptrack;
+	          TVector3 pos,end;
+                  pos=track.Vertex();
+                  end=track.End();
+		  //if(track.ID()==longest_trkid) continue;
+	          if((pos.X()>0 && pos.X()<256.35) && (end.X()>0 && end.X()<256.35) && (pos.Y()>-116.5 && pos.Y()<116.5) && (end.Y()>-116.5 && end.Y()<116.5) && (pos.Z()>0 && pos.Z()<1036.8) && (end.Z()>0 && end.Z()<1036.8)){
+	              cut_2=1;
+		      int hits_p2=0;
+		      std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(track.ID());
+		      for(unsigned int ical=0; ical<calos.size(); ++ical){
+		          if(!calos[ical]) continue;
+		          if(!calos[ical]->PlaneID().isValid) continue;
+		          int planenum = calos[ical]->PlaneID().Plane;
+		          if(planenum<0||planenum>2) continue; 
+		          if(planenum==2) hits_p2=calos[ical]->dEdx().size();
+	              }
+		      if(hits_p2>=5){
+			 cut_3=1;     
+		         float trklen=track.Length();
+		         if(trklen>=5){ // initiall this was 5 cm
+			    cut_4=1;
+		            //float chi_p=-1;
+			    /*float chi_k=-1;
+			    float k_Brg_F_mip=-1;
+			    float k_Brg_B_mip=-1;
+			    float k_Brg_F_p=-1;
+			    float k_Brg_B_p=-1;
+			    float k_Brg_B_mu=-1;
+			    float k_Brg_F_mu=-1;*/		    
+			    if(!trackPIDAssn.isValid()) continue;
+		            std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(track.ID());
+			    if(trackPID.size()==0) continue;
+		            std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
+			    for(size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+		                anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+			        int planeid = UBPID::uB_getSinglePlane(AlgScore.fPlaneID);
+			        if(AlgScore.fAlgName == "Chi2" && anab::kVariableType(AlgScore.fVariableType) == anab::kGOF && planeid==fplane){
+			           //if(AlgScore.fAssumedPdg==2212) chi_p=AlgScore.fValue;
+				   //if(AlgScore.fAssumedPdg==321) chi_k=AlgScore.fValue;
+		                }
+				/*if(AlgScore.fAlgName == "BraggPeakLLH" && anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood && planeid==fplane){
+		                   if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward){
+			              if(AlgScore.fAssumedPdg==0) k_Brg_F_mip=AlgScore.fValue;
+				      if(AlgScore.fAssumedPdg==13) k_Brg_F_mu=AlgScore.fValue;
+		                      if(AlgScore.fAssumedPdg==2212) k_Brg_F_p=AlgScore.fValue;
+			           }
+			           else if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kBackward){
+			                   if(AlgScore.fAssumedPdg==0) k_Brg_B_mip=AlgScore.fValue;
+					   if(AlgScore.fAssumedPdg==13) k_Brg_B_mu=AlgScore.fValue;
+		                           if(AlgScore.fAssumedPdg==2212) k_Brg_B_p=AlgScore.fValue;
+			           }
+			        }*/
+	                     }
+			     /*float mip_max=TMath::Max(k_Brg_F_mip,k_Brg_B_mip);
+			     float p_max=TMath::Max(k_Brg_F_p,k_Brg_B_p);
+			     float mu_max=TMath::Max(k_Brg_F_mu,k_Brg_B_mu);
+			     float ratio=TMath::Log(float(mu_max+mip_max)/(mu_max+mip_max+p_max));*/
+			     //if(chi_p<100 && chi_p>0){ // (chi_p>=10 && chi_p<=80) && (chi_k<=10 && chi_k>0),  (mip_max<0.1),  (ratio<-0.2) // chi_p<100 && chi_p>0
+				 cut_5=1;   
+			         if(mu_vtx_X!=-3000 && mu_vtx_Y!=-3000 && mu_vtx_Z!=-3000){
+			            float start_dis=TMath::Sqrt((mu_vtx_X-pos.X())*(mu_vtx_X-pos.X()) + (mu_vtx_Y-pos.Y())*(mu_vtx_Y-pos.Y()) + (mu_vtx_Z-pos.Z())*(mu_vtx_Z-pos.Z()));
+				    float end_dis=TMath::Sqrt((mu_vtx_X-end.X())*(mu_vtx_X-end.X()) + (mu_vtx_Y-end.Y())*(mu_vtx_Y-end.Y()) + (mu_vtx_Z-end.Z())*(mu_vtx_Z-end.Z()));
+				    if(start_dis<=7 && (start_dis<end_dis)){ // 2.5 // 5
+				       cut_6=1;
+				       kaon_can_trkID.push_back(track.ID()); 
+			            } // vtx distance to the K track < 2.5
+			         } // cc inclusive vertex found
+		              //} // chi p and chi k cut
+		           } // trklen > 7 cm
+		        } // more than 5 hits in the collection plane
+	             } // track is contained in full TPC
+	          } // loop over K  reco trks	
+		  
+		  for(int j=0; j<NTracks; j++){
+	              art::Ptr<recob::Track> ptrack(trackListHandle,j);
+	              const recob::Track& track = *ptrack;
+	              TVector3 pos,end;
+                      pos=track.Vertex();
+                      end=track.End();
+	              //if(track.ID()==longest_trkid) continue;
+	              
+		      
+		      //////////////////////////////// *************************************** //////////////////////////////////////
+		      
+		      /*int continue_index=0;
+	              for(unsigned int k=0; k<kaon_can_trkID.size(); k++){
+		          if(kaon_can_trkID[k]==track.ID()){
+		             continue_index=1;
+		             break;
+		          }
+	              }
+	              if(continue_index==1) continue;*/
+		      
+		      ////////////////////////////////////// ****************************** //////////////////////////////////////////
+		      
+		      
+	              if((pos.X()>0 && pos.X()<256.35) && (end.X()>0 && end.X()<256.35) && (pos.Y()>-116.5 && pos.Y()<116.5) && (end.Y()>-116.5 && end.Y()<116.5) && (pos.Z()>0 && pos.Z()<1036.8) && (end.Z()>0 && end.Z()<1036.8)){
+	                  cut_7=1;
+			  float start_dis=TMath::Sqrt((mu_vtx_X-pos.X())*(mu_vtx_X-pos.X()) + (mu_vtx_Y-pos.Y())*(mu_vtx_Y-pos.Y()) + (mu_vtx_Z-pos.Z())*(mu_vtx_Z-pos.Z()));    
+			  if(start_dis>5){   // 5
+			     cut_8=1;   
+			     int hits_p2=0;
+		             std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(track.ID());
+		             for(unsigned int ical=0; ical<calos.size(); ++ical){
+		                 if(!calos[ical]) continue;
+		                 if(!calos[ical]->PlaneID().isValid) continue;
+		                 int planenum = calos[ical]->PlaneID().Plane;
+		                 if(planenum<0||planenum>2) continue; 
+		                 if(planenum==2) hits_p2=calos[ical]->dEdx().size();
+	                     }
+		             if(hits_p2>=10){
+				cut_9=1;    
+		                float trklen=track.Length();
+		                if(trklen>5){ // trklen>40 && trklen<60 // trklen>30 && trklen<70 // trklen>20 && trklen<70
+				   cut_10=1;	
+		                   //float chi_p=-1;
+				   /*float k_Brg_F_mip=-1;
+			           float k_Brg_B_mip=-1;
+				   float k_Brg_F_p=-1;
+			           float k_Brg_B_p=-1;
+			           float k_Brg_B_mu=-1;
+			           float k_Brg_F_mu=-1;*/	
+			           if(!trackPIDAssn.isValid()) continue;
+			           std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(track.ID());
+			           if(trackPID.size()==0) continue;
+		                   std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
+			           for(size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+		                       anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+			               int planeid = UBPID::uB_getSinglePlane(AlgScore.fPlaneID);
+			               if(AlgScore.fAlgName == "Chi2" && anab::kVariableType(AlgScore.fVariableType) == anab::kGOF && planeid==fplane){
+			                  //if(AlgScore.fAssumedPdg==2212) chi_p=AlgScore.fValue;
+		                       }
+				       /*if(AlgScore.fAlgName == "BraggPeakLLH" && anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood && planeid==fplane){
+		                          if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward){
+			                     if(AlgScore.fAssumedPdg==0) k_Brg_F_mip=AlgScore.fValue;
+					     if(AlgScore.fAssumedPdg==13) k_Brg_F_mu=AlgScore.fValue;
+		                             if(AlgScore.fAssumedPdg==2212) k_Brg_F_p=AlgScore.fValue;
+			                  }
+			                  else if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kBackward){
+			                          if(AlgScore.fAssumedPdg==0) k_Brg_B_mip=AlgScore.fValue;
+						  if(AlgScore.fAssumedPdg==13) k_Brg_B_mu=AlgScore.fValue;
+		                                  if(AlgScore.fAssumedPdg==2212) k_Brg_B_p=AlgScore.fValue;
+		                          }
+			               }*/ 		       
+	                           }
+				   /*float mip_max=TMath::Max(k_Brg_F_mip,k_Brg_B_mip);
+				   float p_max=TMath::Max(k_Brg_F_p,k_Brg_B_p);
+			           float mu_max=TMath::Max(k_Brg_F_mu,k_Brg_B_mu);
+			           float ratio=TMath::Log(float(mu_max+mip_max)/(mu_max+mip_max+p_max));*/
+			           //if(chi_p>60){ // chi_p>=100 // mip_max>=0.1 // ratio>-0.2 && ratio<0.1 // chi_p>60
+				      cut_11=1;   
+			              muon_can_trkID.push_back(track.ID());
+		                   //} // chi p cut
+		                } // muon track length cut
+	                     } // hits > 10
+	                  } // track is 5 cm awary from the vertex 
+		       } // track is contained in the full TPC
+	            } // loop over mu reco trks
+		    
+		    if(kaon_can_trkID.size() && muon_can_trkID.size()){
+	               std::vector<int>mu_mindis_can;
+	               std::vector<int>k_mindis_can;
+	               std::vector<float> close_dis;
+	               for(unsigned int i=0; i<kaon_can_trkID.size(); i++){
+	                   for(unsigned int j=0; j<muon_can_trkID.size(); j++){
+		               art::Ptr<recob::Track> ptrack_k(trackListHandle,kaon_can_trkID[i]);
+		               const recob::Track& track_k = *ptrack_k;
+	                       TVector3 end_k;
+		               end_k=track_k.End();
+		      
+	                       art::Ptr<recob::Track> ptrack_mu(trackListHandle,muon_can_trkID[j]);
+		               const recob::Track& track_mu = *ptrack_mu;
+	                       TVector3 pos_mu;
+	                       pos_mu=track_mu.Vertex();  
+		               
+			       if(kaon_can_trkID[i]!=muon_can_trkID[j]){ // newly introduced cut *************************************************
+		                  float k_en_mu_st=TMath::Sqrt((end_k.X()-pos_mu.X())*(end_k.X()-pos_mu.X()) + (end_k.Y()-pos_mu.Y())*(end_k.Y()-pos_mu.Y()) + (end_k.Z()-pos_mu.Z())*(end_k.Z()-pos_mu.Z()));
+		                  if(k_en_mu_st<=5){ // 2.5 // 5
+		                     mu_mindis_can.push_back(muon_can_trkID[j]);
+			             k_mindis_can.push_back(kaon_can_trkID[i]);
+			             close_dis.push_back(k_en_mu_st);
+		                  } // k/mu vtx < 2.5 cm
+		                } // two track ID's are not identical
+			     } // loop over mu candidates
+	                 } // loop over k candidates
+	      
+	                 if(mu_mindis_can.size() && k_mindis_can.size()){
+	                    cut_12=1;
+			    float min2_dis=5e20;
+		            int track_index=-1;
+		            for(unsigned int k=0; k<close_dis.size(); k++){
+		                if(close_dis[k]<min2_dis){
+		                   min2_dis=close_dis[k];
+		                   track_index=k;
+		                } 
+		             }
+		  
+		             k_can_trkid=k_mindis_can[track_index];
+		             mu_can_trkid=mu_mindis_can[track_index];
+		             k_mu_can_dis=min2_dis;
+		  
+		             art::Ptr<recob::Track> ptrack_k(trackListHandle,k_can_trkid);
+		             const recob::Track& track_k = *ptrack_k;
+		             TVector3 dir_end_k;
+		             TVector3 pos_k,end_k;
+		             pos_k=track_k.Vertex();
+		             end_k=track_k.End();
+     	                     dir_end_k=track_k.EndDirection();
+		  
+		             art::Ptr<recob::Track> ptrack_mu(trackListHandle,mu_can_trkid);
+		             const recob::Track& track_mu = *ptrack_mu;
+		             TVector3 dir_start_mu;
+		             dir_start_mu=track_mu.VertexDirection();
+		             TVector3 pos_mu,end_mu;
+		             pos_mu=track_mu.Vertex();
+		             end_mu=track_mu.End();
+     	          
+		             float k_cosA=dir_end_k.X();float k_cosB=dir_end_k.Y();float k_cosC=dir_end_k.Z();
+	                     float mu_cosA=dir_start_mu.X();float mu_cosB=dir_start_mu.Y();float mu_cosC=dir_start_mu.Z();
+		             k_mu_open_angle=(TMath::ACos(k_cosA*mu_cosA + k_cosB*mu_cosB + k_cosC*mu_cosC))*57.3;
+		             k_vtx_dis=TMath::Sqrt((pos_k.X()-mu_vtx_X)*(pos_k.X()-mu_vtx_X) + (pos_k.Y()-mu_vtx_Y)*(pos_k.Y()-mu_vtx_Y) + (pos_k.Z()-mu_vtx_Z)*(pos_k.Z()-mu_vtx_Z));
+		  
+		             ////////////////////////////////////////////////////////////////////// Doing End point matching for reco and true tracks /////////////////////////////////////
+		  
+		             int New_True_Kaon_ID=-9999;
+		             for(auto const& pPart : ptList){
+	                         std::string pri("primary");
+	                         bool isPrimary=0;
+	                         isPrimary=pPart->Process()==pri;
+		                 if(isPrimary && pPart->PdgCode()==321){
+		                    const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",pPart->TrackId());
+		                    int origin=int(mc_truth->Origin());
+		                    if(origin==1){ 
+		                       New_True_Kaon_ID=pPart->TrackId();
+			               float ksx=pPart->Vx();float ksy=pPart->Vy();float ksz=pPart->Vz();
+	                               float kex=pPart->EndX();float key=pPart->EndY();float kez=pPart->EndZ();
+			               float st_st=TMath::Sqrt((pos_k.X()-ksx)*(pos_k.X()-ksx) + (pos_k.Y()-ksy)*(pos_k.Y()-ksy) + (pos_k.Z()-ksz)*(pos_k.Z()-ksz));
+			               float st_en=TMath::Sqrt((pos_k.X()-kex)*(pos_k.X()-kex) + (pos_k.Y()-key)*(pos_k.Y()-key) + (pos_k.Z()-kez)*(pos_k.Z()-kez));
+			               float en_st=TMath::Sqrt((end_k.X()-ksx)*(end_k.X()-ksx) + (end_k.Y()-ksy)*(end_k.Y()-ksy) + (end_k.Z()-ksz)*(end_k.Z()-ksz));
+			               float en_en=TMath::Sqrt((end_k.X()-kex)*(end_k.X()-kex) + (end_k.Y()-key)*(end_k.Y()-key) + (end_k.Z()-kez)*(end_k.Z()-kez));
+			               if((st_st<=5 || st_en<=5) && (en_st<=5 || en_en<=5)) mtc_k_5cm=1;
+			               if((st_st<=10 || st_en<=10) && (en_st<=10 || en_en<=10)) mtc_k_10cm=1;
+			               mtc_k_endE=pPart->EndE()*1000;	    
+		                    }  
+		                 }
+		                 if(pPart->Process()=="Decay" && pPart->PdgCode()==13 && pPart->Mother()==New_True_Kaon_ID){
+		                    const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",pPart->TrackId());
+		                    int origin=int(mc_truth->Origin());
+		                    if(origin==1){ 
+		                       float musx=pPart->Vx();float musy=pPart->Vy();float musz=pPart->Vz();
+	                               float muex=pPart->EndX();float muey=pPart->EndY();float muez=pPart->EndZ();
+		                       float st_st=TMath::Sqrt((pos_mu.X()-musx)*(pos_mu.X()-musx) + (pos_mu.Y()-musy)*(pos_mu.Y()-musy) + (pos_mu.Z()-musz)*(pos_mu.Z()-musz));
+		                       float st_en=TMath::Sqrt((pos_mu.X()-muex)*(pos_mu.X()-muex) + (pos_mu.Y()-muey)*(pos_mu.Y()-muey) + (pos_mu.Z()-muez)*(pos_mu.Z()-muez));
+		                       float en_st=TMath::Sqrt((end_mu.X()-musx)*(end_mu.X()-musx) + (end_mu.Y()-musy)*(end_mu.Y()-musy) + (end_mu.Z()-musz)*(end_mu.Z()-musz));
+		                       float en_en=TMath::Sqrt((end_mu.X()-muex)*(end_mu.X()-muex) + (end_mu.Y()-muey)*(end_mu.Y()-muey) + (end_mu.Z()-muez)*(end_mu.Z()-muez));
+		                       mtc_mu_pid=pPart->PdgCode();
+			               if((st_st<=5 || st_en<=5) && (en_st<=5 || en_en<=5)) mtc_mu_5cm=1;
+		                       if((st_st<=10 || st_en<=10) && (en_st<=10 || en_en<=10)) mtc_mu_10cm=1;
+		                    }
+		                  }
+	                       }// loop over plist
+		  
+		               ////////////////////////////////////////////////////////////////// End of end point matching //////////////////////////////
+	                   } // minimum distance vectors are filled
+	                 } // kaon and muon ID vectors are filled
+	     
+	                 //////////////////////////////////////////////////////// RECO-TRUTH MATCHING /////////////////////////////////////////////////////
+	     
+	                 if(k_can_trkid!=-9999 && mu_can_trkid!=-9999){
+	                    if(k_can_trkid!=-9999){
+		               simb::MCParticle const* matched_mcparticle = NULL;
+		               std::unordered_map<int,double> trkide;
+                               double maxe=-1, tote=0;
+                               std::vector<simb::MCParticle const*> particle_vec;
+                               std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
+                               std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(k_can_trkid);
+		               art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle,evt,fHitTruthAssns);
+		       
+		               for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
+                                   particle_vec.clear(); match_vec.clear();
+                                   particles_per_hit.get(hits_from_track[i_h].key(),particle_vec,match_vec);
+                                   for(size_t i_p=0; i_p<particle_vec.size(); ++i_p){
+                                       trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
+                                       tote += match_vec[i_p]->energy;
+                                       if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
+                                           maxe = trkide[ particle_vec[i_p]->TrackId() ];
+                                           matched_mcparticle = particle_vec[i_p];
+                                       }
+                                    }
+                                 }
+		   
+		                 std::string pri("primary");
+		                 if(matched_mcparticle){
+		                    int k_geant_id=matched_mcparticle->TrackId();
+		                    k_geant_ID=k_geant_id;
+	                            const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",k_geant_id);
+	                            k_origin=int(mc_truth->Origin());
+		                    k_pdg=matched_mcparticle->PdgCode();
+		                    if(matched_mcparticle->Process()==pri) k_isPri=1;
+		                    k_endE=matched_mcparticle->EndE()*1000;
+		                    if(k_origin==1 && k_pdg==321 && k_endE<=510 && k_isPri==1) k_ness=1;
+	                          }
+		   
+		                  art::Ptr<recob::Track> ptrack(trackListHandle,k_can_trkid);
+		                  const recob::Track& track = *ptrack;
+	                          TVector3 pos,end;
+	                          pos=track.Vertex();
+		                  end=track.End();
+		                  TVector3 dir_start;	
+		                  dir_start=track.VertexDirection();
+		                  k_plen=track.Length();
+		                  k_phi=dir_start.Phi()*57.3;
+                                  k_theta=dir_start.Theta()*57.3;
+		                  if((pos.X()>5 && pos.X()<251.35) && (end.X()>5 && end.X()<251.35) && (pos.Y()>-111.5 && pos.Y()<111.5) && (end.Y()>-111.5 && end.Y()<111.5) && (pos.Z()>5 && pos.Z()<1031.8) && (end.Z()>5 && end.Z()<1031.8))  k_in_5_TPC=1;
+		                  if((pos.X()>12 && pos.X()<244.35) && (end.X()>12 && end.X()<244.35) && (pos.Y()>-81.5 && pos.Y()<81.5) && (end.Y()>-81.5 && end.Y()<81.5) && (pos.Z()>25 && pos.Z()<951.8) && (!(pos.Z()>675 && pos.Z()<775)) && (end.Z()>25 && end.Z()<951.8) && (!(end.Z()>675 && end.Z()<775))) k_in_CC_TPC=1; 
+		                  if(mu_vtx_X!=-3000 && mu_vtx_Y!=-3000 && mu_vtx_Z!=-3000){
+			             kaon_vtx_dis=TMath::Sqrt((mu_vtx_X-pos.X())*(mu_vtx_X-pos.X()) + (mu_vtx_Y-pos.Y())*(mu_vtx_Y-pos.Y()) + (mu_vtx_Z-pos.Z())*(mu_vtx_Z-pos.Z()));
+			          }
+				  float KE_K_p2=0;
+		                  std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(k_can_trkid);
+		                  for(unsigned int ical=0; ical<calos.size(); ++ical){
+		                      if(!calos[ical]) continue;
+		                      if(!calos[ical]->PlaneID().isValid) continue;
+		                      int planenum = calos[ical]->PlaneID().Plane;
+	                              if(planenum<0||planenum>2) continue; 
+		                      if(planenum==fplane){
+		                         const size_t NHits = calos[ical] -> dEdx().size();
+		                         k_hit=int(NHits);
+		                         k_range=calos[ical]->Range();
+		                         float bin_size=0;
+		                         if(k_range<10) bin_size=float(k_range)/2;
+		                         if(k_range>=10) bin_size=5.0;
+		                         std::vector<float> st_vec,en_vec;
+					 float rr_x0=-1;float rr_y0=-1;float rr_z0=-1;
+		                         for(size_t iHit = 0; iHit < NHits; ++iHit){
+			                     const auto& TrkPos=(calos[ical] -> XYZ())[iHit];
+					     if(iHit==0){
+					        rr_x0=TrkPos.X();rr_y0=TrkPos.Y();rr_z0=TrkPos.Z();
+					     }
+					     if((calos[ical]->ResidualRange())[iHit]<=bin_size) en_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                     if((k_range-(calos[ical]->ResidualRange())[iHit])<=bin_size) st_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                     if(iHit>=1){
+			                        if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit-1]>=0) KE_K_p2=KE_K_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit-1])*(calos[ical] -> dEdx())[iHit]);
+			                     }
+			                     if(iHit==0){
+			                        if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit+1]>=0) KE_K_p2=KE_K_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit+1])*(calos[ical] -> dEdx())[iHit]);
+			                     }
+		                          } 
+			 
+			                  if(st_vec.size() && en_vec.size()){
+			                     float en_median=TMath::Median(en_vec.size(),&en_vec[0]);
+	                                     float st_median=TMath::Median(st_vec.size(),&st_vec[0]);
+					     float st_hit0=TMath::Sqrt((pos.X()-rr_x0)*(pos.X()-rr_x0) + (pos.Y()-rr_y0)*(pos.Y()-rr_y0) + (pos.Z()-rr_z0)*(pos.Z()-rr_z0));
+					     float en_hit0=TMath::Sqrt((end.X()-rr_x0)*(end.X()-rr_x0) + (end.Y()-rr_y0)*(end.Y()-rr_y0) + (end.Z()-rr_z0)*(end.Z()-rr_z0));
+					     
+					     if(st_hit0<en_hit0){
+					        k_start_dedx=en_median;
+						k_end_dedx=st_median;
+					     }
+					     
+					     if(en_hit0<st_hit0){
+					        k_end_dedx=en_median;
+						k_start_dedx=st_median;
+					     }
+					     
+					     if(en_hit0==st_hit0){
+					        k_end_dedx=en_median;
+						k_start_dedx=st_median;
+					     }
+					     
+			                     if(en_median>st_median){ 
+			                        k_large_dedx=en_median;
+			                        k_small_dedx=st_median;
+			                     }
+			                     if(en_median<st_median){ 
+			                        k_large_dedx=st_median;
+			                        k_small_dedx=en_median;
+			                     }
+			                     if(en_median==st_median){ 
+			                        k_large_dedx=en_median;
+			                        k_small_dedx=st_median;
+			                     }
+			                   }
+		                        } // grab plane 2
+	                            } // loop over calorimetry objects
+		  
+		                    k_KE=KE_K_p2;
+		 
+		                    if(trackPIDAssn.isValid()){
+		                       std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(k_can_trkid);
+		                       if(trackPID.size()!=0){
+		                          std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
+		                          float k_Brg_F_mu=-9999;float k_Brg_F_p=-9999;float k_Brg_F_pi=-9999;float k_Brg_F_k=-9999;float k_Brg_F_mip=-9999;
+		                          float k_Brg_B_mu=-9999;float k_Brg_B_p=-9999;float k_Brg_B_pi=-9999;float k_Brg_B_k=-9999;float k_Brg_B_mip=-9999;
+		                          for(size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+		                              anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+			                      int planeid = UBPID::uB_getSinglePlane(AlgScore.fPlaneID);
+		                              if(AlgScore.fAlgName == "Chi2" && anab::kVariableType(AlgScore.fVariableType) == anab::kGOF && planeid==fplane){
+			                         if(AlgScore.fAssumedPdg==13) k_chi_mu=AlgScore.fValue;
+		                                 if(AlgScore.fAssumedPdg==2212) k_chi_p=AlgScore.fValue;
+			                         if(AlgScore.fAssumedPdg==211) k_chi_pi=AlgScore.fValue;
+		                                 if(AlgScore.fAssumedPdg==321) k_chi_k=AlgScore.fValue;
+		                              } 
+		                              if(AlgScore.fAlgName == "BraggPeakLLH" && anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood && planeid==fplane){
+		                                 if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward){
+			                            if(AlgScore.fAssumedPdg==13) k_Brg_F_mu=AlgScore.fValue;
+		                                    if(AlgScore.fAssumedPdg==2212) k_Brg_F_p=AlgScore.fValue;
+			                            if(AlgScore.fAssumedPdg==211) k_Brg_F_pi=AlgScore.fValue;
+		                                    if(AlgScore.fAssumedPdg==321) k_Brg_F_k=AlgScore.fValue;
+			                            if(AlgScore.fAssumedPdg==0) k_Brg_F_mip=AlgScore.fValue;
+			                          }
+			                          else if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kBackward){
+			                                  if(AlgScore.fAssumedPdg==13) k_Brg_B_mu=AlgScore.fValue;
+		                                          if(AlgScore.fAssumedPdg==2212) k_Brg_B_p=AlgScore.fValue;
+			                                  if(AlgScore.fAssumedPdg==211) k_Brg_B_pi=AlgScore.fValue;
+		                                          if(AlgScore.fAssumedPdg==321) k_Brg_B_k=AlgScore.fValue;
+				                          if(AlgScore.fAssumedPdg==0) k_Brg_B_mip=AlgScore.fValue;
+		                                  }
+			                        }
+		                                if(AlgScore.fAlgName == "PIDA_mean" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                   k_pida_mean=AlgScore.fValue;
+		                                }
+		                                if(AlgScore.fAlgName == "PIDA_median" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                   k_pida_med=AlgScore.fValue;
+		                                }
+		                                if(AlgScore.fAlgName == "PIDA_kde" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                   k_kde=AlgScore.fValue;
+		                                }
+		                                double dQdxcalibval = 198.;
+		                                if(AlgScore.fAlgName == "TruncatedMean" && planeid==fplane){
+		                                   if(anab::kVariableType(AlgScore.fVariableType) == anab::kdEdxtruncmean) k_trm_dedx=AlgScore.fValue;
+		                                   if(anab::kVariableType(AlgScore.fVariableType) == anab::kdQdxtruncmean) k_trm_dqdx=AlgScore.fValue*dQdxcalibval;
+		                                }
+		                             } // loop over algo score vector...
+		                             k_p_max=TMath::Max(k_Brg_F_p,k_Brg_B_p);
+                                             k_k_max=TMath::Max(k_Brg_F_k,k_Brg_B_k);
+                                             k_pi_max=TMath::Max(k_Brg_F_pi,k_Brg_B_pi);
+                                             k_mu_max=TMath::Max(k_Brg_F_mu,k_Brg_B_mu);
+                                             k_mip_max=TMath::Max(k_Brg_F_mip,k_Brg_B_mip);
+		                             k_L1_ratio=float(k_mip_max)/(k_p_max+k_k_max);
+		                             k_LL1=TMath::Log(k_L1_ratio);
+		                             k_L2_ratio=float(k_mip_max+k_mu_max+k_pi_max)/(k_mip_max+k_mu_max+k_pi_max+k_p_max+k_k_max);
+		                             k_LL2=TMath::Log(k_L1_ratio);
+		                             k_Lp_ratio=float(k_mip_max+k_mu_max)/(k_mip_max+k_mu_max+k_p_max);
+		                             k_LLp=TMath::Log(k_Lp_ratio);
+		                             k_Lk_ratio=float(k_mip_max+k_mu_max)/(k_mip_max+k_mu_max+k_k_max);
+		                             k_LLk=TMath::Log(k_Lk_ratio);
+		                           } // pid vector non-empty
+		                         } // associations are there
+		                      } // valid Kaon ID
+		
+		                      if(mu_can_trkid!=-9999){
+		                         simb::MCParticle const* matched_mcparticle = NULL;
+		                         std::unordered_map<int,double> trkide;
+                                         double maxe=-1, tote=0;
+                                         std::vector<simb::MCParticle const*> particle_vec;
+                                         std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
+                                         std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(mu_can_trkid);
+		                         art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle,evt,fHitTruthAssns);
+		       
+		                         for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
+                                             particle_vec.clear(); match_vec.clear();
+                                             particles_per_hit.get(hits_from_track[i_h].key(),particle_vec,match_vec);
+                                             for(size_t i_p=0; i_p<particle_vec.size(); ++i_p){
+                                                 trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
+                                                 tote += match_vec[i_p]->energy;
+                                                 if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
+                                                     maxe = trkide[ particle_vec[i_p]->TrackId() ];
+                                                     matched_mcparticle = particle_vec[i_p];
+                                                 }
+                                              }
+                                           }
+		    
+		                           std::string dec("Decay");
+		                           if(matched_mcparticle){
+	                                      int mu_geant_id=matched_mcparticle->TrackId();
+	                                      const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",mu_geant_id);
+	                                      mu_origin=int(mc_truth->Origin());
+		                              mu_pdg=matched_mcparticle->PdgCode();
+		                              if(matched_mcparticle->Process()==dec) mu_isDec=1;
+		                              if(matched_mcparticle->Mother()==k_geant_ID) mu_k_is_Mother=1;
+					      
+					      std::cout << "******************** Genuine Mother Kaon track ID : " << k_geant_ID << std::endl;
+					      std::cout << "******************** Given Mother Kaon track ID : " << matched_mcparticle->Mother() << std::endl;
+					      
+		                              if(mu_origin==1 && mu_pdg==-13 && mu_isDec==1 && mu_k_is_Mother==1) mu_ness=1;
+		                              if(mu_origin==1 && (mu_pdg==-13 || mu_pdg==211) && mu_isDec==1 && mu_k_is_Mother!=1){
+		                              for(auto const& pPart : ptList){
+			                          int mom_trkid=matched_mcparticle->Mother();
+			                          if(pPart->TrackId()==mom_trkid){ 
+				                     mu_mom_process=pPart->Process();
+						     std::cout << "********************** Process name of the New Mother : " << mu_mom_process << std::endl;
+						     std::cout << "********************** Mother ID of the New Mother : " << pPart->Mother() << std::endl;
+						     if(pPart->Process()=="kaon+Inelastic" && pPart->Mother()==k_geant_ID) mu_mom_k_inelas=1;
+				                     break;
+			                          }
+			                       }
+		                            }
+	                                 }
+		    
+		                         art::Ptr<recob::Track> ptrack(trackListHandle,mu_can_trkid);
+		                         const recob::Track& track = *ptrack;
+	                                 TVector3 pos,end;
+	                                 pos=track.Vertex();
+		                         end=track.End();
+		                         TVector3 dir_start;	
+		                         dir_start=track.VertexDirection();
+		                         mu_plen=track.Length();
+		                         mu_phi=dir_start.Phi()*57.3;
+                                         mu_theta=dir_start.Theta()*57.3;
+		                         if((pos.X()>5 && pos.X()<251.35) && (end.X()>5 && end.X()<251.35) && (pos.Y()>-111.5 && pos.Y()<111.5) && (end.Y()>-111.5 && end.Y()<111.5) && (pos.Z()>5 && pos.Z()<1031.8) && (end.Z()>5 && end.Z()<1031.8))  mu_in_5_TPC=1;
+		                         if((pos.X()>12 && pos.X()<244.35) && (end.X()>12 && end.X()<244.35) && (pos.Y()>-81.5 && pos.Y()<81.5) && (end.Y()>-81.5 && end.Y()<81.5) && (pos.Z()>25 && pos.Z()<951.8) && (!(pos.Z()>675 && pos.Z()<775)) && (end.Z()>25 && end.Z()<951.8) && (!(end.Z()>675 && end.Z()<775))) mu_in_CC_TPC=1; 
+		                         float KE_Mu_p2=0;
+		                         std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(mu_can_trkid);
+		                         for(unsigned int ical=0; ical<calos.size(); ++ical){
+		                             if(!calos[ical]) continue;
+		                             if(!calos[ical]->PlaneID().isValid) continue;
+		                             int planenum = calos[ical]->PlaneID().Plane;
+	                                     if(planenum<0||planenum>2) continue; 
+		                             if(planenum==fplane){
+		                                const size_t NHits=calos[ical] -> dEdx().size();
+		                                mu_hit=int(NHits);
+		                                mu_range=calos[ical]->Range();
+		                                float bin_size=0;
+		                                if(mu_range<10) bin_size=float(mu_range)/2;
+		                                if(mu_range>=10) bin_size=5.0;
+		                                std::vector<float> st_vec,en_vec;
+						float rr_x0=-1;float rr_y0=-1;float rr_z0=-1;
+		                                for(size_t iHit = 0; iHit < NHits; ++iHit){
+			                            const auto& TrkPos=(calos[ical] -> XYZ())[iHit];
+					            if(iHit==0){
+					               rr_x0=TrkPos.X();rr_y0=TrkPos.Y();rr_z0=TrkPos.Z();
+					            }
+						    if((calos[ical]->ResidualRange())[iHit]<=bin_size) en_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                            if((mu_range-(calos[ical]->ResidualRange())[iHit])<=bin_size) st_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                            if(iHit>=1){
+			                               if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit-1]>=0) KE_Mu_p2=KE_Mu_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit-1])*(calos[ical] -> dEdx())[iHit]);
+			                            }
+			                            if(iHit==0){
+			                               if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit+1]>=0) KE_Mu_p2=KE_Mu_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit+1])*(calos[ical] -> dEdx())[iHit]);
+			                            }
+		                                 } 
+			 
+		                                 if(st_vec.size() && en_vec.size()){
+			                           float en_median=TMath::Median(en_vec.size(),&en_vec[0]);
+	                                           float st_median=TMath::Median(st_vec.size(),&st_vec[0]);
+			                           float st_hit0=TMath::Sqrt((pos.X()-rr_x0)*(pos.X()-rr_x0) + (pos.Y()-rr_y0)*(pos.Y()-rr_y0) + (pos.Z()-rr_z0)*(pos.Z()-rr_z0));
+					           float en_hit0=TMath::Sqrt((end.X()-rr_x0)*(end.X()-rr_x0) + (end.Y()-rr_y0)*(end.Y()-rr_y0) + (end.Z()-rr_z0)*(end.Z()-rr_z0));
+					     
+					           if(st_hit0<en_hit0){
+					              mu_start_dedx=en_median;
+						      mu_end_dedx=st_median;
+					           }
+					     
+					           if(en_hit0<st_hit0){
+					              mu_end_dedx=en_median;
+						      mu_start_dedx=st_median;
+					           }
+					     
+					           if(en_hit0==st_hit0){
+					              mu_end_dedx=en_median;
+						      mu_start_dedx=st_median;
+					           }
+						   
+						   if(en_median>st_median){ 
+			                              mu_large_dedx=en_median;
+			                              mu_small_dedx=st_median;
+			                           }
+			                           if(en_median<st_median){ 
+			                              mu_large_dedx=st_median;
+			                              mu_small_dedx=en_median;
+			                           }
+			                           if(en_median==st_median){ 
+			                              mu_large_dedx=en_median;
+			                              mu_small_dedx=st_median;
+			                         }
+		                              }
+		                           } // grab plane 2
+	                                } // loop over calorimetry objects
+		  
+		                        mu_KE=KE_Mu_p2;
+		     
+		                        if(trackPIDAssn.isValid()){
+		                           std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(mu_can_trkid);
+		                           if(trackPID.size()!=0){
+		                              std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
+		                              float mu_Brg_F_mu=-9999;float mu_Brg_F_p=-9999;float mu_Brg_F_pi=-9999;float mu_Brg_F_k=-9999;float mu_Brg_F_mip=-9999;
+		                              float mu_Brg_B_mu=-9999;float mu_Brg_B_p=-9999;float mu_Brg_B_pi=-9999;float mu_Brg_B_k=-9999;float mu_Brg_B_mip=-9999;
+			                      for(size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+		                                  anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+			                          int planeid = UBPID::uB_getSinglePlane(AlgScore.fPlaneID);
+		                                  if(AlgScore.fAlgName == "Chi2" && anab::kVariableType(AlgScore.fVariableType) == anab::kGOF && planeid==fplane){
+			                             if(AlgScore.fAssumedPdg==13) mu_chi_mu=AlgScore.fValue;
+		                                     if(AlgScore.fAssumedPdg==2212) mu_chi_p=AlgScore.fValue;
+			                             if(AlgScore.fAssumedPdg==211) mu_chi_pi=AlgScore.fValue;
+		                                     if(AlgScore.fAssumedPdg==321) mu_chi_k=AlgScore.fValue;
+		                                  } 
+		                                  if(AlgScore.fAlgName == "BraggPeakLLH" && anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood && planeid==fplane){
+		                                     if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward){
+			                                if(AlgScore.fAssumedPdg==13) mu_Brg_F_mu=AlgScore.fValue;
+		                                        if(AlgScore.fAssumedPdg==2212) mu_Brg_F_p=AlgScore.fValue;
+			                                if(AlgScore.fAssumedPdg==211) mu_Brg_F_pi=AlgScore.fValue;
+		                                        if(AlgScore.fAssumedPdg==321) mu_Brg_F_k=AlgScore.fValue;
+			                                if(AlgScore.fAssumedPdg==0) mu_Brg_F_mip=AlgScore.fValue;
+			                             }
+			                             else if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kBackward){
+			                                     if(AlgScore.fAssumedPdg==13) mu_Brg_B_mu=AlgScore.fValue;
+		                                             if(AlgScore.fAssumedPdg==2212) mu_Brg_B_p=AlgScore.fValue;
+			                                     if(AlgScore.fAssumedPdg==211) mu_Brg_B_pi=AlgScore.fValue;
+		                                             if(AlgScore.fAssumedPdg==321) mu_Brg_B_k=AlgScore.fValue;
+				                             if(AlgScore.fAssumedPdg==0) mu_Brg_B_mip=AlgScore.fValue;
+		                                     }
+			                           }
+		                                   if(AlgScore.fAlgName == "PIDA_mean" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                      mu_pida_mean=AlgScore.fValue;
+		                                   }
+		                                   if(AlgScore.fAlgName == "PIDA_median" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                      mu_pida_med=AlgScore.fValue;
+		                                   }
+		                                   if(AlgScore.fAlgName == "PIDA_kde" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                      mu_kde=AlgScore.fValue;
+		                                   }
+		                                   double dQdxcalibval = 198.;
+		                                   if(AlgScore.fAlgName == "TruncatedMean" && planeid==fplane){
+		                                      if(anab::kVariableType(AlgScore.fVariableType) == anab::kdEdxtruncmean) mu_trm_dedx=AlgScore.fValue;
+		                                      if(anab::kVariableType(AlgScore.fVariableType) == anab::kdQdxtruncmean) mu_trm_dqdx=AlgScore.fValue*dQdxcalibval;
+		                                   }
+		                                } // loop over algo score vector...
+			                        mu_p_max=TMath::Max(mu_Brg_F_p,mu_Brg_B_p);
+                                                mu_k_max=TMath::Max(mu_Brg_F_k,mu_Brg_B_k);
+                                                mu_pi_max=TMath::Max(mu_Brg_F_pi,mu_Brg_B_pi);
+                                                mu_mu_max=TMath::Max(mu_Brg_F_mu,mu_Brg_B_mu);
+                                                mu_mip_max=TMath::Max(mu_Brg_F_mip,mu_Brg_B_mip);
+		                                mu_L1_ratio=float(mu_mip_max)/(mu_p_max+mu_k_max);
+		                                mu_LL1=TMath::Log(mu_L1_ratio);
+		                                mu_L2_ratio=float(mu_mip_max+mu_mu_max+mu_pi_max)/(mu_mip_max+mu_mu_max+mu_pi_max+mu_p_max+mu_k_max);
+		                                mu_LL2=TMath::Log(mu_L1_ratio);
+		                                mu_Lp_ratio=float(mu_mip_max+mu_mu_max)/(mu_mip_max+mu_mu_max+mu_p_max);
+		                                mu_LLp=TMath::Log(mu_Lp_ratio);
+		                                mu_Lk_ratio=float(mu_mip_max+mu_mu_max)/(mu_mip_max+mu_mu_max+mu_k_max);
+		                                mu_LLk=TMath::Log(mu_Lk_ratio); 
+			                      } // pid vector non-empty
+		                           } // associations are there
+		                        } // valid Muon ID
+	                             } // kaon and muon ID are valid
+	       
+	                             //////////////////////////////////////////////////////////// Looking into CC  Muon
+	       
+	                             for(int k=0; k<NTracks; k++){
+	                                 art::Ptr<recob::Track> ptrack(trackListHandle,k);
+		                         const recob::Track& track = *ptrack;
+		                         simb::MCParticle const* matched_mcparticle = NULL;
+		                         std::unordered_map<int,double> trkide;
+                                         double maxe=-1, tote=0;
+                                         std::vector<simb::MCParticle const*> particle_vec;
+                                         std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
+                                         std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.ID());
+		                         art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle,evt,fHitTruthAssns);
+		   
+		                         for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
+		                             particle_vec.clear(); match_vec.clear();
+		                             particles_per_hit.get(hits_from_track[i_h].key(),particle_vec,match_vec);
+		                             for(size_t i_p=0; i_p<particle_vec.size(); ++i_p){
+                                                 trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
+                                                 tote += match_vec[i_p]->energy;
+                                                 if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
+                                                     maxe = trkide[ particle_vec[i_p]->TrackId() ];
+                                                     matched_mcparticle = particle_vec[i_p];
+                                                 }
+                                              }
+                                           }
+		   
+		                           std::string pri("primary");
+		   
+		                           if(matched_mcparticle){
+		                              int mu_geant_id=matched_mcparticle->TrackId();
+		                              const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",mu_geant_id);
+	                                      mu_origin=int(mc_truth->Origin());
+		                              cc_mu_pdg=matched_mcparticle->PdgCode();
+		                              if(matched_mcparticle->Process()==pri && TMath::Abs(cc_mu_pdg)==13 && mu_origin==1){ 
+		                                 pri_Mu_is=1;
+			                         cc_mu_trkid=track.ID();
+			                         break;
+		                              }
+	                                   }
+		                        }
+		
+		                        //////////////////////////////////////////////////////// End of truth Muon inforamtion  //////////////////////////////////////////////////////////////////////////////
+	     
+	                                if(cc_mu_trkid!=-9999){
+		                           art::Ptr<recob::Track> ptrack(trackListHandle,cc_mu_trkid);
+	                                   const recob::Track& track = *ptrack;
+		                           cc_mu_tlen=track.Length();
+		                           TVector3 dir_start;	
+		                           dir_start=track.VertexDirection();
+		                           cc_mu_phi=dir_start.Phi()*57.3;
+                                           cc_mu_theta=dir_start.Theta()*57.3;
+		                           TVector3 pos,end;
+                                           pos=track.Vertex();
+		                           end=track.End();
+		                           float st_vtx=TMath::Sqrt((mu_vtx_X-pos.X())*(mu_vtx_X-pos.X()) + (mu_vtx_Y-pos.Y())*(mu_vtx_Y-pos.Y()) + (mu_vtx_Z-pos.Z())*(mu_vtx_Z-pos.Z()));
+		                           cc_dis_vtx=st_vtx;
+		                           float KE_Mu_p2=0;
+		                           std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(cc_mu_trkid);
+		                           for(unsigned int ical=0; ical<calos.size(); ++ical){
+		                               if(!calos[ical]) continue;
+		                               if(!calos[ical]->PlaneID().isValid) continue;
+		                               int planenum = calos[ical]->PlaneID().Plane;
+	                                       if(planenum<0||planenum>2) continue; 
+		                               if(planenum==fplane){
+		                                  const size_t NHits = calos[ical] -> dEdx().size();
+		                                  cc_mu_range=calos[ical]->Range();
+			                          cc_mu_hit=int(NHits);
+		                                  float bin_size=0;
+		                                  if(cc_mu_range<10) bin_size=float(cc_mu_range)/2;
+		                                  if(cc_mu_range>=10) bin_size=5.0;
+		                                  std::vector<float> st_vec,en_vec;
+			                          for(size_t iHit = 0; iHit < NHits; ++iHit){
+			                              if((calos[ical]->ResidualRange())[iHit]<=bin_size) en_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                              if((cc_mu_range-(calos[ical]->ResidualRange())[iHit])<=bin_size) st_vec.push_back((calos[ical] -> dEdx())[iHit]);
+			                              if(iHit>=1){
+			                                 if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit-1]>=0) KE_Mu_p2=KE_Mu_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit-1])*(calos[ical] -> dEdx())[iHit]);
+			                              }
+			                              if(iHit==0){
+			                                 if((calos[ical]->ResidualRange())[iHit]>=0 && (calos[ical]->ResidualRange())[iHit+1]>=0) KE_Mu_p2=KE_Mu_p2+TMath::Abs(((calos[ical]->ResidualRange())[iHit]-(calos[ical]->ResidualRange())[iHit+1])*(calos[ical] -> dEdx())[iHit]);
+			                              }
+			                           }
+			  
+			                           if(st_vec.size() && en_vec.size()){
+			                              float en_median=TMath::Median(en_vec.size(),&en_vec[0]);
+	                                              float st_median=TMath::Median(st_vec.size(),&st_vec[0]);
+			                              if(en_median>st_median){ 
+			                                 cc_mu_large_dedx=en_median;
+			                                 cc_mu_small_dedx=st_median;
+			                              }
+			                              if(en_median<st_median){ 
+			                                 cc_mu_large_dedx=st_median;
+			                                 cc_mu_small_dedx=en_median;
+			                              }
+			                              if(en_median==st_median){ 
+			                                 cc_mu_large_dedx=en_median;
+			                                 cc_mu_small_dedx=st_median;
+			                              }
+		                                   }
+		                                } // grab plane 2
+	                                     } // loop over calorimetry objects
+		  
+		                             cc_mu_KE=KE_Mu_p2;
+		    
+		                             if(trackPIDAssn.isValid()){
+		                                std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(cc_mu_trkid);
+		                                if(trackPID.size()!=0){
+		                                   std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
+		                                   float cc_mu_Brg_F_mu=-9999;float cc_mu_Brg_F_p=-9999;float cc_mu_Brg_F_pi=-9999;float cc_mu_Brg_F_k=-9999;float cc_mu_Brg_F_mip=-9999;
+		                                   float cc_mu_Brg_B_mu=-9999;float cc_mu_Brg_B_p=-9999;float cc_mu_Brg_B_pi=-9999;float cc_mu_Brg_B_k=-9999;float cc_mu_Brg_B_mip=-9999;
+			                           for(size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
+		                                       anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
+			                               int planeid = UBPID::uB_getSinglePlane(AlgScore.fPlaneID);
+		                                       if(AlgScore.fAlgName == "Chi2" && anab::kVariableType(AlgScore.fVariableType) == anab::kGOF && planeid==fplane){
+			                                  if(AlgScore.fAssumedPdg==13) cc_mu_chi_mu=AlgScore.fValue;
+		                                          if(AlgScore.fAssumedPdg==2212) cc_mu_chi_p=AlgScore.fValue;
+			                                  if(AlgScore.fAssumedPdg==211) cc_mu_chi_pi=AlgScore.fValue;
+		                                          if(AlgScore.fAssumedPdg==321) cc_mu_chi_k=AlgScore.fValue;
+		                                       } 
+		                                       if(AlgScore.fAlgName == "BraggPeakLLH" && anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood && planeid==fplane){
+		                                          if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward){
+			                                     if(AlgScore.fAssumedPdg==13) cc_mu_Brg_F_mu=AlgScore.fValue;
+		                                             if(AlgScore.fAssumedPdg==2212) cc_mu_Brg_F_p=AlgScore.fValue;
+			                                     if(AlgScore.fAssumedPdg==211) cc_mu_Brg_F_pi=AlgScore.fValue;
+		                                             if(AlgScore.fAssumedPdg==321) cc_mu_Brg_F_k=AlgScore.fValue;
+			                                     if(AlgScore.fAssumedPdg==0) cc_mu_Brg_F_mip=AlgScore.fValue;
+			                                   }
+			                                   else if(anab::kTrackDir(AlgScore.fTrackDir) == anab::kBackward){
+			                                           if(AlgScore.fAssumedPdg==13) cc_mu_Brg_B_mu=AlgScore.fValue;
+		                                                   if(AlgScore.fAssumedPdg==2212) cc_mu_Brg_B_p=AlgScore.fValue;
+			                                           if(AlgScore.fAssumedPdg==211) cc_mu_Brg_B_pi=AlgScore.fValue;
+		                                                   if(AlgScore.fAssumedPdg==321) cc_mu_Brg_B_k=AlgScore.fValue;
+				                                   if(AlgScore.fAssumedPdg==0) cc_mu_Brg_B_mip=AlgScore.fValue;
+		                                           }
+			                                }
+		                                        if(AlgScore.fAlgName == "PIDA_mean" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                           cc_mu_pida_mean=AlgScore.fValue;
+		                                        }
+		                                        if(AlgScore.fAlgName == "PIDA_median" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                           cc_mu_pida_med=AlgScore.fValue;
+		                                        }
+		                                        if(AlgScore.fAlgName == "PIDA_kde" && anab::kVariableType(AlgScore.fVariableType) == anab::kPIDA && planeid==fplane){
+		                                           cc_mu_kde=AlgScore.fValue;
+		                                        }
+		                                        double dQdxcalibval = 198.;
+		                                        if(AlgScore.fAlgName == "TruncatedMean" && planeid==fplane){
+		                                           if(anab::kVariableType(AlgScore.fVariableType) == anab::kdEdxtruncmean) cc_mu_trm_dedx=AlgScore.fValue;
+		                                           if(anab::kVariableType(AlgScore.fVariableType) == anab::kdQdxtruncmean) cc_mu_trm_dqdx=AlgScore.fValue*dQdxcalibval;
+		                                        }
+		                                     } // loop over algo score vector...
+			                             cc_mu_p_max=TMath::Max(cc_mu_Brg_F_p,cc_mu_Brg_B_p);
+                                                     cc_mu_k_max=TMath::Max(cc_mu_Brg_F_k,cc_mu_Brg_B_k);
+                                                     cc_mu_pi_max=TMath::Max(cc_mu_Brg_F_pi,cc_mu_Brg_B_pi);
+                                                     cc_mu_mu_max=TMath::Max(cc_mu_Brg_F_mu,cc_mu_Brg_B_mu);
+                                                     cc_mu_mip_max=TMath::Max(cc_mu_Brg_F_mip,cc_mu_Brg_B_mip);
+		                                     cc_mu_L1_ratio=float(cc_mu_mip_max)/(cc_mu_p_max+cc_mu_k_max);
+		                                     cc_mu_LL1=TMath::Log(cc_mu_L1_ratio);
+		                                     cc_mu_L2_ratio=float(cc_mu_mip_max+cc_mu_mu_max+cc_mu_pi_max)/(cc_mu_mip_max+cc_mu_mu_max+cc_mu_pi_max+cc_mu_p_max+cc_mu_k_max);
+		                                     cc_mu_LL2=TMath::Log(cc_mu_L1_ratio);
+		                                     cc_mu_Lp_ratio=float(cc_mu_mip_max+cc_mu_mu_max)/(cc_mu_mip_max+cc_mu_mu_max+cc_mu_p_max);
+		                                     cc_mu_LLp=TMath::Log(cc_mu_Lp_ratio);
+		                                     cc_mu_Lk_ratio=float(cc_mu_mip_max+cc_mu_mu_max)/(cc_mu_mip_max+cc_mu_mu_max+cc_mu_k_max);
+		                                     cc_mu_LLk=TMath::Log(cc_mu_Lk_ratio); 
+			                           } // pid vector non-empty
+		                                } // associations are there
+		                             } // cc mu trkid is valid
+					     
+		                         }  // long track clost to vtx and multiplicity >2
+		                      } // more than 3 track reconstructed in the event
+	      
+	                              //////////////////////////////////////////////////////////// Looking into the  truth level information //////////////////////////////////////////////////////////////////
+	      
+	                              int gk_trk_ID=-9999;
+	                              float k_px=-9999;float k_py=-9999; float k_pz=-9999;
+	                              float kp=-9999;
+	                              for(auto const& pPart : ptList){
+	                                  std::string pri("primary");
+	                                  bool isPrimary=0;
+	                                  isPrimary=pPart->Process()==pri;
+		                          TLorentzVector mcstart, mcend;
+	                                  unsigned int pstarti, pendi;
+	                                  double plen=length(*pPart, mcstart, mcend, pstarti, pendi);
+		                          if(isPrimary && TMath::Abs(pPart->PdgCode())==13){
+		                             const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",pPart->TrackId());
+		                             int origin=int(mc_truth->Origin());
+		                             if(origin==1){ 
+		                                Tr_pri_mu_is=1; 
+		                                Tr_pri_mu_pdg=pPart->PdgCode();
+		                             } 
+	                                  }
+		                          if(isPrimary && pPart->PdgCode()==321){
+		                             const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",pPart->TrackId());
+		                             int origin=int(mc_truth->Origin());
+		                             if(origin==1){ 
+		                                if(pPart->EndE()*1000<520) Tr_pri_st_k_is=1; // initially this was 510
+		                                gk_trk_ID=pPart->TrackId();
+						std::cout << "********************** Truth level Kaon trk ID : " << gk_trk_ID <<  std::endl;
+						std::cout << "****************************** End Energy of Primary Kaon : " << pPart->EndE()*1000 << std::endl;
+		                                float ksx=pPart->Vx();float ksy=pPart->Vy();float ksz=pPart->Vz();
+	                                        float kex=pPart->EndX();float key=pPart->EndY();float kez=pPart->EndZ();
+		                                Tr_k_plen=plen;
+			                        Tr_k_endE=pPart->EndE()*1000;
+		                                Tr_k_phi=pPart->Momentum().Phi()*57.3;
+	                                        Tr_k_theta=pPart->Momentum().Theta()*57.3;
+		                                k_px=pPart->Px(); k_py=pPart->Py(); k_pz=pPart->Pz();
+		                                kp=pPart->Momentum().Vect().Mag();
+		                                if((ksx>0 && ksx<256.35) && (kex>0 && kex<256.35) && (ksy>-116.5 && ksy<116.5) && (key>-116.5 && key<116.5) && (ksz>0 && ksz<1036.8) && (kez>0 && kez<1036.8)){ 
+			                            Tr_k_inTPC=1;
+		                                }
+			                        if((ksx>5 && ksx<251.35) && (kex>5 && kex<251.35) && (ksy>-111.5 && ksy<111.5) && (key>-111.5 && key<111.5) && (ksz>5 && ksz<1031.8) && (kez>5 && kez<1031.8)){
+			                            Tr_k_in_5_TPC=1;
+			                        }
+			                        if((ksx>12 && ksx<244.35) && (kex>12 && kex<244.35) && (ksy>-81.5 && ksy<81.5) && (key>-81.5 && key<81.5) && (ksz>5 && ksz<1031.8) && (kez>5 && kez<1031.8) && (!(ksx>675&& ksx<775)) && (!(kex>675&& kex<775))){
+			                            Tr_k_in_CC_TPC=1;
+			                        }
+			                     }  
+		                          }
+		                      }// loop over plist
+		                      for(auto const& sPart : ptList){
+		                          TLorentzVector mcstart, mcend;
+	                                  unsigned int pstarti, pendi;
+	                                  double plen=length(*sPart, mcstart, mcend, pstarti, pendi);
+					  if(sPart->Process()=="Decay" && (sPart->PdgCode()==-13 || sPart->PdgCode()==211)){ 
+					     std::cout << "********** Truth info Found a decaying " << sPart->PdgCode() << std::endl;
+					     std::cout << "********** Mother trkID of the Found decay particle " << sPart->Mother() << std::endl;
+					  }
+		                          if(sPart->Process()=="Decay" && (sPart->PdgCode()==-13 || sPart->PdgCode()==211) && sPart->Mother()==gk_trk_ID){
+		                             std::cout << "****************************** We found typical kaon decaying event ********************************" << std::endl;
+					     const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",sPart->TrackId());
+		                             int origin=int(mc_truth->Origin());
+			                     if(origin==1){
+			                        Tr_dec_mu_is=1;
+						Tr_dec_mu_pi_pdg=sPart->PdgCode();
+		                                float musx=sPart->Vx();float musy=sPart->Vy();float musz=sPart->Vz();
+	                                        float muex=sPart->EndX();float muey=sPart->EndY();float muez=sPart->EndZ();
+		                                Tr_mu_plen=plen;
+		                                Tr_mu_phi=sPart->Momentum().Phi()*57.3;
+	                                        Tr_mu_theta=sPart->Momentum().Theta()*57.3;
+		                                Tr_kmu_open_ang=(TMath::ACos(float(sPart->Px()*k_px + sPart->Py()*k_py + sPart->Pz()*k_pz)/(kp*sPart->Momentum().Vect().Mag())))*57.3;
+		                                if((musx>0 && musx<256.35) && (muex>0 && muex<256.35) && (musy>-116.5 && musy<116.5) && (muey>-116.5 && muey<116.5) && (musz>25 && musz<951.8) && (muez>25 && muez<951.8)){ 
+			                            Tr_mu_inTPC=1;
+		                                }
+			                        if((musx>5 && musx<251.35) && (muex>5 && muex<251.35) && (musy>-111.5 && musy<111.5) && (muey>-111.5 && muey<111.5) && (musz>5 && musz<1031.8) && (muez>5 && muez<1031.8)){
+			                            Tr_mu_in_5_TPC=1;
+			                        }
+			                        if((musx>12 && musx<244.35) && (muex>12 && muex<244.35) && (musy>-81.5 && musy<81.5) && (muey>-81.5 && muey<81.5) && (musz>5 && musz<1031.8) && (muez>5 && muez<1031.8) && (!(musx>675&& musx<775)) && (!(muex>675&& muex<775))){
+			                            Tr_mu_in_CC_TPC=1;
+			                        }
+			                        break;
+		                             }
+		                          }
+					  
+					  if(sPart->Process()=="Decay" && (sPart->PdgCode()==-13 || sPart->PdgCode()==211) && sPart->Mother()!=gk_trk_ID){
+					     for(auto const& pPart : ptList){
+			                          int mom_trkid=sPart->Mother();
+			                          if(pPart->TrackId()==mom_trkid){ 
+						     std::cout << "************** Process Name : " << pPart->Process() << std::endl;
+						     std::cout << "************** Mother ID of Mother : " << pPart->Mother() << std::endl;	  
+				                     if(pPart->Process()=="kaon+Inelastic" && pPart->Mother()==gk_trk_ID){ // initiall (pPart->Process()=="kaon+Inel")
+							
+							///////////////////////////////////////// checking whetehr this inelastic kaon is making it's own track ////////////////
+							     
+							for(int i=0; i<NTracks; i++){
+	                                                    art::Ptr<recob::Track> ptrack(trackListHandle,i);
+	                                                    const recob::Track& track = *ptrack;
+							    
+							    simb::MCParticle const* matched_mcparticle = NULL;
+		                                            std::unordered_map<int,double> trkide;
+                                                            double maxe=-1, tote=0;
+                                                            std::vector<simb::MCParticle const*> particle_vec;
+                                                            std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
+                                                            std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.ID());
+		                                            art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle,evt,fHitTruthAssns);
+		   
+		                                            for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
+		                                                particle_vec.clear(); match_vec.clear();
+		                                                particles_per_hit.get(hits_from_track[i_h].key(),particle_vec,match_vec);
+		                                                for(size_t i_p=0; i_p<particle_vec.size(); ++i_p){
+                                                                   trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
+                                                                   tote += match_vec[i_p]->energy;
+                                                                   if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
+                                                                       maxe = trkide[ particle_vec[i_p]->TrackId() ];
+                                                                       matched_mcparticle = particle_vec[i_p];
+                                                                   }
+                                                                }
+                                                             }
+							     
+							     if(matched_mcparticle){
+							        if(matched_mcparticle->TrackId()==pPart->TrackId()){
+								   kinelas_has_traks=1;
+								   kinelas_reco_trkID=track.ID();
+								   kinelas_tlen=track.Length();
+								   break;
+							        }
+							     }
+							    
+						        }     
+							     
+							////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+							     
+							std::cout << "****************************** We found non-typical kaon decaying event ********************************" << std::endl;
+							std::cout << "****************************** End Energy of Secondary Kaon : " << pPart->EndE()*1000 << std::endl;
+							
+							True_kinelas_KE=(pPart->E()-0.493)*1000;
+							TLorentzVector mcstart, mcend;
+	                                                unsigned int pstarti, pendi;
+	                                                True_kinelas_tlen=length(*pPart, mcstart, mcend, pstarti, pendi);
+							Tr_K_Inelas=1;    
+							
+							std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& Testing Kaon Inelastic interaction &&&&&&&&&&&&&&&&&&&&&&&&&&&" << std::endl;
+							std::cout << "Inelastic Kaon has his own reco track : " << kinelas_has_traks << std::endl;
+							std::cout << "Reco track ID of Inelastic Kaon and Primary Kaon : " << kinelas_reco_trkID << "  " << k_can_trkid << std::endl;
+							std::cout << "True KE of Inelastic Kaon : " << True_kinelas_KE << std::endl;
+							std::cout << "True tracklength of Inelastic Kaon : " << True_kinelas_tlen << std::endl;
+							std::cout << "Kaon Inelastic swith is " << Tr_K_Inelas << std::endl;
+							
+							const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",sPart->TrackId());
+		                                        int origin=int(mc_truth->Origin());
+							if(origin==1){
+							   Tr_dec_mu_is=1;
+						           Tr_dec_mu_pi_pdg=sPart->PdgCode();
+		                                           float musx=sPart->Vx();float musy=sPart->Vy();float musz=sPart->Vz();
+	                                                   float muex=sPart->EndX();float muey=sPart->EndY();float muez=sPart->EndZ();
+		                                           Tr_mu_plen=plen;
+		                                           Tr_mu_phi=sPart->Momentum().Phi()*57.3;
+	                                                   Tr_mu_theta=sPart->Momentum().Theta()*57.3;
+		                                           Tr_kmu_open_ang=(TMath::ACos(float(sPart->Px()*k_px + sPart->Py()*k_py + sPart->Pz()*k_pz)/(kp*sPart->Momentum().Vect().Mag())))*57.3;
+		                                           if((musx>0 && musx<256.35) && (muex>0 && muex<256.35) && (musy>-116.5 && musy<116.5) && (muey>-116.5 && muey<116.5) && (musz>25 && musz<951.8) && (muez>25 && muez<951.8)){ 
+			                                       Tr_mu_inTPC=1;
+		                                           }
+			                                   if((musx>5 && musx<251.35) && (muex>5 && muex<251.35) && (musy>-111.5 && musy<111.5) && (muey>-111.5 && muey<111.5) && (musz>5 && musz<1031.8) && (muez>5 && muez<1031.8)){
+			                                       Tr_mu_in_5_TPC=1;
+			                                   }
+			                                   if((musx>12 && musx<244.35) && (muex>12 && muex<244.35) && (musy>-81.5 && musy<81.5) && (muey>-81.5 && muey<81.5) && (musz>5 && musz<1031.8) && (muez>5 && muez<1031.8) && (!(musx>675&& musx<775)) && (!(muex>675&& muex<775))){
+			                                       Tr_mu_in_CC_TPC=1;
+			                                   }
+							   break;
+						       }
+					            }
+			                         }
+			                      }
+				           }
+	                               }
+			 
+		                       ///////////////////////////////////////////////////////// Getting Calorimetric information of Kaon and Muon //////////////////////////////////////////////////
+		 
+		                       if(k_can_trkid!=-9999 && mu_can_trkid!=-9999){
+		                          std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(k_can_trkid);
+		                          for(size_t ical = 0; ical<calos.size(); ++ical){
+	                                      if(!calos[ical]) continue;
+	                                      if(!calos[ical]->PlaneID().isValid) continue;
+	                                      int planenum = calos[ical]->PlaneID().Plane;
+	                                      if(planenum<0||planenum>2) continue;
+	                                      const size_t NHits = calos[ical] -> dEdx().size();
+		                              for(size_t iHit = 0; iHit < NHits; ++iHit){
+	                                          k_dedx[planenum][iHit]=(calos[ical] -> dEdx())[iHit];
+		                                  k_rr[planenum][iHit]=(calos[ical]->ResidualRange())[iHit];
+		                              }
+	                                   }
+		                           calos=fmcal.at(mu_can_trkid);
+		                           for(size_t ical = 0; ical<calos.size(); ++ical){
+	                                       if(!calos[ical]) continue;
+	                                       if(!calos[ical]->PlaneID().isValid) continue;
+	                                       int planenum = calos[ical]->PlaneID().Plane;
+	                                       if(planenum<0||planenum>2) continue;
+	                                       const size_t NHits = calos[ical] -> dEdx().size();
+		                               for(size_t iHit = 0; iHit < NHits; ++iHit){
+	                                           mu_dedx[planenum][iHit]=(calos[ical] -> dEdx())[iHit];
+		                                   mu_rr[planenum][iHit]=(calos[ical]->ResidualRange())[iHit];
+		                               }
+	                                    }
+		                         }
+	                             } // is MC
+                                     fEventTree->Fill();
+} // end of analyze function
+ 
+ /////////////////////////////////////////// Reset Function ///////////////////////////////
+ 
+ void CCKaonFilterVersion2::reset(){
+      run=-9999;
+      subrun=-9999;
+      event=-9999;
+      k_can_trkid=-9999;
+      mu_can_trkid=-9999;
+      k_mu_can_dis=-9999;
+      k_mu_open_angle=-9999;
+      k_vtx_dis=-9999;
+      mtc_k_5cm=-9999;
+      mtc_k_10cm=-9999;
+      mtc_k_endE=-9999;
+      mtc_mu_5cm=-9999;
+      mtc_mu_10cm=-9999;	
+      mtc_mu_pid=-9999;
+      k_geant_ID=-9999;
+      k_origin=-9999;
+      k_pdg=-9999;
+      k_isPri=-9999;
+      k_endE=-9999;
+      k_ness=-9999;
+      kaon_vtx_dis=-9999;
+      k_plen=-9999;
+      k_phi=-9999;
+      k_theta=-9999;
+      k_in_5_TPC=-9999;
+      k_in_CC_TPC=-9999;
+      k_hit=-9999;
+      k_range=-9999;
+      k_KE=-9999;
+      k_large_dedx=-9999;
+      k_small_dedx=-9999;
+      k_chi_p=-9999;
+      k_chi_k=-9999;
+      k_chi_pi=-9999;
+      k_chi_mu=-9999;
+      k_p_max=-9999;
+      k_k_max=-9999;
+      k_pi_max=-9999;
+      k_mu_max=-9999;
+      k_mip_max=-9999;
+      k_L1_ratio=-9999;
+      k_LL1=-9999;
+      k_L2_ratio=-9999;
+      k_LL2=-9999;
+      k_Lp_ratio=-9999;
+      k_LLp=-9999;
+      k_Lk_ratio=-9999;
+      k_LLk=-9999;
+      k_pida_mean=-9999;
+      k_pida_med=-9999;
+      k_kde=-9999;
+      k_trm_dqdx=-9999;
+      k_trm_dedx=-9999;
+      mu_pdg=-9999;
+      mu_isDec=-9999;
+      mu_origin=-9999;
+      mu_k_is_Mother=-9999;
+      mu_mom_k_inelas=-9999;
+      mu_ness=-9999;
+      mu_plen=-9999;
+      mu_phi=-9999;
+      mu_theta=-9999;
+      mu_in_5_TPC=-9999;
+      mu_in_CC_TPC=-9999;
+      mu_KE=-9999;
+      mu_hit=-9999;
+      mu_range=-9999;
+      mu_large_dedx=-9999;
+      mu_small_dedx=-9999;
+      mu_chi_p=-9999;
+      mu_chi_k=-9999;
+      mu_chi_pi=-9999;
+      mu_chi_mu=-9999;
+      mu_p_max=-9999;
+      mu_k_max=-9999;
+      mu_pi_max=-9999;
+      mu_mu_max=-9999;
+      mu_mip_max=-9999;
+      mu_L1_ratio=-9999;
+      mu_LL1=-9999;
+      mu_L2_ratio=-9999;
+      mu_LL2=-9999;
+      mu_Lp_ratio=-9999;
+      mu_LLp=-9999;
+      mu_Lk_ratio=-9999;
+      mu_LLk=-9999;
+      mu_pida_mean=-9999;
+      mu_pida_med=-9999;
+      mu_kde=-9999;
+      mu_trm_dqdx=-9999;
+      mu_trm_dedx=-9999;
+      mu_mom_process="NA";
+      cc_mu_trkid=-9999;
+      cc_mu_tlen=-9999;
+      cc_mu_phi=-9999;
+      cc_mu_pdg=-9999;
+      cc_mu_theta=-9999;
+      cc_mu_range=-9999;
+      cc_mu_KE=-9999;
+      cc_mu_hit=-9999;
+      cc_mu_large_dedx=-9999;
+      cc_mu_small_dedx=-9999;
+      cc_dis_vtx=-9999;
+      cc_mu_chi_p=-9999;
+      cc_mu_chi_k=-9999;
+      cc_mu_chi_pi=-9999;
+      cc_mu_chi_mu=-9999;
+      cc_mu_p_max=-9999;
+      cc_mu_k_max=-9999;
+      cc_mu_pi_max=-9999;
+      cc_mu_mu_max=-9999;
+      cc_mu_mip_max=-9999;
+      cc_mu_L1_ratio=-9999;
+      cc_mu_LL1=-9999;
+      cc_mu_L2_ratio=-9999;
+      cc_mu_LL2=-9999;
+      cc_mu_Lp_ratio=-9999;
+      cc_mu_LLp=-9999;
+      cc_mu_Lk_ratio=-9999;
+      cc_mu_LLk=-9999;
+      cc_mu_pida_mean=-9999;
+      cc_mu_pida_med=-9999;
+      cc_mu_kde=-9999;
+      cc_mu_trm_dqdx=-9999;
+      cc_mu_trm_dedx=-9999;
+      longest_trkid=-9999;
+      longest_trklen=-9999;
+      pri_Mu_is=-9999;
+      Tr_pri_mu_pdg=-9999;
+      Tr_pri_mu_is=-9999;
+      Tr_pri_st_k_is=-9999;
+      Tr_K_Inelas=-9999;
+      Tr_k_plen=-9999;
+      Tr_k_endE=-9999;
+      Tr_k_theta=-9999;
+      Tr_k_phi=-9999;
+      Tr_dec_mu_is=-9999;
+      Tr_dec_mu_pi_pdg=-9999;
+      Tr_mu_plen=-9999;
+      Tr_mu_theta=-9999;
+      Tr_mu_phi=-9999;
+      Tr_k_inTPC=-9999;
+      Tr_mu_inTPC=-9999;
+      Tr_k_in_5_TPC=-9999;
+      Tr_k_in_CC_TPC=-9999;
+      Tr_mu_in_5_TPC=-9999;
+      Tr_mu_in_CC_TPC=-9999;
+      Tr_kmu_open_ang=-9999;
+      vtx_mult=-9999;
+      vtx_5cm_mult=-9999;
+      k_start_dedx=-9999;
+      k_end_dedx=-9999;
+      mu_start_dedx=-9999;
+      mu_end_dedx=-9999;
+      cut_1=-9999;
+      cut_2=-9999;
+      cut_3=-9999;
+      cut_4=-9999;
+      cut_5=-9999;
+      cut_6=-9999;
+      cut_7=-9999;
+      cut_8=-9999;
+      cut_9=-9999;
+      cut_10=-9999;
+      cut_11=-9999;
+      cut_12=-9999;
+      kinelas_has_traks=-9999;
+      kinelas_reco_trkID=-9999;
+      kinelas_tlen=-9999;
+      True_kinelas_KE=-9999;
+      True_kinelas_tlen=-9999;
+      
+      for(int k=0; k<kMaxTracks; k++){
+          vtx_dis_trks[k]=-9999;
+      }
+      
+      for(int j=0; j<3; j++){
+	  for(int k=0; k<3000; k++){
+	      k_dedx[j][k]=-9999;
+              k_rr[j][k]=-9999;
+	      mu_dedx[j][k]=-9999;
+              mu_rr[j][k]=-9999;
+          }
+      }
+ }
+ 
+ /////////////////////////////////////////////////////////////////////////////////////////
+ 
+ double CCKaonFilterVersion2::length(const simb::MCParticle& p, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi)
+{
+  art::ServiceHandle<geo::Geometry> geom;
+  double bnd[6] = {0.,2.*geom->DetHalfWidth(),-geom->DetHalfHeight(),geom->DetHalfHeight(),0.,geom->DetLength()};
+  double result = 0.;
+  TVector3 disp;
+  bool first = true;
+
+  for(unsigned int i = 0; i < p.NumberTrajectoryPoints(); ++i) {
+    // check if the particle is inside a TPC
+    if (p.Vx(i) >= bnd[0] && p.Vx(i) <= bnd[1] && p.Vy(i) >= bnd[2] && p.Vy(i) <= bnd[3] && p.Vz(i) >= bnd[4] && p.Vz(i) <= bnd[5]){
+      if(first){
+	start = p.Position(i);
+	first = false;
+	starti = i;
+      }else{
+	disp -= p.Position(i).Vect();
+	result += disp.Mag();
+      }
+      disp = p.Position(i).Vect();
+      end = p.Position(i);
+      endi = i;
+    }
+  }
+  return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+ 
+ DEFINE_ART_MODULE(CCKaonFilterVersion2)
+}
+
+

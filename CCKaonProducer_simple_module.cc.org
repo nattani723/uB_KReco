@@ -1,0 +1,229 @@
+#include "CCKaonProducer_module_simple.h"
+#include "headers/particle_split_basetool_producer.h"
+#include "headers/track_production_producer.h"
+
+#include "TCanvas.h"
+#include "TTree.h"
+#include "TMath.h"
+#include "TGraph.h"
+#include "TGraph2D.h"
+#include "TGraphDelaunay.h"
+#include "TRandom3.h"
+#include "TH2F.h"
+#include "TH1F.h"
+#include "TH1.h"
+#include "TFile.h"
+#include "TTimeStamp.h"
+
+//#ifdef __MAKECINT__
+#ifdef __CLING__
+#pragma link C++ class std::vector < std::vector<Float_t> >+; 
+#pragma link C++ class std::vector < std::vector< std::vector<Float_t> > >+; 
+#endif
+
+
+using namespace std;
+namespace Kaon_Analyzer{
+
+  CCKaonProducer_simple::CCKaonProducer_simple(fhicl::ParameterSet const& pset) :
+    EDProducer(pset),
+    fHitsModuleLabel          (pset.get< std::string >("HitsModuleLabel","gaushit")),
+    fLArG4ModuleLabel         (pset.get< std::string >("LArG4ModuleLabel","largeant")),
+    fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel","generator")),  
+    fTrackModuleLabel         (pset.get< std::string >("TrackModuleLabel","pandora")),
+    fShowerModuleLabel        (pset.get< std::string >("ShowerModuleLabel","pandora")),
+    //fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","pandoracaliSCE")),
+    fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","pandoraKalmanShowercali")),
+    fPIDLabel                 (pset.get< std::string >("PIDLabel","pandorapid")),
+    fHitTruthAssns            (pset.get< std::string >("HitTruthAssn","gaushitTruthMatch")), 
+    fHitTrackAssns            (pset.get< std::string >("HitTrackAssn","pandora")), 
+    fHitShowerAssns            (pset.get< std::string >("HitShowerAssn","pandora")), 
+    m_pfp_producer            (pset.get< std::string >("pfp_producer","pandora")),
+    fPFParticleLabel          (pset.get< std::string >("PFParticleLabel", "pandora")),
+    fSpacePointproducer       (pset.get< std::string >("SpacePointproducer", "pandora")),
+    //fCreateAnalysisCollection       (pset.get< std::string >("SpacePointproducer", "pandora")),
+    isMC                      (pset.get< bool >("IsMC",true))
+    
+  {
+    
+    theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
+    SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    geom = lar::providerFrom<geo::Geometry>();
+    produces< std::vector<recob::Track> >(); 
+    
+  }
+  
+  CCKaonProducer_simple::~CCKaonProducer_simple()
+  {
+    //destructor
+  }
+
+
+  void CCKaonProducer_simple::beginJob()
+  {
+    art::ServiceHandle<art::TFileService> tfs;
+    //fEventTree->Branch();
+  }
+
+
+  void CCKaonProducer_simple::produce(art::Event& evt)
+  {
+    
+    std::vector< art::Ptr<simb::MCParticle> > ptList;   
+    std::unique_ptr< std::vector<recob::Track> > anaTrackCollection(new std::vector<recob::Track> ); 
+   
+    // get MCParticles
+    art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
+    if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle)){
+      art::fill_ptr_vector(ptList, mcParticleHandle); 
+    }   
+    
+    // Check if event passed the NuCC inclusive filter
+    /*
+    reco_nu_cc_filter = false;
+    string process(isMC ? "OverlayFiltersPostStage2" : "DataFiltersPostStage2");
+    art::InputTag trigResInputTag("TriggerResults","",process.data()); // the last is the name of process where the filters were run
+    art::ValidHandle<art::TriggerResults> trigRes = evt.getValidHandle<art::TriggerResults>(trigResInputTag);
+    fhicl::ParameterSet pset;
+    if (!fhicl::ParameterSetRegistry::get(trigRes->parameterSetID(), pset)) { throw cet::exception("PSet Not Found???"); }
+    std::vector<std::string> trigger_path_names = pset.get<std::vector<std::string> >("trigger_paths", {});
+    if (trigger_path_names.size()!=trigRes->size()) { throw cet::exception("Size mismatch???"); }
+    for (size_t itp=0;itp<trigRes->size();itp++) {
+      //cout << "Filter name " << trigger_path_names.at(itp) << " decision=" << trigRes->at(itp).accept() << endl;
+      if (trigger_path_names.at(itp)=="NuCC") {
+	reco_nu_cc_filter = trigRes->at(itp).accept();
+      }
+    }
+    */
+        
+    // Collect all recontructed particles
+    art::Handle<std::vector<recob::PFParticle>> pfparticles;
+    evt.getByLabel(m_pfp_producer, pfparticles);
+    
+    if (pfparticles->size()==0) {
+      std::cout << "No PFParticles found" << std::endl;
+      evt.put(std::move(anaTrackCollection)); 
+      return;
+    }
+
+    // Get PFParticle associations
+    art::FindManyP<anab::T0> pfp_muon_assn(pfparticles, evt, "NuCCproducer");
+    if(!pfp_muon_assn.isValid()){
+      cout << "PFParticle-T0 associations are not valid" << endl;
+      evt.put(std::move(anaTrackCollection)); 
+      return;
+    }
+    
+    art::FindManyP<recob::Track> pfparticleTrackAssn(pfparticles, evt, "pandora");
+    if(!pfparticleTrackAssn.isValid()){
+      cout << "PFParticle-Track associations are not valid" << endl;
+      evt.put(std::move(anaTrackCollection)); 
+      return;
+    }
+    
+    art::FindManyP<recob::Vertex> pfparticleVertexAssn(pfparticles, evt, "pandora");
+    if(!pfparticleVertexAssn.isValid()){
+      cout << "PFParticle-Vertex associations are not valid" << endl;
+      evt.put(std::move(anaTrackCollection)); 
+      return;
+    }
+
+    // Find recontructed neutrino (there should be one)
+    lar_pandora::PFParticleVector pfneutrinos(0);
+    for (unsigned int i=0; i<pfparticles->size(); ++i) {
+      
+      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);      
+      if (pfparticle->IsPrimary() && pfparticle->PdgCode()==14) {
+	pfneutrinos.push_back(pfparticle);
+      }
+      
+    }
+    
+    if (pfneutrinos.size() != 1) {
+      cout << "Number of neutrinos is not one" << endl;
+      evt.put(std::move(anaTrackCollection));
+      return;
+    }
+    
+
+
+    /*
+    art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
+
+    // Find CC muon and daughters
+    lar_pandora::PFParticleVector pfmuons(0);
+    vector<int> reco_nu_daughters_id(0);
+
+    for (unsigned int i=0; i<pfparticles->size(); ++i) {
+      
+      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
+      
+      // look at particles with neutrino parent and one associated track
+      if (pfparticle->Parent()==pfnu->Self() && pfparticleTrackAssn.at(i).size()==1) {
+	
+	art::Ptr<recob::Track> track = pfparticleTrackAssn.at(i).front();
+	reco_nu_daughters_id.push_back(track.key());
+	
+	// CC muon has a T0 associated
+	if (pfp_muon_assn.at(i).size()==1) {
+	  pfmuons.push_back(pfparticle);
+	}
+      }      
+    }
+    */
+
+
+    reco_nu_ndaughters = reco_nu_daughters_id.size();
+    reco_nu_cc_nmue = pfmuons.size();
+    
+    if (pfmuons.size()!=1) {
+      std::cout << "Number of CC inclusive muons is not 1: " << pfmuons.size() << std::endl;
+      evt.put(std::move(anaTrackCollection));
+      return;
+    }
+    
+    //art::Ptr<recob::PFParticle> pfmuon = pfmuons.front();
+    //art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
+    
+    /*
+    // get hits
+    art::Handle< std::vector<recob::Hit> > hitListHandle;
+    std::vector<art::Ptr<recob::Hit> > hitlist;
+    if(evt.getByLabel(fHitsModuleLabel,hitListHandle)){
+      art::fill_ptr_vector(hitlist, hitListHandle);
+    }
+    */
+
+    // get tracks
+    art::Handle< std::vector<recob::Track> > trackListHandle;
+    std::vector<art::Ptr<recob::Track> > tracklist;
+    if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) {
+      art::fill_ptr_vector(tracklist, trackListHandle);
+    }
+
+
+    int NTracks=tracklist.size();
+    
+    for (int i=0; i<reco_nu_ndaughters; i++) {
+
+    art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
+    const recob::Track& track = *ptrack;
+    
+    anaTrackCollection->push_back(track);
+    
+    for (int j=0; j<NTracks; j++) {
+    
+      art::Ptr<recob::Track> ptrack2(trackListHandle,j);
+      const recob::Track& track2 = *ptrack2;
+      anaTrackCollection->push_back(track2);
+    
+    }//NTrack loop 
+    
+  }
+  
+  evt.put(std::move(anaTrackCollection));
+
+  }
+  
+}
