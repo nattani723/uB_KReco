@@ -203,13 +203,9 @@ namespace Kaon_Analyzer{
     SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
     geom = lar::providerFrom<geo::Geometry>();
     
-    //produces< std::vector<recob::Vertex> >();
     produces< std::vector<recob::Track> >(); 
-    //produces< std::vector<recob::Hit> >();
-    //produces< art::Assns<recob::PFParticle, recob::Track> >();
     produces< art::Assns<recob::Track, recob::Hit> >();
-    //produces< art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> >();
-    //produces< std::vector<recob::SpacePoint> >();
+
   }
   
   CCKaonProducer::~CCKaonProducer()
@@ -230,14 +226,8 @@ namespace Kaon_Analyzer{
     art::Handle< std::vector<simb::MCTruth> > mctruths;
     std::vector< art::Ptr<simb::MCParticle> > ptList;
    
-    //std::unique_ptr< std::vector<recob::Vertex> >          anaVertexCollection(new std::vector<recob::Vertex> ); 
     std::unique_ptr< std::vector<recob::Track> > anaTrackCollection(new std::vector<recob::Track> );
-    //std::unique_ptr< std::vector<recob::Hit> >             anaHitCollection(new std::vector<recob::Hit> );
-    //std::unique_ptr< art::Assns<recob::PFParticle, recob::Track> > anaParticleTrackAssociations( new art::Assns<recob::PFParticle, recob::Track> );
     std::unique_ptr<art::Assns<recob::Track, recob::Hit>>  anaTrackHitAssociations(new art::Assns<recob::Track, recob::Hit>);
-    //std::unique_ptr< art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> > anaTrackHitAssociationsMeta( new art::Assns<recob::Track, recob::Hit, recob::TrackHitMeta> );
-
-    //std::unique_ptr< std::vector<recob::SpacePoint> > anaSpacePointCollection(new std::vector<recob::SpacePoint> );
    
     // get MCTruth
     evt.getByLabel("generator", mctruths);
@@ -254,31 +244,7 @@ namespace Kaon_Analyzer{
       art::fill_ptr_vector(ptList, mcParticleHandle); 
     }   
 
-    
-    // Check if event passed the NuCC inclusive filter
-    /*
-    reco_nu_cc_filter = false;
-    string process(isMC ? "OverlayFiltersPostStage2" : "DataFiltersPostStage2");
-    art::InputTag trigResInputTag("TriggerResults","",process.data()); // the last is the name of process where the filters were run
-    art::ValidHandle<art::TriggerResults> trigRes = evt.getValidHandle<art::TriggerResults>(trigResInputTag);
-    fhicl::ParameterSet pset;
-    if (!fhicl::ParameterSetRegistry::get(trigRes->parameterSetID(), pset)) { throw cet::exception("PSet Not Found???"); }
-    std::vector<std::string> trigger_path_names = pset.get<std::vector<std::string> >("trigger_paths", {});
-    if (trigger_path_names.size()!=trigRes->size()) { throw cet::exception("Size mismatch???"); }
-    for (size_t itp=0;itp<trigRes->size();itp++) {
-      //cout << "Filter name " << trigger_path_names.at(itp) << " decision=" << trigRes->at(itp).accept() << endl;
-      if (trigger_path_names.at(itp)=="NuCC") {
-	reco_nu_cc_filter = trigRes->at(itp).accept();
-      }
-    }
-
-    
-    if (!reco_nu_cc_filter) {
-      //evt.put(std::move(anaTrackCollection));
-      //return;
-    }
-    */
-    
+        
     // Collect all recontructed particles
     art::Handle<std::vector<recob::PFParticle>> pfparticles;
     std::vector< art::Ptr<recob::PFParticle> > pfpVector;
@@ -286,54 +252,32 @@ namespace Kaon_Analyzer{
       art::fill_ptr_vector(pfpVector, pfparticles);
     }
     
+    //event has no particle
     if (pfparticles->size()==0) {
-      std::cout << "No PFParticles found" << std::endl;
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations)); 
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection));
       return;
-      //continue;
     }
 
     // Get PFParticle associations
     art::FindManyP<anab::T0> pfp_muon_assn(pfparticles, evt, "NuCCproducer");
     if(!pfp_muon_assn.isValid()){
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection));
       return;
-      //continue;
     }
     
     art::FindManyP<recob::Track> pfparticleTrackAssn(pfparticles, evt, "pandora");
     if(!pfparticleTrackAssn.isValid()){
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection));
       return;
     }
     
     art::FindManyP<recob::Vertex> pfparticleVertexAssn(pfparticles, evt, "pandora");
     if(!pfparticleVertexAssn.isValid()){
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection)); 
       return;
     }
 
@@ -351,13 +295,8 @@ namespace Kaon_Analyzer{
     }
     
     if (pfneutrinos.size() != 1) {
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection)); 
       return;
     }
     
@@ -382,20 +321,15 @@ namespace Kaon_Analyzer{
 	if (pfp_muon_assn.at(i).size()==1) {
 	  pfmuons.push_back(pfparticle);
 	}
+
       }      
     }
     
     reco_nu_ndaughters = reco_nu_daughters_id.size();
-    //reco_nu_cc_nmue = pfmuons.size();
     
     if (pfmuons.size()!=1) {
-      //evt.put(std::move(anaVertexCollection));
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection));
       return;
     }
     
@@ -424,11 +358,13 @@ namespace Kaon_Analyzer{
       art::fill_ptr_vector(showerlist, showerListHandle);
     }
 
+    /*
     art::Handle< std::vector<recob::Cluster> > clusterHandle;
     std::vector< art::Ptr<recob::Cluster> > clusterVector;
     if(evt.getByLabel(fPandoraLabel,clusterHandle)){
       art::fill_ptr_vector(clusterVector,clusterHandle);
     }
+    */
 
     art::Handle< std::vector<recob::SpacePoint> > spacepointHandle;
     std::vector< art::Ptr<recob::SpacePoint> > spacepointVector;
@@ -436,47 +372,39 @@ namespace Kaon_Analyzer{
       art::fill_ptr_vector(spacepointVector,spacepointHandle);
     }
 
-    //fSpacePointproducer
-
-    //art::FindManyP<recob::Hit, recob::TrackHitMeta> fmthm(trackListHandle, evt, fTrackModuleLabel);
-    
-    // get track associations
-    /*
-    art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
-    if(!fmcal.isValid()){
-      //return;
-    }
-    */
 
     art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns);
     art::FindManyP<recob::Hit> hits_from_showers(showerListHandle, evt, fHitShowerAssns);
     if(!hits_from_tracks.isValid()){
       evt.put(std::move(anaTrackCollection));
-      //evt.put(std::move(anaHitCollection));
-      //evt.put(std::move(anaParticleTrackAssociations));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
-      //evt.put(std::move(anaSpacePointCollection));
       return;
-      //return;
     }
 
-    /*
-    art::FindManyP<anab::ParticleID> trackPIDAssn(trackListHandle, evt, fPIDLabel);
-    if(!trackPIDAssn.isValid()){
-      //return;
-    }
-    */
 
-    art::FindManyP<recob::Cluster> clusters_per_pfparticle(pfparticles, evt, fPandoraLabel);
-    art::FindManyP<recob::Hit> hits_per_cluster(clusterHandle, evt, fPandoraLabel);
-    std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Cluster>> > pfParticleToClustersMap;
-    std::map<art::Ptr<recob::Cluster>,  std::vector<art::Ptr<recob::Hit>> > clusterToHitsMap;
+    //art::FindManyP<recob::Cluster> clusters_per_pfparticle(pfparticles, evt, fPandoraLabel);
+    //art::FindManyP<recob::Hit> hits_per_cluster(clusterHandle, evt, fPandoraLabel);
+    //std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Cluster>> > pfParticleToClustersMap;
+    //std::map<art::Ptr<recob::Cluster>,  std::vector<art::Ptr<recob::Hit>> > clusterToHitsMap;
+
+    ///
+
+    art::FindOneP<recob::Hit> findSPToHit(spacepointVector, evt, fSpacePointproducer); 
+    art::FindManyP<recob::Hit> findTrackToHit(trackVector, ent, fTrackModuleLabel);
+    art::FindManyP<recob::Hit> findShowerToHit(showerVector, evt, fShowerModuleLabel);
+    //art::FindManyP<recob::Hit> hits_per_spacepoint(spacepointHandle, evt, fSpacePointproducer);
+
+    std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>> spacepointToHitMap;
+    std::map<art::Ptr<recob::SpacePoint>,  std::vector<art::Ptr<recob::Hit>> > spacepointToHitsMap;
+    std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>> hitToSpacePointMap;
+
+    //until here
 
     art::FindManyP<recob::SpacePoint> spacepoints_per_pfparticle(pfparticles, evt, fSpacePointproducer);
-    art::FindManyP<recob::Hit> hits_per_spacepoint(spacepointHandle, evt, fSpacePointproducer);
+    //art::FindManyP<recob::Hit> hits_per_spacepoint(spacepointHandle, evt, fSpacePointproducer);
     std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
-    std::map<art::Ptr<recob::SpacePoint>,  std::vector<art::Ptr<recob::Hit>> > spacepointToHitsMap;
+    //std::map<art::Ptr<recob::SpacePoint>,  std::vector<art::Ptr<recob::Hit>> > spacepointToHitsMap;
+
 
     std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsMap;
     std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsFromSpacePointsMap;
@@ -485,31 +413,41 @@ namespace Kaon_Analyzer{
     if( !clusters_per_pfparticle.isValid() || !hits_per_cluster.isValid() || !spacepoints_per_pfparticle.isValid() || !hits_per_spacepoint.isValid()  ){
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
-      //evt.put(std::move(anaTrackHitAssociationsMeta));
       return;
     }
 
-    //std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsMapSPC;
-
-    //art::ValidHandle<std::vector<recob::Cluster>> const & clusterHandle = evt.getValidHandle<std::vector<recob::Cluster>>(m_pandoraLabel);
-    //std::vector< art::Ptr<recob::Cluster> > clusterVector;
-    //art::fill_ptr_vector(clusterVector,clusterHandle);
 
     const art::PtrMaker<recob::Track> makeTrackPtr(evt);
 
     for (unsigned int i=0; i<pfpVector.size(); ++i) {
       auto pfp = pfpVector[i];
-      //art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
-      //pfParticleToClustersMap[*pfparticle] = clusters_per_pfparticle.at(pfparticle->key());
-      pfParticleToClustersMap[pfp] = clusters_per_pfparticle.at(pfp.key());
+      //pfParticleToClustersMap[pfp] = clusters_per_pfparticle.at(pfp.key());
       pfParticleToSpacePointsMap[pfp] = spacepoints_per_pfparticle.at(pfp.key());
     }
 
+    /*
     for(size_t i=0; i< clusterVector.size(); ++i){
       auto cluster = clusterVector[i];
       clusterToHitsMap[cluster] = hits_per_cluster.at(cluster.key());
     }
+    */
 
+    for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
+      const art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
+      const art::Ptr<recob::Hit> hit = findSPToHit.at(iSP); 
+      spacePointToHitMap[spacepoint] = hit;
+      hitToSpacePointMap[hit] = spacepoint;
+
+      auto spacepoint = spacepointVector[iSP];
+      std::vector<art::Ptr<recob::Hit>> hits;
+      spacepointToHitsMap[spacepoint] = findSPToHit.at(spacepoint.key());
+
+      for(unsigned int ihit=0; ihit < hits.size(); ++ihit){
+	hitToSpacePointMap[hits.at(ihit)] = spacepoint;
+      }
+    }
+
+    //old
     for(size_t i=0; i< spacepointVector.size(); ++i){
       auto spacepoint = spacepointVector[i];
       spacepointToHitsMap[spacepoint] = hits_per_spacepoint.at(spacepoint.key());
@@ -518,10 +456,8 @@ namespace Kaon_Analyzer{
     }
 
     for (unsigned int i=0; i<pfpVector.size(); ++i) {
+
       auto pfp = pfpVector[i];
-      //art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
-      //art::Ptr<recob::Track> ppfptrack = pfparticleTrackAssn.at(i).front();
-      //std::vector<art::Ptr<recob::Cluster>> clusters_vec  = pfParticleToClustersMap[*pfparticle];
       std::vector<art::Ptr<recob::Cluster>> clusters_vec  = pfParticleToClustersMap[pfp];
       std::vector<art::Ptr<recob::SpacePoint>> spacepoints_vec  = pfParticleToSpacePointsMap[pfp];
       std::vector<art::Ptr<recob::Hit>> hits_for_pfp = {};
@@ -531,9 +467,7 @@ namespace Kaon_Analyzer{
       for (art::Ptr<recob::SpacePoint> spacepoint: spacepoints_vec){
 	std::vector<art::Ptr<recob::Hit>> hits_vec =  spacepointToHitsMap[spacepoint];
 	hits_for_pfp.insert( hits_for_pfp.end(), hits_vec.begin(), hits_vec.end() );
-	//pfParticleToNHitsFromSpacePoints[pfp] += hits_vec.size();
-	
-	//cout << hits_vec.size() << endl;
+
 	for(auto hit : hits_vec){
 	  (void) hitsInParticleSet.insert(hit);
 	}
@@ -541,20 +475,15 @@ namespace Kaon_Analyzer{
       }
       pfParticleToNHitsFromSpacePoints[pfp] = hits_for_pfp.size();
       pfParticleToHitsFromSpacePointsMap[pfp] = hits_for_pfp;
-      //pfParticleToHitsMapSPC[pfp] = hits_for_pfp;
-      cout << "hits_for_pfp size before cluster " << hits_for_pfp.size() << endl;
 
       for (art::Ptr<recob::Cluster> cluster: clusters_vec){
 	std::vector<art::Ptr<recob::Hit>> hits_vec =  clusterToHitsMap[cluster];
-	//hits_for_pfp.insert( hits_for_pfp.end(), hits_vec.begin(), hits_vec.end() );
 
 	for(auto hit : hits_vec){
-	  //cout << "hitsInParticleSet.count(hit): " << hitsInParticleSet.count(hit) << endl;
 	  if(hitsInParticleSet.count(hit) == 0) hits_for_pfp.push_back(hit);
 	}
       }
       cout << "hits_for_pfp size after cluster " << hits_for_pfp.size() <<endl;
-      //pfParticleToHitsMap[*pfparticle] = hits_for_pfp;
       pfParticleToHitsMap[pfp] = hits_for_pfp;
     }
 
@@ -567,63 +496,25 @@ namespace Kaon_Analyzer{
     
     for (int i=0; i<reco_nu_ndaughters; i++) {
 
-      //std::map<int,int> mrgidpdg;
-      //std::map<int,int> mrgidpdg_3D;
-      //std::map<int,TVector3> mrgidmom;
-      //vector<TH1D*> h_angular_distribution_pfparticle_cheat;
-      //vector<TH2D*> h_angular_distribution_pfparticle_cheat_3D;
-      //vector<TH1D*> h_angular_distribution_pfparticle;
-      //vector<TH2D*> h_angular_distribution_pfparticle_3D;
-    //vector<TH2D*> h_angular_distribution_pfparticle_surface;
-    //vector<TH3D*> h_angular_distribution_pfparticle_sphere;
-    //vector<bool> v_trk_flg;
-    //vector<bool> v_trk_flg_3D;
-    //vector<bool> v_trk_flg_surface;
     vector<bool> v_trk_flg_peak;
-    //vector<int> v_pdg;
-    //vector<int> v_pdg_3D;
-    //vector<int> v_pdg_peak;
-    //vector<TVector2> view_peak_vector_cheat;
     std::map<double, TVector2, std::greater<>> view_peak_map;
-    //std::map<int, std::map<double, TVector2, std::greater<>>> view_peak_map_cheat;
-    //vector<TVector2> view_peak_vector;
     vector<TVector2> best_peak_bins;
-    //std::map<int, vector<TVector2>> best_peak_bins_cheat;
 
-    //std::map<int, std::map<int, double>> angular_distribution_mrgid_map;
-    //std::map<int, std::map<int, std::map<int, double>>> angular_distribution_mrgid_map_3D;
-    //std::map<int, double> angular_distribution_map_track;
-    //std::map<int, double> angular_distribution_map_shower;
     std::map<int, std::map<int, double>> angular_distribution_map_3D_track;
     std::map<int, std::map<int, double>> angular_distribution_map_3D_shower;
     std::map<int, std::map<int, double>> angular_distribution_map_3D_pfparticle;
 
     std::vector<art::Ptr<recob::Hit>> unavailable_hit_list;
     std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list;
-    //std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat;
-    //std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat_pip;
-    //std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat_mup;
     std::vector<std::vector<art::Ptr<recob::Hit>>> shower_spine_hit_list_vector;
-    //std::vector<art::Ptr<recob::Hit>> true_pi0_hit_list;
 
     std::vector<art::Ptr<recob::Hit>> hits_from_reco;
-
-    //int trackcount = 0;
-
-    //int currentMergedId = 1;
-    //int currentMergedId_3D = 1;
-
-    //lar_pandora::PFParticleVector pfParticleVector;
-    //lar_pandora::PFParticlesToSpacePoints pfParticlesToSpacePoints;
-    //lar_pandora::LArPandoraHelper::CollectPFParticles(evt, fPFParticleLabel, pfParticleVector, pfParticlesToSpacePoints);
 
 
     art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
     const recob::Track& track = *ptrack;
     lar_pandora::HitVector hitsInParticle;
 
-    //anaTrackCollection->push_back(track);
-    //anaTrackCollection->emplace_back(track);
     unsigned int hitsFromSpacePointsSize = 0;
     
     for (unsigned int i=0; i<pfparticles->size(); ++i) {  
@@ -648,50 +539,11 @@ namespace Kaon_Analyzer{
     }
     
 
-    /*
-    for (unsigned int i=0; i<pfparticles->size(); ++i) {
-      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
-      if (pfparticle->Parent()==pfnu->Self() && pfparticleTrackAssn.at(i).size()==1){
-	art::Ptr<recob::Track> ppfptrack = pfparticleTrackAssn.at(i).front();
-	const recob::Track& pfptrack = *ppfptrack; 
 
-	//int id = 0;
-	if(pfptrack.ID() == track.ID()){
-	  
-	  //pandora::IntVector indexVector;
-	  //indexVector.pushback(id);
-	  //lar_content::LArPfoHelper::GetSlidingFitTrajectory(cartesianPointVector, track.Vertex(), 20, wirePitchW, trackStateVector, &indexVector);
-
-	  lar_pandora::PFParticlesToSpacePoints::const_iterator particleToSpacePointIter(pfParticlesToSpacePoints.find(pfparticle));
-	  // PFParticlesToSpacePoints::const_iterator
-	  //auto particleToSpacePointIter(pfParticlesToSpacePoints.find(pfparticle));
-	  
-	  lar_pandora::HitVector hitsFromSpacePoints;// hitsInParticle;
-	  hitsInParticle.clear();
-	  lar_pandora::LArPandoraHelper::GetAssociatedHits(evt, fPFParticleLabel, particleToSpacePointIter->second, hitsFromSpacePoints, &indexVector);
-	  //lar_pandora::LArPandoraHelper::GetAssociatedHits(evt, fPFParticleLabel, particleToSpacePointIter, hitsFromSpacePoints, &indexVector);
-	  
-	  for (unsigned int hitIndex = 0; hitIndex < hitsFromSpacePoints.size(); hitIndex++){
-	    hitsInParticle.push_back(hitsFromSpacePoints.at(hitIndex));
-	  }
-	  
-	  hitsInParticle.clear();
-	  hitsInParticle = pfParticleToHitsMap[*pfparticle];
-	  continue;
-	}
-
-      }
-    }
-    */
-
-    //art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns); 
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
 
 
-    //int hitsFromSpacePointsSize = 0;
-
-    //unsigned int hitsFromSpacePointsSize = 0;
     art::FindManyP<recob::SpacePoint> spacepoint_per_hit_test(hitListHandle, evt, fSpacePointproducer);
 
     //recob::Track primary_track = trackRebuid(trackcount, hits_from_track, spacepoint_per_hit_test, track);
@@ -702,30 +554,10 @@ namespace Kaon_Analyzer{
       spacepoint_vec_test.clear();
       spacepoint_vec_test = spacepoint_per_hit_test.at(hits_from_track[i_h].key());
 
-      //hitsFromSpacePointsSize += spacepoint_vec_test.size();
-      //for(auto spaceptr : spacepoint_vec_test){
-	//hitsFromSpacePointsSize++;
-  //anaSpacePointCollection->push_back(*spaceptr);
-      //}
     }
     cout << "hits_from_track.size(): " << hits_from_track.size() << endl;
     cout << "hitsFromSpacePointsSize: " << hitsFromSpacePointsSize << endl;
 
-    //cout << "hitPtrVec[0].key(): " << hits_from_track[0].key() << endl;
-
-    //get associated hits to track
-    //std::vector<art::Ptr<recob::Hit>> hitPtrVec = trackToHitAssns.at(ptrack.key());
-    //cout << "hitPtrVec[0].key(): " << hitPtrVec[0].key() << endl;
-    
-    //art::FindMany<recob::Hit> trackToHitAssns(trackListHandle,  evt, fHitTrackAssns);
-    //auto hitPtrVec = trackToHitAssns.at(ptrack.key());
-    //size_t prev_size = anaHitCollection->size();
-
-    /*
-    for(auto hitptr : hitPtrVec){
-      anaHitCollection->push_back(*hitptr);
-    }
-    */
 
     //push back the hit
     //size_t prev_size = anaHitCollection->size(); 
@@ -739,24 +571,6 @@ namespace Kaon_Analyzer{
       anaHitCollection_tmp.push_back(hitptr);
     }
 
-    /*
-    PFParticleVector pfParticleVector;
-    PFParticlesToSpacePoints pfParticlesToSpacePoints;
-    LArPandoraHelper::CollectPFParticles(evt, fPFParticleLabel, pfParticleVector, pfParticlesToSpacePoints); 
-
-    PFParticlesToSpacePoints::const_iterator particleToSpacePointIter(pfParticlesToSpacePoints.find(pPFParticle));
-
-    for (const art::Ptr<recob::PFParticle> pPFParticle : pfParticleVector){
-      // Obtain associated spacepoints
-      PFParticlesToSpacePoints::const_iterator particleToSpacePointIter(pfParticlesToSpacePoints.find(pPFParticle));
-
-      HitVector hitsFromSpacePoints;
-      LArPandoraHelper::GetAssociatedHits(evt, m_pfParticleLabel, particleToSpacePointIter->second, hitsFromSpacePoints, track.key());
-    }
-    */
-
-
-    //util::CreateAssn(*this, evt, *(anaTrackCollection.get()), hitsInParticle, *(anaTrackHitAssociations.get()));
 
     art::Ptr<recob::Track> pTrack(makeTrackPtr(anaTrackCollection->size() - 1));
 
@@ -773,56 +587,14 @@ namespace Kaon_Analyzer{
 	//anaTrackHitAssociationsMeta->addSingle(pTrack, phit, metadata);
       }
 
-    //fmthm.at(ptrack.key())
-    //std::vector<art::Ptr<recob::TrackHitMeta>> vmeta = fmthm.at(ptrack.key();
-    //								  vmeta[hitIndex];
-    
-    /*
-
-    util::CreateAssn(*this, evt, pTrack, pPFParticle, *(outputParticlesToTracks.get()));
-    util::CreateAssn(*this, evt, *(outputTracks.get()), hitsInParticle, *(outputTracksToHits.get()));
-    */
-
-    //util::CreateAssn(*this,evt,*anaTrackCollection,*anaHitCollection,*anaTrackHitAssociations,prev_size,anaHitCollection->size()); 
-    //util::CreateAssn(*this, evt, *(anaTrackCollection.get()), anaHitCollection_tmp, *(anaTrackHitAssociations.get()));
-    //cout <<"create assns" << endl;
-    //util::CreateAssn(*this, evt, *(anaTrackCollection.get()), hitsInParticle, *(anaTrackHitAssociations.get()));
-    //cout <<"end assns" << endl;
 
     // skip cc muon track
     if (ptrack.key()==trkmuon.key()) continue;
-
-
     
 
     // check track start and end
     TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
     TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
-
-    /*
-    double st_vtx=TMath::Sqrt((reco_nu_vtx_x-pos.X())*(reco_nu_vtx_x-pos.X()) +
-                              (reco_nu_vtx_y-pos.Y())*(reco_nu_vtx_y-pos.Y()) +
-                              (reco_nu_vtx_z-pos.Z())*(reco_nu_vtx_z-pos.Z()));
-    */
-
-    // track length and angles
-    //double trklen=track.Length();
-    /*
-    TVector3 endmom = track.EndMomentumVector<TVector3>(); 
-    TVector3 strmom = track.StartMomentumVector<TVector3>(); 
-    TVector3 vtxmom = track.VertexMomentumVector<TVector3>(); 
-    */
-
-    // check kaon track start and end distance from vertex
-    /*
-    double end_dis=TMath::Sqrt((reco_nu_vtx_x-end.X())*(reco_nu_vtx_x-end.X()) +
-                               (reco_nu_vtx_y-end.Y())*(reco_nu_vtx_y-end.Y()) +
-                               (reco_nu_vtx_z-end.Z())*(reco_nu_vtx_z-end.Z()));
-    */
-
-    //fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
-
-
 
 
     int ndaughters = 0;
@@ -855,18 +627,10 @@ namespace Kaon_Analyzer{
       cout << "distance to vertex: " << track_dau_distance << endl;
 
       // check distance to vertex
-      //if (track_dau_distance<10) { //7cm, 
+
       if (track_dau_distance<40) { //7cm, 
-      //if (track_dau_distance<100) { //7cm, 
 
 	//erase-remove this daughter track to avoid double counting
-	/*
-	auto customComparator = [&track_dau](const recob::Track& element) {
-	  return track_dau.ID() == element.ID();
-	};
-	auto removeEnd = std::remove_if(anaTrackCollection->begin(), anaTrackCollection->end(), customComparator);
-	anaTrackCollection->erase(removeEnd, anaTrackCollection->end());
-	*/
 
         TVector3 end2(track_dau.End().X(),track_dau.End().Y(),track_dau.End().Z());
 
@@ -919,18 +683,7 @@ namespace Kaon_Analyzer{
 	art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
 	hits_from_reco.insert(hits_from_reco.end(), hits_from_shower.begin(), hits_from_shower.end()); 
 	
-	//fillTrueMatching_sh(hits_from_shower, particles_per_hit, ntracks, ndaughters_sh);
-	//fillShowerMatching(hits_from_shower, particles_per_hit, ntracks, ndaughters_sh);
-	
-	//if(true_kaon_end_process == 1 || true_kaon_end_process == 1){
-	//if(reco_track_true_pdg[ntracks] == 321){	
-	//fillAngularDistributionMap(hits_from_shower, end, spacepoint_per_hit, angular_distribution_map_shower);
 	fillAngularDistributionMap3D(hits_from_shower, end, spacepoint_per_hit, angular_distribution_map_3D_shower);
-	//fillAngularDistributionMapCheat(hits_from_shower, end, particles_per_hit, spacepoint_per_hit, angular_distribution_mrgid_map, mrgidpdg, currentMergedId);
-	//fillAngularDistributionMapCheat3D(hits_from_shower, true_pi0_hit_list, end, particles_per_hit, spacepoint_per_hit, angular_distribution_mrgid_map_3D, mrgidpdg_3D, mrgidmom, currentMergedId_3D);
-	
-	//}
-	//}
 
 	ndaughters_sh++;
       }
@@ -953,23 +706,6 @@ namespace Kaon_Analyzer{
 
     art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
     findShowerSpine3D(hits_from_reco, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_vector, end, view_peak_map, best_peak_bins);
-
-
-    /*
-   if(best_peak_bins_cheat.size()!=0){
-      for(auto& entry : best_peak_bins_cheat){
-	cout << "PEAK OF PDG IS " << entry.first << endl;
-	if(reco_track_true_pdg[ntracks] == 321){
-	  if(entry.first == 211) findShowerSpine3D(hits_from_reco, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_cheat_pip, end, view_peak_map, entry.second);
-	  if(entry.first == -13) findShowerSpine3D(hits_from_reco, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_cheat_mup, end, view_peak_map, entry.second);
-	}
-	//findShowerSpine3D(true_pi0_hit_list, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_cheat, end, view_peak_map, entry.second);
-	//findShowerSpine3D(hits_from_reco, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_cheat, end, view_peak_map, entry.second);
-
-	//findShowerSpine3D(hits_from_reco, spacepoint_per_hit, unavailable_hit_list, shower_spine_hit_list_cheat, end, view_peak_map, entry.second, true_dau_pip_length);
-      }
-    }
-    */
    
 
    //double trkln;
@@ -994,20 +730,7 @@ namespace Kaon_Analyzer{
 	 cout << "adding reco_track" << endl;
 	 anaTrackCollection->push_back(reco_track);
 
-	 //get associated hits to track
-	 //art::FindMany<recob::Hit> trackToHitAssns(trackListHandle,  evt, fTrackModuleLabel);
-	 //auto hitPtrVec_reco = shower_spine_hit_list_vector[i];
 	 std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = shower_spine_hit_list_vector[i];
-	 // = trackToHitAssns.at(ptrack.key());
-	 
-	 //push back the hit
-	 /*
-	 size_t prev_size_reco = anaHitCollection->size(); 
-	 for(auto hitptr : hitPtrVec_reco)
-	   anaHitCollection->push_back(*hitptr);
-	 util::CreateAssn(*this,evt,*anaTrackCollection,*anaHitCollection,*anaTrackHitAssociations,prev_size_reco,anaHitCollection->size()); 
-	 */
-
 	 
 	 art::FindManyP<recob::SpacePoint> spacepoint_per_hit_reco(hitListHandle, evt, fSpacePointproducer);
 	 std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec_reco;
@@ -1020,16 +743,6 @@ namespace Kaon_Analyzer{
 	     //}
 	 }
 	 
-
-	 /*
-	 for (unsigned int hitIndex = 0; hitIndex < hits_from_track_rebuild.size(); hitIndex++){
-	   const art::Ptr<recob::Hit> phit(hits_from_track_rebuild.at(hitIndex));
-	   recob::TrackHitMeta metadata(hitIndex, -std::numeric_limits<double>::max());
-	   //recob::Track reco_track
-	   art::Ptr<recob::Track> preco_track = &reco_track;
-	   anaTrackHitAssociationsMeta->addSingle(preco_track, phit, metadata);
-	 }
-	 */
 	 
 	 art::Ptr<recob::Track> pTrackdau(makeTrackPtr(anaTrackCollection->size() - 1));
 
@@ -1055,12 +768,7 @@ namespace Kaon_Analyzer{
    
     }
     evt.put(std::move(anaTrackCollection));
-    //evt.put(std::move(anaHitCollection));
-    //evt.put(std::move(anaParticleTrackAssociations));
     evt.put(std::move(anaTrackHitAssociations));
-    //evt.put(std::move(anaTrackHitAssociationsMeta));
-    //evt.put(std::move(anaSpacePointCollection));
-    //return;
   }
 }
 
