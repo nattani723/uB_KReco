@@ -4,6 +4,24 @@ namespace kaon_reconstruction {
   public:
     ReconstructionOrchestrator() : directionFinder(), hitCollector() {}
 
+    void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const Reco::Track& k_track);
+
+    const std::vector<Reco::Track> ReconstructionOrchestrator::getRebuildTrackList();
+
+
+  private:
+    ParticleDirectionFinder directionFinder;
+    TrackHitCollector hitCollector;
+    TrackRebuilder trackRebuilder;
+    std::vector<Reco::Track> rebuildTrackList;
+    std::vector<HitList> trackHitLists;
+
+    // Other members like unavailableHitList might be defined here if they are shared across methods
+  };
+  
+  const std::vector<Reco::Track> getRebuildTrackList()  { return rebuildTrackList }; 
+  const std::vector<HitList> getHitLists() { return trackHitLists };
+
     void runReconstruction(const SPList& sp_list, const Reco::Track& k_track) {
 
       // Container for peak direction vectors calculated by ParticleDirectionFinder
@@ -36,17 +54,11 @@ namespace kaon_reconstruction {
 	
 	//make run function with statuscode return
 	//think about how to retrieve reco::track object define getrebuildtracj in this orchestrator?
-	trackRebuilder.track_rebuild(trackHitList, k_track);
+	rebuildTrackList.push_back( trackRebuilder.track_rebuild(trackHitList, k_track) );
+	trackHitLists.push_back( trackHitList );
       }
       
     }
-
-  private:
-    ParticleDirectionFinder directionFinder;
-    TrackHitCollector hitCollector;
-    TrackRebuilder trackRebuilder;
-
-    // Other members like unavailableHitList might be defined here if they are shared across methods
-  };
+  
 
 } // namespace kaon_recontruction
