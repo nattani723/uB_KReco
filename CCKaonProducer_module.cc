@@ -115,11 +115,6 @@
 #include "nusimdata/SimulationBase/MCFlux.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
-#include "PID/LLR_PID.h"
-#include "PID/LLRPID_proton_muon_lookup.h"
-#include "PID_K/LLR_PID_K.h"
-#include "PID_K/LLRPID_kaon_proton_lookup.h"
-
 #include "Pandora/PdgTable.h" 
 
 #include "TCanvas.h"
@@ -175,8 +170,7 @@
 #endif
 
 
-using namespace std;
-namespace Kaon_Analyzer{
+namespace kaon_reconstruction {
 
   CCKaonProducer::CCKaonProducer(fhicl::ParameterSet const& pset) :
     EDProducer(pset),
@@ -216,8 +210,7 @@ namespace Kaon_Analyzer{
 
   void CCKaonProducer::beginJob()
   {
-    //art::ServiceHandle<art::TFileService> tfs;
-    //fEventTree->Branch();
+    //set output tree
   }
 
 
@@ -282,7 +275,6 @@ namespace Kaon_Analyzer{
     }
 
     
-
     // Find recontructed neutrino (there should be one)
     lar_pandora::PFParticleVector pfneutrinos(0);
     for (unsigned int i=0; i<pfparticles->size(); ++i) {
@@ -357,14 +349,6 @@ namespace Kaon_Analyzer{
     if(evt.getByLabel(fShowerModuleLabel,showerListHandle)) {
       art::fill_ptr_vector(showerlist, showerListHandle);
     }
-
-    /*
-    art::Handle< std::vector<recob::Cluster> > clusterHandle;
-    std::vector< art::Ptr<recob::Cluster> > clusterVector;
-    if(evt.getByLabel(fPandoraLabel,clusterHandle)){
-      art::fill_ptr_vector(clusterVector,clusterHandle);
-    }
-    */
 
     art::Handle< std::vector<recob::SpacePoint> > spacepointHandle;
     std::vector< art::Ptr<recob::SpacePoint> > spacepointVector;

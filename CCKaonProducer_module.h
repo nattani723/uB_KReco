@@ -125,11 +125,6 @@
 #include "nusimdata/SimulationBase/MCFlux.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 
-#include "PID/LLR_PID.h"
-#include "PID/LLRPID_proton_muon_lookup.h"
-#include "PID_K/LLR_PID_K.h"
-#include "PID_K/LLRPID_kaon_proton_lookup.h"
-
 #include "Pandora/PdgTable.h" 
 
 #include "TCanvas.h"
@@ -187,8 +182,7 @@
 const int kMaxTracks=20;
 //const int kMaxTracks=50;
 
-using namespace std;
-namespace Kaon_Analyzer{
+namespace kaon_reconstruction {
 
 
   class CCKaonProducer : public art::EDProducer {
@@ -200,231 +194,6 @@ namespace Kaon_Analyzer{
     void beginJob();
     void produce(art::Event& evt) override;
     //void produce(const art::Event& evt) override;
-
-
-     void fillAngularDistributionMapCheat(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-				          TVector3 Kend_candidate,
-				          art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-                                          art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-                                          std::map<int, std::map<int, double>>& angular_distribution_mrgid_map,
-					  std::map<int,int> &mrgidpdg,
-					  int& currentMergedId);
-
-     void fillAngularDistributionMapCheat3D(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-					    std::vector<art::Ptr<recob::Hit>>& true_pi0_hit_list,
-					    TVector3 Kend_candidate,
-					    art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-					    art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-					    std::map<int, std::map<int, std::map<int, double>>>& angular_distribution_mrgid_map_3D,
-					    std::map<int,int> &mrgidpdg,
-					    std::map<int,TVector3> &mrgidmom,
-					    int& currentMergedId);
-
-     void fillAngularDistributionMap(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-				     TVector3 Kend_candidate,
-                                     art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-                                     std::map<int, double>& angular_distribution_map);
-
-
-     void fillAngularDistributionMap3D(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-				       TVector3 Kend_candidate,
-				       art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-				       std::map<int, std::map<int, double>> &angular_distribution_map_3D);
-
-     int fillHistAngularDistributionMapCheat( std::map<int, std::map<int, double>>& angular_distribution_mrgid_map,
-					      std::map<int,int>& mrgidpdg,
-					      std::vector<TH1D*>& h_angular_distribution_pfparticle_cheat,
-					      vector<int>& v_pdg);
-
-
-     int fillHistAngularDistributionMapCheat3D( std::map<int, std::map<int, std::map<int, double>>>& angular_distribution_mrgid_map_3D,
-						std::map<int,int>& mrgidpdg,
-						std::vector<TH2D*>& h_angular_distribution_pfparticle_cheat_3D,
-						vector<int>& v_pdg);
-     
-     int fillHistAngularDistributionMap( std::map<int, double>& angular_distribution_map,
-					 vector<TH1D*>& h_angular_distribution_pfparticle,
-					 vector<bool>& v_trk_flg,
-					 bool trk_flg);
-
-     int fillHistAngularDistributionMap3D( std::map<int, std::map<int, double>>& angular_distribution_map_3D,
-					   vector<TH2D*>& h_angular_distribution_pfparticle_3D,
-					   vector<bool>& v_trk_flg,
-					   bool trk_flg);
-
-     int fillHistAngularDistributionMapSurface( std::map<int, std::map<int, double>>& angular_distribution_map_3D,
-					       vector<TH2D*>& h_angular_distribution_pfparticle_surface,
-					       vector<bool>& v_trk_flg,
-					       bool trk_flg);
-
-     int fillHistAngularDistributionMapSphere( std::map<int, std::map<int, double>>& angular_distribution_map_3D,
-					       vector<TH3D*>& h_angular_distribution_pfparticle_sphere,
-					       vector<bool>& v_trk_flg,
-					       bool trk_flg);
-
-     void smoothAngularDistributionMap(std::map<int, double> &angular_distribution_map);
-
-     void smoothAngularDistributionMapCheat3D(std::map<int, std::map<int, std::map<int, double>>> &angular_distribution_mrgid_map_3D);
-
-     void smoothAngularDistributionMap3D(std::map<int, std::map<int, double>> &angular_distribution_map_3D);
-
-     void accumulateAngularDistributionMap3D(std::map<int, std::map<int, double>> &angular_distribution_map_3D_1,
-					     std::map<int, std::map<int, double>> &angular_distribution_map_3D_2,
-					     std::map<int, std::map<int, double>> &angular_distribution_map_3D);
-
-     void obtainPeakVectorCheat3D(std::map<int, std::map<int, std::map<int, double>>> &angular_distribution_mrgid_map_3D, 
-				  std::map<int,int>& mrgidpdg,
-				  std::map<int, std::map<double, TVector2, std::greater<>>>& view_peak_map_cheat,
-				  vector<int>& v_pdg_peak);
-
-     void obtainPeakVector3D(std::map<int, std::map<int, double>> &angular_distribution_map_3D,
-			     vector<bool>& v_trk_flg,
-			     std::map<double, TVector2, std::greater<>>& view_peak_map,
-			     bool trk_flg);
-
-     void findBestAngularPeakCheat3D( std::map<int, std::map<double, TVector2, std::greater<>>>& view_peak_map_cheat,
-				     std::map<int, vector<TVector2>> &best_peak_bins_cheat);
-
-
-     void findBestAngularPeak3D(std::map<int, std::map<int, double>> &angular_distribution_map_3D,
-				std::map<double, TVector2, std::greater<>>& view_peak_vector,
-				vector<TVector2> &best_peak_bins);
-
-     void findShowerSpine3D(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-			    art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-			    std::vector<art::Ptr<recob::Hit>>& unavailable_hit_list,
-			    std::vector<std::vector<art::Ptr<recob::Hit>>>& shower_spine_hit_list_vector,
-			    TVector3 Kend_candidate,
-			    std::map<double, TVector2, std::greater<>>& view_peak_map,
-			    vector<TVector2> &best_peak_bins);
-
-     void findShowerSpine3D(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-			    art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-			    std::vector<art::Ptr<recob::Hit>>& unavailable_hit_list,
-			    std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-			    TVector3 Kend_candidate,
-			    std::map<double, TVector2, std::greater<>>& view_peak_map,
-			    vector<TVector2> &best_peak_bins);
-
-     void findShowerSpine3D(std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-			    art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-			    std::vector<art::Ptr<recob::Hit>>& unavailable_hit_list,
-			    std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-			    TVector3 Kend_candidate,
-			    std::map<double, TVector2, std::greater<>>& view_peak_map,
-			    vector<TVector2> &best_peak_bins,
-			    double true_length);  
-        
-     bool collectSubsectionHits(const lar_content::ThreeDSlidingFitResult &extrapolated_fit,
-				const TVector3 &extrapolated_start_position,
-				const TVector3 &extrapolated_end_position,
-				const TVector3 &extrapolated_direction,
-				const bool is_end_downstream,
-				std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-				art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-				vector<TVector3> &running_fit_position_vec,
-				pandora::CartesianPointVector &pandora_running_fit_position_vec,
-				std::vector<art::Ptr<recob::Hit>>& unavailable_hit_list,
-				std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list);
-     
-
-     bool collectSubsectionHits(const lar_content::ThreeDSlidingFitResult &extrapolated_fit,
-				const TVector3 &extrapolated_start_position,
-				const TVector3 &extrapolated_end_position,
-				const TVector3 &extrapolated_direction,
-				const bool is_end_downstream,
-				std::vector<art::Ptr<recob::Hit>>& hits_from_pfparticle,
-				art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-				vector<TVector3> &running_fit_position_vec,
-				pandora::CartesianPointVector &pandora_running_fit_position_vec,
-				std::vector<art::Ptr<recob::Hit>>& unavailable_hit_list,
-				std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-				TVector3 Kend_candidate,
-				double true_length);
-     
-     void collectConnectedHits(std::vector<art::Ptr<recob::Hit>>& collected_hits,
-			       art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-			       const TVector3 &extrapolated_start_position,
-			       const TVector3 &extrapolated_direction,
-			       vector<TVector3> &running_fit_position_vec,
-			       pandora::CartesianPointVector &pandora_running_fit_position_vec,
-			       std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list);
-
-     TVector3 getClosestPointToLine3D(const TVector3 &extrapolated_start_position,
-				      const TVector3 &extrapolated_direction,
-				      art::Ptr<recob::Hit>& collected_hit,
-				      const TVector3 &hit_position);
-
-     bool isCloseToLine(const TVector3 &hit_position,
-			const TVector3 &line_start,
-			const TVector3 &line_direction,
-			const double distance_to_line);
-
-     double getClosestDistance(art::Ptr<recob::Hit>& collected_hit,
-			       art::Ptr<recob::Hit>& shower_spine_hit,
-			       art::FindManyP<recob::SpacePoint>& spacepoint_per_hit);
-
-     double getClosestDistance(art::Ptr<recob::Hit>& collected_hit,
-			       std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-			       art::FindManyP<recob::SpacePoint>& spacepoint_per_hit);
-
-     double getClosestDistance(const TVector3 &position,
-			       vector<TVector3> &test_positions);
-
-     void obtainLength(std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-		       art::FindManyP<recob::SpacePoint>& spacepoint_per_hit,
-		       TVector3 Kend_candidate);
-
-     void obtainLongitudinalDecomposition(std::vector<art::Ptr<recob::Hit>>& shower_spine_hit_list,
-					  art::FindManyP<recob::SpacePoint>& spacepoint_per_hit);
-     
-     int drawHistAngularDistributionMapCheat( std::vector<TH1D*> &h_angular_distribution_pfparticle_cheat,
-					      std::vector<int> &v_pdg,
-					      TString outfile_name,
-					      TCanvas*& c);
-
-     int drawHistAngularDistributionMapCheat3D( std::vector<TH2D*> &h_angular_distribution_pfparticle_cheat_3D,
-						std::vector<int> &v_pdg,
-						TString outfile_name,
-						TCanvas*& c);
-     
-     int drawHistAngularDistributionMap( std::vector<TH1D*>& h_angular_distribution_pfparticle,
-					 std::vector<bool>& v_trk_flg,
-					 TString outfile_name,
-					 TCanvas*& c);
-
-     int drawHistAngularDistributionMap3D( std::vector<TH2D*>& h_angular_distribution_pfparticle_3D,
-					   std::vector<bool>& v_trk_flg,
-					   TString outfile_name,
-					   TCanvas*& c);
-
-     int drawHistAngularDistributionMapSurface( std::vector<TH2D*> &h_angular_distribution_pfparticle_surface,
-						std::vector<bool> &v_trk_flg,
-						TString outfile_name,
-						TCanvas* &c);
-
-     int drawHistAngularDistributionMapSphere( std::vector<TH3D*> &h_angular_distribution_pfparticle_sphere,
-					       std::vector<bool> &v_trk_flg,
-					       TString outfile_name,
-					       TCanvas* &c);
-
-     void fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track, 
-                           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit, 
-                           int track_i=-1, 
-                           int daughter_i=-1); 
-     void fillTrueMatching_sh(std::vector<art::Ptr<recob::Hit>>& hits_from_shower, 
-                           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit, 
-                           int track_i=-1, 
-                           int daughter_i=-1);
-     void fillTrackMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track, 
-                           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit, 
-                           int track_i=-1, 
-                           int daughter_i=-1); 
-
-     void fillShowerMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_shower, 
-                           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit, 
-                           int track_i=-1, 
-                           int daughter_i=-1); 
 
 
 
@@ -466,13 +235,6 @@ namespace Kaon_Analyzer{
     Int_t   reco_track_true_pdg[kMaxTracks];
  
   };
-
-  /*
-  CCKaonProducer::CCKaonProducer(fhicl::ParameterSet const& pset) : EDProducer{pset}
-  {
-    produces< std::vector<recob::Track> >();
-  }
-  */
 
   
   DEFINE_ART_MODULE(CCKaonProducer)     
