@@ -30,11 +30,11 @@ namespace kaon_reconstruction
     return m_phi_bin_size;
   }
 
-  const ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
+  const SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
     return sp_list_roi; 
   }
 
-  const ParticleDirectionFinder::TVector3& ParticleDirectionFinder::get_k_end() const { 
+  const TVector3& ParticleDirectionFinder::get_k_end() const { 
     return k_end; 
   }
 
@@ -106,7 +106,7 @@ namespace kaon_reconstruction
 
   //-----------------------------------------------------------------------------
 
-  void ParticleDirectionFinder::fill_angular_distribution_map(const std::vector<art::Ptr<recob::SpacePoint>>& sp_list_roi, const TVector3& k_end, AngularDistribution3DMap& angular_distribution_map) const
+  void ParticleDirectionFinder::fill_angular_distribution_map(const std::vector<art::Ptr<recob::SpacePoint>>& sp_list_roi, const TVector3 k_end, AngularDistribution3DMap& angular_distribution_map) const
   {
 
     //const TVector3 x_axis(1.,0.,0.);
@@ -247,7 +247,8 @@ namespace kaon_reconstruction
 	// If the current bin is determined to be a peak, record its weight and position
 	  if (is_peak) {
 	    //TVector2 peak_position(bin_theta, bin_phi);
-	    TVector3 peak_direction.SetMagTheta(1, bin_theta*m_theta_bin_size, bin_phi*m_phi_bin_size);
+	    TVector3 peak_direction;
+	    peak_direction.SetMagTheta(1, bin_theta*m_theta_bin_size, bin_phi*m_phi_bin_size);
 	    sort_peak_direction_map[bin_weight] = peak_direction; // Peaks are sorted by weight
 	  } 
 	}
@@ -279,7 +280,7 @@ namespace kaon_reconstruction
       if(open_angle > m_peak_open_angle && entry.first > m_min_peak_height)
 	peak_direction_vector.push_back(current_peak_direction);
 
-      if (best_peak_bins.size() >= m_max_num_peak) break;
+      if (peak_direction_vector.size() >= m_max_num_peak) break;
 	
     }
 

@@ -63,13 +63,14 @@ namespace kaon_reconstruction
   public:
     TrackHitCollector();
 
+    typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
+    typedef std::vector<art::Ptr<recob::Hit>> HitList;
+
     pandora::StatusCode Run(const TVector3& k_end, const SPList& sp_list,
         const TVector3& peak_direction, HitList& unavailable_hit_list, HitList& track_hit_list);
 
   private:
 
-    typdef std::vector<art::Ptr<recob::SpacePoint>> SPList;
-    typdef std::vector<art::Ptr<recob::Hit>> HitList;
 
 
     //const double get_wire_pitch();
@@ -150,7 +151,7 @@ namespace kaon_reconstruction
      *  @param  sort_position: take the distance between sp in list and this position
      *
      */
-    void TrackHitCollector::sort_sp_by_distance(SPList& sp_list, const TVector3& sort_position) cons;t
+    void TrackHitCollector::sort_sp_by_distance(SPList& sp_list, const TVector3& sort_position) const;
 
     /**
      *  @brief  Determine whether a hit lies close to the track projection

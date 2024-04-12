@@ -28,6 +28,8 @@ namespace kaon_reconstruction
 
     void draw_hist_angular_distribution_map_cheated_pdg(std::map<int, TH2D*> &h_angular_distribution_cheated_pdg, TString outfile_name) const;
 
+    float m_theta_bin_size;
+    float m_phi_bin_size;
     int m_num_bin_theta;
     int m_num_bin_phi;
 

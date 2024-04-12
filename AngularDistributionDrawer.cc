@@ -2,7 +2,9 @@
 
 namespace kaon_reconstruction
 {
-  AngularDistributionDrawer::AngularDistributionDrawer(const ParticleDirectionFinder particle_direction_finder) :
+  AngularDistributionDrawer::AngularDistributionDrawer(const ParticleDirectionFinder& particle_direction_finder) :
+    m_theta_bin_size(particle_direction_finder.get_theta_bin_size()),
+    m_phi_bin_size(particle_direction_finder.get_phi_bin_size()),
     m_num_bin_theta(static_cast<int>(M_PI / particle_direction_finder.get_theta_bin_size())),
     m_num_bin_phi(static_cast<int>(2*M_PI / particle_direction_finder.get_phi_bin_size()))
   {
@@ -19,15 +21,20 @@ namespace kaon_reconstruction
       const TVector3 hit_position = (*it_sp)->XYZ();
       const TVector3 displacement_vector = hit_position - k_end;
 
-      double theta = distance_vector.Theta();
-      double phi = distance_vector.Phi();
+      double theta = displacement_vector.Theta();
+      double phi = displacement_vector.Phi();
       int theta_factor = (int)(std::floor(theta / m_theta_bin_size));
       int phi_factor = (int)(std::floor(phi / m_phi_bin_size));
 
       // retrieve PDG info
-      art::Ptr<recob::Hit> hit = fSpacePointsToHits.at(*spIter);
+      art::Ptr<recob::Hit> hit = spacepointToHitMap.at(*it_sp);
+      
+      //need to import related code from my dune code
+      /*
       truthHitMatcher(hit, particletmp);
       int pdg = particletmp->PdgCode();
+      */
+      int pdg = 0;//THIS IS TEMPORARY
 
       angular_distribution_map_cheated_pdg[pdg][theta_factor][phi_factor] += TMath::Sin(theta);;
     }

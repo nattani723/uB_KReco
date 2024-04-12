@@ -1,6 +1,7 @@
 #include "ParticleDirectionFinder.h"
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"
+#include "AngularDistributionDrawer.h"
 
 namespace kaon_reconstruction {
 

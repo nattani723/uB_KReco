@@ -44,8 +44,8 @@ namespace kaon_reconstruction
     typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
     typedef std::map<int, std::map<int, double>> AngularDistribution3DMap;
 
-    const SPList& get_sp_list_roi();
-    const TVector3& get_k_end();
+    const SPList& get_sp_list_roi() const;
+    const TVector3& get_k_end() const;
     
   private:
     
