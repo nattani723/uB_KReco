@@ -36,11 +36,11 @@ namespace kaon_reconstruction
 
     ParticleDirectionFinder();
 
-    pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track k_track,  HitList& unavailable_hit_list, vector<TVector3> &peak_direction_vector);
+    pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track& k_track,  HitList& unavailable_hit_list, vector<TVector3> &peak_direction_vector);
     float get_theta_bin_size() const;
     float get_phi_bin_size() const;
-const SPList& get_sp_list_roi();
-const TVector3& get_k_end();
+    const SPList& get_sp_list_roi();
+    const TVector3& get_k_end();
     
   private:
     

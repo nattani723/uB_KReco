@@ -184,7 +184,6 @@ const int kMaxTracks=20;
 
 namespace kaon_reconstruction {
 
-
   class CCKaonProducer : public art::EDProducer {
 
   public:
@@ -196,8 +195,8 @@ namespace kaon_reconstruction {
     //void produce(const art::Event& evt) override;
 
 
-
   private:
+
     std::string fDigitModuleLabel;
     std::string fHitsModuleLabel;
     std::string fLArG4ModuleLabel;
@@ -215,8 +214,8 @@ namespace kaon_reconstruction {
     std::string fPandoraLabel;
     bool isMC;
 
-    detinfo::DetectorProperties const * theDetector ;// = lar::providerFrom<detinfo::DetectorPropertiesService>();
-    detinfo::DetectorClocks    const *  detClocks   ;//= lar::providerFrom<detinfo::DetectorClocksService>();  
+    detinfo::DetectorProperties const * theDetector ;
+    detinfo::DetectorClocks    const *  detClocks   ;
     spacecharge::SpaceCharge const * SCE;
     geo::GeometryCore const * geom;
 

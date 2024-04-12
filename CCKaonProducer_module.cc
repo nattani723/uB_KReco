@@ -1,167 +1,5 @@
 #include "CCKaonProducer_module.h"
-#include "headers/particle_split_basetool_producer.h"
-#include "headers/track_production_producer.h"
-
-#include "art/Framework/Core/EDFilter.h"
-#include "art/Framework/Core/EDProducer.h"
-//#include "art/Framework/Core/EDAnalyzer.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Core/EDAnalyzer.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Services/Optional/TFileDirectory.h"
-#include "art/Framework/Principal/View.h"
-#include "art/Utilities/make_tool.h"
-
-#include "canvas/Utilities/InputTag.h"
-#include "canvas/Utilities/ensurePointer.h"
-#include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/FindMany.h"
-#include "canvas/Persistency/Common/FindManyP.h"
-#include "canvas/Persistency/Common/FindOne.h"
-#include "canvas/Persistency/Common/FindOneP.h"
-#include "canvas/Persistency/Common/PtrVector.h"
-#include "canvas/Persistency/Common/TriggerResults.h"
-#include "canvas/Utilities/InputTag.h"
-
-#include "fhiclcpp/ParameterSet.h"
-#include "fhiclcpp/ParameterSetRegistry.h" 
-
-#include "messagefacility/MessageLogger/MessageLogger.h"
-#include "cetlib_except/exception.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/DetectorInfoServices/LArPropertiesService.h" 
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "/uboone/app/users/taniuchi/51_pandora/srcs/larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h" 
-
-#include "larreco/Calorimetry/CalorimetryAlg.h"
-#include "larreco/RecoAlg/TrajectoryMCSFitter.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
-#include "larreco/Deprecated/BezierTrack.h"
-
-#include "larcore/Geometry/Geometry.h"
-#include "larcoreobj/SummaryData/POTSummary.h"
-#include "larcoreobj/SimpleTypesAndConstants/PhysicalConstants.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Slice.h"
-#include "lardataobj/RecoBase/EndPoint2D.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Wire.h"
-#include "lardataobj/RecoBase/MCSFitResult.h"
-#include "lardataobj/RecoBase/PFParticleMetadata.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-#include "lardataobj/AnalysisBase/CosmicTag.h"
-#include "lardataobj/AnalysisBase/FlashMatch.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/T0.h"
-#include "lardataobj/MCBase/MCShower.h"
-#include "lardataobj/MCBase/MCTrack.h"
-#include "lardataobj/MCBase/MCStep.h"
-#include "lardataobj/Simulation/SimChannel.h"
-#include "lardataobj/Simulation/AuxDetSimChannel.h"
-#include "lardataobj/Simulation/GeneratedParticleInfo.h"
-#include "lardataobj/RawData/RawDigit.h"
-#include "lardataobj/RawData/raw.h"
-#include "lardataobj/RawData/BeamInfo.h"
-#include "lardataobj/RawData/TriggerData.h"
-#include "larcoreobj/SummaryData/POTSummary.h"
-
-
-#include "ubobj/CRT/CRTHit.hh"
-#include "ubobj/RawData/DAQHeaderTimeUBooNE.h"
-
-
-#include "larevt/SpaceCharge/SpaceCharge.h"
-#include "larevt/SpaceChargeServices/SpaceChargeService.h"
-
-#include "larsim/EventWeight/Base/MCEventWeight.h"
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
-#include "ubevt/Database/UbooneElectronLifetimeProvider.h"
-#include "ubevt/Database/UbooneElectronLifetimeService.h"
-
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-#include "nusimdata/SimulationBase/simb.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "nusimdata/SimulationBase/GTruth.h"
-
-#include "ubana/AnalysisTree/MCTruth/IMCTruthMatching.h"
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
-#include "ubobj/Optical/UbooneOpticalFilter.h"
-
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-
-#include "Pandora/PdgTable.h" 
-
-#include "TCanvas.h"
-#include "TTree.h"
-#include "TMath.h"
-#include "TGraph.h"
-#include "TGraph2D.h"
-#include "TGraphDelaunay.h"
-#include "TRandom3.h"
-#include "TH2F.h"
-#include "TH1F.h"
-#include "TH1.h"
-#include "TFile.h"
-#include "TTimeStamp.h"
-
-#include <iostream>
-#include <TH2D.h>
-#include <TH3D.h>
-#include <TH1D.h>
-#include <TFile.h>
-#include <TROOT.h>
-#include <TChain.h>
-#include <TTree.h>
-#include <TVectorT.h>
-#include <THStack.h>
-#include <TPDF.h>
-#include <TLegend.h>
-#include <vector>
-#include <iomanip>
-#include <stdio.h>
-#include <fstream>
-#include <sstream>
-#include <string.h>
-#include <array>
-#include <map>
-#include <cstddef>
-#include <cstring>
-#include <iterator>
-#include <string>
-#include <numeric>
-#include <algorithm>
-#include <functional>
-#include <typeinfo>
-#include <memory>
-#include <chrono>
-#include <sys/stat.h>
-#include "TDirectory.h"
+#include "ReconstructionOrchestrator.cc"
 
 //#ifdef __MAKECINT__
 #ifdef __CLING__
@@ -192,13 +30,13 @@ namespace kaon_reconstruction {
     
   {
     
+    produces< std::vector<recob::Track> >(); 
+    produces< art::Assns<recob::Track, recob::Hit> >();
+
     theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
     detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
     SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
-    geom = lar::providerFrom<geo::Geometry>();
-    
-    produces< std::vector<recob::Track> >(); 
-    produces< art::Assns<recob::Track, recob::Hit> >();
+    geom = lar::providerFrom<geo::Geometry>();    
 
   }
   
@@ -216,27 +54,30 @@ namespace kaon_reconstruction {
 
   void CCKaonProducer::produce(art::Event& evt)
   {
-    art::Handle< std::vector<simb::MCTruth> > mctruths;
     std::vector< art::Ptr<simb::MCParticle> > ptList;
    
-    std::unique_ptr< std::vector<recob::Track> > anaTrackCollection(new std::vector<recob::Track> );
+    std::unique_ptr< std::vector<recob::Track> > anaTrackCollection(new std::vector<recob::Track>);
     std::unique_ptr<art::Assns<recob::Track, recob::Hit>>  anaTrackHitAssociations(new art::Assns<recob::Track, recob::Hit>);
    
-    // get MCTruth
-    evt.getByLabel("generator", mctruths);
+    // get MCTruth information
+    art::Handle< std::vector<simb::MCTruth> > mctruths;
+    evt.getByLabel(fGenieGenModuleLabel, mctruths);
+    if (!mctruths.isValid() || mctruths->empty()) return;
+    const simb::MCTruth& mctruth = mctruths->front();
+    /*
     if (mctruths->size()!=1) {
       //return;
       //continue;
     }
     simb::MCTruth mctruth = mctruths->at(0);
-    
+    */
+
 
     // get MCParticles
     art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
     if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle)){
       art::fill_ptr_vector(ptList, mcParticleHandle); 
     }   
-
         
     // Collect all recontructed particles
     art::Handle<std::vector<recob::PFParticle>> pfparticles;
@@ -254,77 +95,61 @@ namespace kaon_reconstruction {
 
     // Get PFParticle associations
     art::FindManyP<anab::T0> pfp_muon_assn(pfparticles, evt, "NuCCproducer");
-    if(!pfp_muon_assn.isValid()){
-      evt.put(std::move(anaTrackCollection));
-      evt.put(std::move(anaTrackHitAssociations));
-      return;
-    }
-    
-    art::FindManyP<recob::Track> pfparticleTrackAssn(pfparticles, evt, "pandora");
-    if(!pfparticleTrackAssn.isValid()){
-      evt.put(std::move(anaTrackCollection));
-      evt.put(std::move(anaTrackHitAssociations));
-      return;
-    }
-    
-    art::FindManyP<recob::Vertex> pfparticleVertexAssn(pfparticles, evt, "pandora");
-    if(!pfparticleVertexAssn.isValid()){
+    art::FindManyP<recob::Track> pfparticleTrackAssn(pfparticles, evt, fTrackModuleLabel);
+    art::FindManyP<recob::Vertex> pfparticleVertexAssn(pfparticles, evt, fTrackModuleLabel);
+    if(!pfp_muon_assn.isValid() || !pfparticleTrackAssn.isValid() || !pfparticleVertexAssn.isValid()){
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
       return;
     }
 
-    
-    // Find recontructed neutrino (there should be one)
+
+    // Find the primary neutrino particle and associated muon
     lar_pandora::PFParticleVector pfneutrinos(0);
-    for (unsigned int i=0; i<pfparticles->size(); ++i) {
-      
-      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);      
+    lar_pandora::PFParticleVector pfmuons(0);
+
+    for (unsigned int i=0; i<pfparticles->size(); ++i) { 
+
+      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
+
       if (pfparticle->IsPrimary() && pfparticle->PdgCode()==14) {
 	pfneutrinos.push_back(pfparticle);
       }
-      
     }
-    
+   
     if (pfneutrinos.size() != 1) {
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
       return;
     }
-    
-    art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
+    else art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
 
-    
-    // Find CC muon and daughters
-    lar_pandora::PFParticleVector pfmuons(0);
-    vector<int> reco_nu_daughters_id(0);
+    for (unsigned int i=0; i<pfparticles->size(); ++i) { 
 
-    for (unsigned int i=0; i<pfparticles->size(); ++i) {
-      
-      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
-      
       // look at particles with neutrino parent and one associated track
       if (pfparticle->Parent()==pfnu->Self() && pfparticleTrackAssn.at(i).size()==1) {
 	
 	art::Ptr<recob::Track> track = pfparticleTrackAssn.at(i).front();
 	reco_nu_daughters_id.push_back(track.key());
 	
-	// CC muon has a T0 associated
+	// CC muon has a T0 associated   
 	if (pfp_muon_assn.at(i).size()==1) {
 	  pfmuons.push_back(pfparticle);
 	}
-
-      }      
+	
+      }
     }
-    
-    reco_nu_ndaughters = reco_nu_daughters_id.size();
-    
+
+
     if (pfmuons.size()!=1) {
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
       return;
     }
+
     
+    reco_nu_ndaughters = reco_nu_daughters_id.size();
+
     art::Ptr<recob::PFParticle> pfmuon = pfmuons.front();
     art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
     
@@ -333,21 +158,21 @@ namespace kaon_reconstruction {
     art::Handle< std::vector<recob::Hit> > hitListHandle;
     std::vector<art::Ptr<recob::Hit> > hitList;
     if(evt.getByLabel(fHitsModuleLabel,hitListHandle)){
-      art::fill_ptr_vector(hitlist, hitListHandle);
+      art::fill_ptr_vector(hitList, hitListHandle);
     }
 
     // get tracks
     art::Handle< std::vector<recob::Track> > trackListHandle;
     std::vector<art::Ptr<recob::Track> > trackList;
     if(evt.getByLabel(fTrackModuleLabel,trackListHandle)) {
-      art::fill_ptr_vector(tracklist, trackListHandle);
+      art::fill_ptr_vector(trackList, trackListHandle);
     }
 
     // get showers
     art::Handle< std::vector<recob::Shower> > showerListHandle;
     std::vector<art::Ptr<recob::Shower> > showerList;
     if(evt.getByLabel(fShowerModuleLabel,showerListHandle)) {
-      art::fill_ptr_vector(showerlist, showerListHandle);
+      art::fill_ptr_vector(showerList, showerListHandle);
     }
 
     art::Handle< std::vector<recob::SpacePoint> > spacepointHandle;
@@ -471,7 +296,7 @@ namespace kaon_reconstruction {
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
       
       ReconstructionOrchestrator orchestrator;
-      orchestrator.runReconstruction(sp_list, k_track);
+      orchestrator.runReconstruction(sp_list, track);
       std::vector<Reco::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
       
       //for(Reco::Track reco_track : rebuildTrackList) {
