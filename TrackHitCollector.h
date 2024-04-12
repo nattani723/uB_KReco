@@ -67,7 +67,9 @@ namespace kaon_reconstruction
     typedef std::vector<art::Ptr<recob::Hit>> HitList;
 
     pandora::StatusCode Run(const TVector3& k_end, const SPList& sp_list,
-        const TVector3& peak_direction, HitList& unavailable_hit_list, HitList& track_hit_list);
+			    const TVector3& peak_direction, HitList& unavailable_hit_list, HitList& track_hit_list,
+			    const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap,
+			    const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap);
 
   private:
 
@@ -86,7 +88,7 @@ namespace kaon_reconstruction
      *
      */
     
-    void find_track_hits(const SPList& sp_list, HitList& unavailable_hit_list, HitList& track_hit_list, const TVector3& k_end, TVector3& peak_direction) const;
+    void find_track_hits(const SPList& sp_list, HitList& unavailable_hit_list, HitList& track_hit_list, const TVector3& k_end, TVector3& peak_direction, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap) const;
 
     /**
      *  @brief  Reassign extrapolated direction and start/end positions
@@ -141,7 +143,7 @@ namespace kaon_reconstruction
      *  @return whether any hits were collected in the running fit step
      */
 
-    bool collect_subsection_hits(const lar_content::ThreeDSlidingFitResult& extrapolated_fit, const TVector3& extrapolated_start_position, const TVector3& extrapolated_end_position, const TVector3& extrapolated_direction, const bool is_end_downstream, const SPList& sp_list, TVector3& running_fit_position_vector, pandora::CartesianPointVector& pandora_running_fit_position_vector, HitList& unavailable_hit_list, HitList& track_hit_list, float& distance_to_line, float& hit_connection_distance) const;
+    bool collect_subsection_hits(const lar_content::ThreeDSlidingFitResult& extrapolated_fit, const TVector3& extrapolated_start_position, const TVector3& extrapolated_end_position, const TVector3& extrapolated_direction, const bool is_end_downstream, const SPList& sp_list, TVector3& running_fit_position_vector, pandora::CartesianPointVector& pandora_running_fit_position_vector, HitList& unavailable_hit_list, HitList& track_hit_list, float& distance_to_line, float& hit_connection_distance, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap) const;
 
 
     /**
@@ -179,7 +181,7 @@ namespace kaon_reconstruction
      *
      */
 
-    void collect_connected_hits(HitList& collected_hit_list, const TVector3& extrapolated_start_position, const TVector3& extrapolated_direction, TVector3& running_fit_position_vector, pandora::CartesianPointVector& pandora_running_fit_position_vector, HitList& track_hit_list, float& hit_connection_distance) const;
+    void collect_connected_hits(HitList& collected_hit_list, const TVector3& extrapolated_start_position, const TVector3& extrapolated_direction, TVector3& running_fit_position_vector, pandora::CartesianPointVector& pandora_running_fit_position_vector, HitList& track_hit_list, float& hit_connection_distance, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap) const;
 
     /**
      *  @brief  Find the smallest distance between a position and a list of other positions
