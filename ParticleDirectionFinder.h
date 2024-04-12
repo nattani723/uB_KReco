@@ -13,15 +13,20 @@
 #undef _GLIBCXX14_CONSTEXPR
 #define _GLIBCXX14_CONSTEXPR
 
-//#include "HitSplitAlg_module.h"
+// Framework includes
+#include "art/Framework/Core/EDAnalyzer.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+#include "art/Framework/Services/Registry/ServiceHandle.h"
+
 #include "TMath.h"
 #include <algorithm>
 #include <functional>
+#include <TVector3.h>
 
 #include "Api/PandoraApi.h"
 #include "Pandora/AlgorithmHeaders.h"
 #include "larpandoracontent/LArContent.h"
-
 
 //using namespace pandora;
 //using namespace std;
@@ -39,14 +44,15 @@ namespace kaon_reconstruction
     pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track& k_track,  HitList& unavailable_hit_list, vector<TVector3> &peak_direction_vector);
     float get_theta_bin_size() const;
     float get_phi_bin_size() const;
+
+    typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
+    typedef std::map<int, std::map<int, double>> AngularDistribution3DMap;
+
     const SPList& get_sp_list_roi();
     const TVector3& get_k_end();
     
   private:
     
-    typdef std::vector<art::Ptr<recob::SpacePoint>> SPList;
-    typdef std::map<int, std::map<int, double>> AngularDistribution3DMap;
-
   /*
    * @brief  Collect spacepoints inside the region of interest (ROI)
    *
