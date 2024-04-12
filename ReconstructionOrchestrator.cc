@@ -16,28 +16,28 @@ namespace kaon_reconstruction {
     typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
     typedef std::vector<art::Ptr<recob::Hit>> HitList;
 
-    void runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, const art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const Reco::Track& k_track);
+    void runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, const art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const recob::Track& k_track);
 
-    const std::vector<Reco::Track> getHitLists();
-    const std::vector<Reco::Track> getRebuildTrackList();
+    const std::vector<recob::Track> getHitLists();
+    const std::vector<recob::Track> getRebuildTrackList();
 
 
   private:
     ParticleDirectionFinder directionFinder;
     TrackHitCollector hitCollector;
     TrackRebuilder trackRebuilder;
-    std::vector<Reco::Track> rebuildTrackList;
+    std::vector<recob::Track> rebuildTrackList;
     std::vector<HitList> trackHitLists;
 
     // Other members like unavailableHitList might be defined here if they are shared across methods
   };
   
-  const std::vector<Reco::Track> ReconstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList }; 
+  const std::vector<recob::Track> recobnstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList }; 
 
-  const std::vector<HitList> ReconstructionOrchestrator::getHitLists() { return trackHitLists };
+  const std::vector<HitList> recobnstructionOrchestrator::getHitLists() { return trackHitLists };
   
-  //void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const Reco::Track& k_track) {
-  void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>> hitToSpacePointMap,  const Reco::Track& k_track) {
+  //void recobnstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const recob::Track& k_track) {
+  void recobnstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>> hitToSpacePointMap,  const recob::Track& k_track) {
     
     // Container for peak direction vectors calculated by ParticleDirectionFinder
     vector<TVector3> peakDirectionVector;
