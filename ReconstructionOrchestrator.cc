@@ -1,5 +1,4 @@
 #include "ParticleDirectionFinder.h"
-#include "ReconstructionOrchestrator.h"
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"
 

@@ -1,5 +1,4 @@
 #include "TrackHitCollector.h"
-#include "TrackRebuilder.h"
 
 #include "art/Framework/Core/EDProducer.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"

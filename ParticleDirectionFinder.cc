@@ -8,7 +8,7 @@ namespace kaon_reconstruction
   ParticleDirectionFinder::ParticleDirectionFinder() :
 
     m_region_of_interest(100.),
-    m_peak_searh_region(15.),
+    m_peak_search_region(15.),
     m_theta_bin_size(0.06),
     m_phi_bin_size(0.06),
     m_smoothing_window(1),
@@ -22,17 +22,25 @@ namespace kaon_reconstruction
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  float ParticleDirectionFinder::get_theta_bin_size() const { return m_theta_bin_size(); }
+  float ParticleDirectionFinder::get_theta_bin_size() const { 
+    return m_theta_bin_size;
+  }
   
-  float ParticleDirectionFinder::get_phi_bin_size() const { return m_phi_bin_size(); }
+  float ParticleDirectionFinder::get_phi_bin_size() const { 
+    return m_phi_bin_size;
+  }
 
-  const ParticleDirectionFinder::SPList& get_sp_list_roi() const { return sp_list_roi; }
+  const ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
+    return sp_list_roi; 
+  }
 
-  const ParticleDirectionFinder::TVector3& get_k_end() const { return k_end; }
+  const ParticleDirectionFinder::TVector3& ParticleDirectionFinder::get_k_end() const { 
+    return k_end; 
+  }
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> k_track,  const HitList& unavailable_hit_list, vector<TVector3> &peak_direction_vector)
+  pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> k_track,  const HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector)
 {
 	// get sp list inside region of interest
 	//SPList sp_list_roi;
@@ -196,7 +204,7 @@ pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const ar
 
   //-----------------------------------------------------------------------------
 
-  void ParticleDirectionFinder::retrieve_peak_directions(const angular_distribution_map_3d& angular_distribution_map, std::map<double, TVector3, std::greater<>>& sort_peak_direction_map) const
+  void ParticleDirectionFinder::retrieve_peak_directions(const AngularDistribution3DMap& angular_distribution_map, std::map<double, TVector3, std::greater<>>& sort_peak_direction_map) const
 
   {
 
@@ -249,7 +257,7 @@ pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const ar
 
   //-----------------------------------------------------------------------------
 
-  void ParticleDirectionFinder::refine_peak_directions(const std::map<double, TVector3, std::greater<>>& sort_peak_direction_map, vector<TVector3> &peak_direction_vector) const
+  void ParticleDirectionFinder::refine_peak_directions(const std::map<double, TVector3, std::greater<>>& sort_peak_direction_map, std::vector<TVector3> &peak_direction_vector) const
   {
 
     if(sort_peak_direction_map.empty()) return;

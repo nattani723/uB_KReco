@@ -31,7 +31,7 @@ namespace kaon_reconstruction
     int m_num_bin_theta;
     int m_num_bin_phi;
 
-  }
+  };
 
 
 } //namespace kaon_reconstruction

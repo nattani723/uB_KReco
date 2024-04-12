@@ -8,6 +8,7 @@
 #ifndef TRACK_HIT_COLLECTOR
 #define TRACK_HIT_COLLECTOR 1
 
+#include "CCKaonProducer_module.h"
 #include "larpandoracontent/LArHelpers/LArHitWidthHelper.h"
 #include "larpandoracontent/LArHelpers/LArConnectionPathwayHelper.h"
 #include "larpandoracontent/LArHelpers/LArGeometryHelper.h"
@@ -15,10 +16,10 @@
 
 namespace kaon_reconstruction 
 {
-
+  
   class TrackUtilities
   {
-
+    
   public:
     /**
      * @brief Obtain wire pitch used for sliding linear fit
@@ -43,7 +44,7 @@ namespace kaon_reconstruction
 	throw cet::exception("LArPandoraTrackCreation") << " LArPandoraTrackCreation::produce --- expect to find u and v views; if there is one further view, it must be w or y ";
 
       const bool useYPlane((nWirePlanes > 2) && planeSet.count(geo::kY));
-
+      
       const float wirePitchU(theGeometry->WirePitch(geo::kU));
       const float wirePitchV(theGeometry->WirePitch(geo::kV));
       const float wirePitchW((nWirePlanes < 3) ? 0.5f * (wirePitchU + wirePitchV) : (useYPlane) ? theGeometry->WirePitch(geo::kY) : theGeometry->WirePitch(geo::kW));
@@ -52,8 +53,8 @@ namespace kaon_reconstruction
 
       return sliding_fit_pitch;
     }
-
-  }
+    
+  };
 
 
   class TrackHitCollector
@@ -203,7 +204,7 @@ namespace kaon_reconstruction
     float m_hit_connection_distance;                 ///< The max. separation between connected hits
     float m_trackall_sliding_fit_window;
 
-  } // end of class
+  }; // end of class
   
 } // namespace kaon_reconstruction 
 

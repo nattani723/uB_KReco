@@ -13,11 +13,7 @@
 #undef _GLIBCXX14_CONSTEXPR
 #define _GLIBCXX14_CONSTEXPR
 
-// Framework includes
-#include "art/Framework/Core/EDAnalyzer.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
+#include "CCKaonProducer_module.h"
 
 #include "TMath.h"
 #include <algorithm>
@@ -41,7 +37,7 @@ namespace kaon_reconstruction
 
     ParticleDirectionFinder();
 
-    pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track& k_track,  HitList& unavailable_hit_list, vector<TVector3> &peak_direction_vector);
+    pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track& k_track,  HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector);
     float get_theta_bin_size() const;
     float get_phi_bin_size() const;
 
@@ -95,7 +91,7 @@ namespace kaon_reconstruction
    */
 
   //void retrieve_peak_directions(const angular_distribution_map_3d& angular_distribution_map, std::vector<TVector2>& peak_direction_vectors) const;
-  void retrieve_peak_directions(const angular_distribution_map_3d& angular_distribution_map, std::map<double, TVector3, std::greater<>>& sort_peak_direction_map) const;
+  void retrieve_peak_directions(const AngularDistribution3DMap& angular_distribution_map, std::map<double, TVector3, std::greater<>>& sort_peak_direction_map) const;
 
   /*
    * @brief  Remove some peak candidates depending on their height or opnening angles
@@ -105,7 +101,7 @@ namespace kaon_reconstruction
    * 
    */
 
-  void refine_peak_directions(const std::map<double, TVector3, std::greater<>>& sort_peak_direction_map, vector<TVector3> &peak_direction_vector) const;
+  void refine_peak_directions(const std::map<double, TVector3, std::greater<>>& sort_peak_direction_map, std::vector<TVector3> &peak_direction_vector) const;
 
   float m_region_of_interest;
   float m_peak_search_region;
@@ -117,8 +113,8 @@ namespace kaon_reconstruction
   double m_min_peak_height;
   int m_max_num_peak;
 
-SPList sp_list_roi;
-TVector3 k_end;
+  SPList sp_list_roi;
+  TVector3 k_end;
 
 };
 
