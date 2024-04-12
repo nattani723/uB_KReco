@@ -1,3 +1,8 @@
+#include "ParticleDirectionFinder.h"
+#include "ReconstructionOrchestrator.h"
+#include "TrackHitCollector.h"
+#include "TrackRebuilder.h"
+
 namespace kaon_reconstruction {
 
   class ReconstructionOrchestrator {
