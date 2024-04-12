@@ -30,7 +30,7 @@ namespace kaon_reconstruction
     return m_phi_bin_size;
   }
 
-  const ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
+  ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_roi() { 
     return sp_list_roi; 
   }
 
@@ -40,7 +40,7 @@ namespace kaon_reconstruction
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> k_track,  const HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector)
+  pandora::StatusCode ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> primary_track,  const HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector)
 {
 	// get sp list inside region of interest
 	//SPList sp_list_roi;
@@ -51,11 +51,11 @@ namespace kaon_reconstruction
 	
 	//get coordinates of k track end and store unavailable_hit_list
 	//TVector3 
-	k_end(track->End().x(), track->End().y(), track->End().z());
+	k_end.SetXYZ(primary_track->End().x(), primary_track->End().y(), primary_track->End().z());
 
 	// get sp list for peak finder
 	SPList sp_list_peak_search;
-	this->collect_sp_in_roi(sp_roi, k_end, m_peak_search_region, sp_list_peak_search);
+	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search);
 		
 	if (sp_list_peak_search.empty())
         	return STATUS_CODE_NOT_FOUND;
@@ -88,7 +88,7 @@ namespace kaon_reconstruction
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  void ParticleDirectionFinder::collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, double& region_of_interest, SPList& sp_list_roi) const
+  void ParticleDirectionFinder::collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, float& region_of_interest, SPList& sp_list_roi) const
   {
 
     for(auto it_sp = sp_list.begin(); it_sp != sp_list.end(); ++it_sp){

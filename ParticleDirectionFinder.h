@@ -36,15 +36,15 @@ namespace kaon_reconstruction
   public:
 
     ParticleDirectionFinder();
-
-    pandora::STATUSCODE Run(const SPList& sp_list, const Reco::Track& k_track,  HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector);
-    float get_theta_bin_size() const;
-    float get_phi_bin_size() const;
-
+    typedef std::vector<art::Ptr<recob::Hit>> HitList;
     typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
     typedef std::map<int, std::map<int, double>> AngularDistribution3DMap;
 
-    const SPList& get_sp_list_roi() const;
+    pandora::StatusCode Run(const SPList& sp_list, const art::Ptr<recob::Track> primary_track, const  HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector);
+    float get_theta_bin_size() const;
+    float get_phi_bin_size() const;
+
+    SPList& get_sp_list_roi();
     const TVector3& get_k_end() const;
     
   private:
@@ -59,7 +59,7 @@ namespace kaon_reconstruction
    */
 
   //void collect_sp_in_roi(const SPList& sp_list, const TVector3 k_end, SPList& sp_list_roi) const;
-  void collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, double& region_of_interest, SPList& sp_list_roi) const;
+  void collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, float& region_of_interest, SPList& sp_list_roi) const;
 
   /*
    * @brief  Fill map of angular distribution for spacepoints inside the region of interest (ROI)

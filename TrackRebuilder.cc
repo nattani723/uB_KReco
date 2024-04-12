@@ -5,41 +5,46 @@ using namespace pandora;
 
 namespace kaon_reconstruction 
 {
-  TrackRebuilder::TrackRebuilder() :
+  TrackRebuilder::TrackRebuilder() : 
+    m_rebuild_track_counter(1000);
   {
   }
 
-  pandora::STATUSCODE TrackRebuilder::Run(HitList& track_hit_list, const recob::Track& primary_track)
+  pandora::StatusCode TrackRebuilder::Run(TrackHitCollector::HitList& track_hit_list, const recob::Track& primary_track, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap)
   {
-    this->track_rebuild(track_hit_list, primary_track);
+    this->track_rebuild(track_hit_list, primary_track, rebuild_reco_track, hitToSpacePointMap);
     return STATUS_CODE_SUCCESS;
   }
+
+  recob::Track TrackRebuilder::get_rebuild_reco_track() {
+    return rebuild_reco_track;
+  }
   
-  recob::Track TrackRebuilder::track_rebuild(HitList& track_hit_list, const recob::Track& primary_track) const{
+  recob::Track TrackRebuilder::track_rebuild(TrackHitCollector::HitList& track_hit_list, const recob::Track& primary_track, recob::Track& rebuild_reco_track, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap) const{
     
     
-    float wire_pirch_w = TrackUtilities::get_wire_pitch();
+    float wire_pitch_w = TrackUtilities::get_wire_pitch();
 
     pandora::CartesianPointVector pandora_hit_position_vec;
 
 
-    for (const auto& hit : hit_list) {
-      auto sp = fHitsToSpacePoints.at(hit); // Assuming fHitsToSpacePoints_old maps hit to space points
+    for (const auto& hit : track_hit_list) {
+      auto sp = hitToSpacePointMap.at(hit); // Assuming fHitsToSpacePoints_old maps hit to space points
       const auto& xyz = sp->XYZ();
       pandora::CartesianVector pandora_hit_position(xyz[0], xyz[1], xyz[2]);
       pandora_hit_position_vec.emplace_back(std::move(pandora_hit_position));
     }
 
     std::unique_ptr<std::vector<recob::Track>> output_tracks(new std::vector<recob::Track>);
-    const pandora::CartesianVector vertex_position(track.End().X(), track.End().Y(),track.End().Z());
+    const pandora::CartesianVector vertex_position(primary_track.End().X(), primary_track.End().Y(), primary_track.End().Z());
 
     // these are dummy values to get GetSlidingFitTrajectory instance
     lar_content::LArTrackStateVector track_state_vector;
     pandora::IntVector index_vector;
  
-    lar_content::LArPfoHelper::GetSlidingFitTrajectory(pandora_hit_positions,
+    lar_content::LArPfoHelper::GetSlidingFitTrajectory(pandora_hit_position_vec,
 						       vertex_position,
-						       m_sliding_fit_half_window,
+						       TrackUtilities::m_sliding_fit_half_window,
 						       wire_pitch_w,
 						       track_state_vector,
 						       &index_vector);
@@ -49,20 +54,20 @@ namespace kaon_reconstruction
     output_tracks->emplace_back(this->build_track( m_rebuild_track_counter++, track_state_vector));
 
     // always expect to have single track from single track_hit_list
-    recob::Track reco_track = outputTracks->at(0);
-    return reco_track;
+    rebuild_reco_track = output_tracks->at(0);
+    return rebuild_reco_track;
 
   }
 
   recob::Track TrackRebuilder::build_track(int track_id, lar_content::LArTrackStateVector& track_state_vector) const
   {
-    if (trackStateVector.empty()) cout << "BuildTrack - No input trajectory points provided" << endl;
+    if (track_state_vector.empty()) std::cout << "BuildTrack - No input trajectory points provided" << endl;
     
     recob::tracking::Positions_t xyz;
     recob::tracking::Momenta_t pxpypz;
     recob::TrackTrajectory::Flags_t flags;
     
-    for (const lar_content::LArTrackState& trackState : trackStateVector) {
+    for (const lar_content::LArTrackState& trackState : track_state_vector) {
       
       xyz.emplace_back(recob::tracking::Point_t(trackState.GetPosition().GetX(),
 						trackState.GetPosition().GetY(),
@@ -94,7 +99,7 @@ namespace kaon_reconstruction
 			util::kBogusI,
 			recob::tracking::SMatrixSym55(),
 			recob::tracking::SMatrixSym55(),
-			id);
+			track_id);
     
   }
   

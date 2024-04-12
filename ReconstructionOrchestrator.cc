@@ -16,9 +16,9 @@ namespace kaon_reconstruction {
     typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
     typedef std::vector<art::Ptr<recob::Hit>> HitList;
 
-    void runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, const art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const recob::Track& k_track);
+    void runReconstruction(SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const art::Ptr<recob::Track> k_track, const HitList& hits_from_track);
 
-    const std::vector<recob::Track> getHitLists();
+    const std::vector<HitList> getHitLists();
     const std::vector<recob::Track> getRebuildTrackList();
 
 
@@ -32,17 +32,19 @@ namespace kaon_reconstruction {
     // Other members like unavailableHitList might be defined here if they are shared across methods
   };
   
-  const std::vector<recob::Track> recobnstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList }; 
+  const std::vector<recob::Track> ReconstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList; }
 
-  const std::vector<HitList> recobnstructionOrchestrator::getHitLists() { return trackHitLists };
+  const std::vector<ReconstructionOrchestrator::HitList> ReconstructionOrchestrator::getHitLists() { return trackHitLists; }
   
-  //void recobnstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const recob::Track& k_track) {
-  void recobnstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>> hitToSpacePointMap,  const recob::Track& k_track) {
+  //void ReconstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const recob::Track& k_track) {
+  void ReconstructionOrchestrator::runReconstruction(SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap,  const art::Ptr<recob::Track> k_track, const HitList& hits_from_track) {
     
     // Container for peak direction vectors calculated by ParticleDirectionFinder
-    vector<TVector3> peakDirectionVector;
+    std::vector<TVector3> peakDirectionVector;
     
-    std::vector<art::Ptr<recob::Hit>> unavailableHitList = hits_from_tracks.at(ptrack.key());
+    //std::vector<art::Ptr<recob::Hit>> 
+    HitList unavailableHitList = hits_from_track;
+      // = hits_from_tracks.at(ptrack.key());
     
     // Run the ParticleDirectionFinder
     auto status = directionFinder.Run(sp_list, k_track, unavailableHitList, peakDirectionVector);
@@ -69,7 +71,10 @@ namespace kaon_reconstruction {
       
       //make run function with statuscode return
       //think about how to retrieve reco::track object define getrebuildtracj in this orchestrator?
-      rebuildTrackList.push_back( trackRebuilder.track_rebuild(trackHitList, k_track) );
+      //const recob::Track& primary_track = *k_track;
+      trackRebuilder.Run(trackHitList, *k_track, hitToSpacePointMap);
+      rebuildTrackList.push_back( trackRebuilder.get_rebuild_reco_track() );
+      //rebuildTrackList.push_back( trackRebuilder.track_rebuild(trackHitList, k_trac );
       trackHitLists.push_back( trackHitList );
     }
     

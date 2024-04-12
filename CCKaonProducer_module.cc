@@ -296,7 +296,7 @@ namespace kaon_reconstruction {
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
       
       ReconstructionOrchestrator orchestrator;
-      orchestrator.runReconstruction(sp_list, spacepointToHitMap, track);
+      orchestrator.runReconstruction(spacepointVector, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
       std::vector<Reco::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
       
       //for(Reco::Track reco_track : rebuildTrackList) {
