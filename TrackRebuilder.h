@@ -1,6 +1,21 @@
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"
 
+#include "art/Framework/Core/EDProducer.h"
+#include "lardataobj/RecoBase/TrackHitMeta.h"
+#include "art/Persistency/Common/PtrMaker.h"
+
+#include "larpandoracontent/LArHelpers/LArPfoHelper.h"
+#include "larpandoracontent/LArObjects/LArPfoObjects.h"
+
+#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
+#include "larpandora/LArPandoraInterface/LArPandoraOutput.h" 
+
+#include <iostream>
+
+#ifndef TRACK_REBUILDER
+#define TRACK_REBUILDER 1
+
 using namespace pandora;
 
 namespace kaon_reconstruction 
@@ -96,3 +111,5 @@ recob::Track TrackRebuilder::build_track(int track_id, lar_content::LArTrackStat
 }
 
 }//namespace kaon_reconstruction
+
+#endif
