@@ -101,8 +101,30 @@ pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const ar
   void ParticleDirectionFinder::fill_angular_distribution_map(const std::vector<art::Ptr<recob::SpacePoint>>& sp_list_roi, const TVector3& k_end, AngularDistribution3DMap& angular_distribution_map) const
   {
 
-    const TVector3 x_axis(1.,0.,0.);
+    //const TVector3 x_axis(1.,0.,0.);
 
+    for (const auto& sp : sp_list_roi) {
+     
+      const TVector3 hit_position = sp->XYZ();
+      const TVector3 displacement_vector = hit_position - k_end;
+
+      double theta = displacement_vector.Theta();
+      double phi = displacement_vector.Phi();
+      int theta_factor = static_cast<int>(std::floor(theta / m_theta_bin_size));
+      int phi_factor = static_cast<int>(std::floor(phi / m_phi_bin_size));
+
+      // Using double brackets safely by checking or initializing correctly
+      if (angular_distribution_map[theta_factor].find(phi_factor) == angular_distribution_map[theta_factor].end()) {
+	// If phi_factor is not found under the current theta_factor, initialize it
+	angular_distribution_map[theta_factor][phi_factor] = TMath::Sin(theta);
+      } else {
+	// If found, just add to the existing value
+	angular_distribution_map[theta_factor][phi_factor] += TMath::Sin(theta);
+      }
+
+    }
+
+    /*
     for(auto it_sp = sp_list_roi.begin(); it_sp != sp_list_roi.end(); ++it_sp){
 
       const TVector3 hit_position = (*it_sp)->XYZ();
@@ -119,6 +141,7 @@ pandora::STATUSCODE ParticleDirectionFinder::Run(const SPList& sp_list, const ar
       else angular_distribution_map[theta_factor][phi_factor] += TMath::Sin(theta);
 
     }
+    */
 
   }
 

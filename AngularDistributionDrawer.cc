@@ -12,7 +12,7 @@ namespace kaon_reconstruction
   void AngularDistributionDrawer::fill_angular_distribution_map_cheated_pdg(const std::vector<art::Ptr<recob::SpacePoint>>& sp_list_roi, const TVector3 k_end, AngularDistribution3DCheatPDGMap& angular_distribution_map_cheated_pdg, std::map<int, TH2D*> &h_angular_distribution_cheated_pdg) const
   {
 
-    const TVector3 x_axis(1.,0.,0.);
+    //const TVector3 x_axis(1.,0.,0.);
 
     for(auto it_sp = sp_list_roi.begin(); it_sp != sp_list_roi.end(); ++it_sp){
 
