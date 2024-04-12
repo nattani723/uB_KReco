@@ -348,7 +348,7 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  double TrackHitCollector::get_closest_distance(const TVector3& hit_position, const vector<TVector3>& test_positions) const
+  double TrackHitCollector::get_closest_distance(const TVector3& hit_position, const std::vector<TVector3>& test_positions) const
   {
 
     double closest_distance_squared(std::numeric_limits<double>::max());

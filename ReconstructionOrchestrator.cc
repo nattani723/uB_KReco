@@ -1,3 +1,4 @@
+#include "CCKaonProducer_module.h"
 #include "ParticleDirectionFinder.h"
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"
@@ -9,7 +10,7 @@ namespace kaon_reconstruction {
   public:
     ReconstructionOrchestrator() : directionFinder(), hitCollector() {}
 
-    void runReconstruction(const SPList& sp_list, const Reco::Track& k_track);
+    void runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const Reco::Track& k_track);
 
     const std::vector<Reco::Track> getHitLists();
     const std::vector<Reco::Track> getRebuildTrackList();
@@ -29,7 +30,8 @@ namespace kaon_reconstruction {
 
   const std::vector<HitList> ReconstructionOrchestrator::getHitLists() { return trackHitLists };
   
-  void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const Reco::Track& k_track) {
+  //void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const Reco::Track& k_track) {
+  void ReconstructionOrchestrator::runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const Reco::Track& k_track) {
     
     // Container for peak direction vectors calculated by ParticleDirectionFinder
     vector<TVector3> peakDirectionVector;

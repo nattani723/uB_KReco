@@ -151,7 +151,7 @@ namespace kaon_reconstruction
      *  @param  sort_position: take the distance between sp in list and this position
      *
      */
-    void TrackHitCollector::sort_sp_by_distance(SPList& sp_list, const TVector3& sort_position) const;
+    void sort_sp_by_distance(SPList& sp_list, const TVector3& sort_position) const;
 
     /**
      *  @brief  Determine whether a hit lies close to the track projection
@@ -190,7 +190,7 @@ namespace kaon_reconstruction
      *  @return the closest distance
      */
 
-    double get_closest_distance(const TVector3& hit_position, const vector<TVector3>& test_positions) const;
+    double get_closest_distance(const TVector3& hit_position, const std::vector<TVector3>& test_positions) const;
 
 
     unsigned int m_hit_threshold_for_track;           ///< The hit threshold for a significant track

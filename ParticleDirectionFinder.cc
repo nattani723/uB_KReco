@@ -30,7 +30,7 @@ namespace kaon_reconstruction
     return m_phi_bin_size;
   }
 
-  const SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
+  const ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_roi() const { 
     return sp_list_roi; 
   }
 
@@ -248,7 +248,7 @@ namespace kaon_reconstruction
 	  if (is_peak) {
 	    //TVector2 peak_position(bin_theta, bin_phi);
 	    TVector3 peak_direction;
-	    peak_direction.SetMagTheta(1, bin_theta*m_theta_bin_size, bin_phi*m_phi_bin_size);
+	    peak_direction.SetMagThetaPhi(1, bin_theta*m_theta_bin_size, bin_phi*m_phi_bin_size);
 	    sort_peak_direction_map[bin_weight] = peak_direction; // Peaks are sorted by weight
 	  } 
 	}

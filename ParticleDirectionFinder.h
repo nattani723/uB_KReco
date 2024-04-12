@@ -111,7 +111,7 @@ namespace kaon_reconstruction
   int m_peak_search_window;
   double m_peak_open_angle;
   double m_min_peak_height;
-  int m_max_num_peak;
+  size_t m_max_num_peak;
 
   SPList sp_list_roi;
   TVector3 k_end;
