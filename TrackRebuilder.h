@@ -24,10 +24,10 @@ namespace kaon_reconstruction
   {
   public:
     TrackRebuilder();
-    pandora::STATUSCODE Run(HitList& track_hit_list, const recob::Track& primary_track);
+    pandora::STATUSCODE Run(TrackHitCollector::HitList& track_hit_list, const recob::Track& primary_track);
 
   private:
-    recob::Track track_rebuild(HitList& track_hit_list, const recob::Track& primary_track) const;
+    recob::Track track_rebuild(TrackHitCollector::HitList& track_hit_list, const recob::Track& primary_track) const;
     recob::Track build_track(int track_id, lar_content::LArTrackStateVector& track_state_vector) const;
 
   };

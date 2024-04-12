@@ -22,11 +22,11 @@ namespace kaon_reconstruction
   {
   }
 
-    pandora::StatusCode Run(const TVector3& k_end, const SPList& sp_list,
-			    const TVector3& peak_direction, HitList& unavailable_hit_list, HitList& track_hit_list,
-			    const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap,
-			    const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap)
-{
+  pandora::StatusCode TrackHitCollector::Run(const TVector3& k_end, const SPList& sp_list,
+					     const TVector3& peak_direction, HitList& unavailable_hit_list, HitList& track_hit_list,
+					     const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap,
+					     const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap)
+  {
 
     this->find_track_hits(sp_list, unavailable_hit_list, track_hit_list, k_end, peak_direction);
 

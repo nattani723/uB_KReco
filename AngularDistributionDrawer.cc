@@ -63,7 +63,8 @@ namespace kaon_reconstruction
     TFile outfile(outfile_name, "update");
     auto h_stack = new THStack("h_stack", "");
     TLegend * leg = new TLegend(0.7, 0.7, 0.9, 0.9, "");
-    TCanvas * c("c", "Canvas", 800, 600);
+    TCanvas* c = new TCanvas("c", "Canvas", 800, 600);
+    //TCanvas * c("c", "Canvas", 800, 600);
     c->SetFillStyle(1001);
     
     for(const auto& it_pdg : h_angular_distribution_cheated_pdg) {
@@ -74,13 +75,13 @@ namespace kaon_reconstruction
       
       int fill_color = kBlack; // Default color
       switch (pdg_code) {
-      case 321: fillColor = kBlue; break;
-      case -13: fillColor = kCyan; break;
-      case 211: fillColor = kMagenta; break;
+      case 321: fill_color = kBlue; break;
+      case -13: fill_color = kCyan; break;
+      case 211: fill_color = kMagenta; break;
       case -11:
-      case 11: fillColor = kGreen + 2; break;
+      case 11: fill_color = kGreen + 2; break;
       case 2212:
-      case 2112: fillColor = kRed; break;
+      case 2112: fill_color = kRed; break;
       default: break; // Use default color
       }
 

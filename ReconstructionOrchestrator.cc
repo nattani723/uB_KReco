@@ -4,11 +4,17 @@
 #include "TrackRebuilder.h"
 #include "AngularDistributionDrawer.h"
 
+#ifndef RECONSTRUCTION_ORCHESTRATOR
+#define RECONSTRUCTION_ORCHESTRATOR 1
+
 namespace kaon_reconstruction {
 
   class ReconstructionOrchestrator {
   public:
     ReconstructionOrchestrator() : directionFinder(), hitCollector() {}
+
+    typedef std::vector<art::Ptr<recob::SpacePoint>> SPList;
+    typedef std::vector<art::Ptr<recob::Hit>> HitList;
 
     void runReconstruction(const SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, const art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const Reco::Track& k_track);
 
@@ -71,3 +77,4 @@ namespace kaon_reconstruction {
   
 
 } // namespace kaon_recontruction
+#endif
