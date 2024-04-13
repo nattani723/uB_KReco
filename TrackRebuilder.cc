@@ -6,7 +6,7 @@ using namespace pandora;
 namespace kaon_reconstruction 
 {
   TrackRebuilder::TrackRebuilder() : 
-    m_rebuild_track_counter(1000);
+    m_rebuild_track_counter(1000)
   {
   }
 
@@ -23,7 +23,7 @@ namespace kaon_reconstruction
   recob::Track TrackRebuilder::track_rebuild(TrackHitCollector::HitList& track_hit_list, const recob::Track& primary_track, recob::Track& rebuild_reco_track, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap) const{
     
     
-    float wire_pitch_w = TrackUtilities::get_wire_pitch();
+    const float wire_pitch_w = TrackUtilities::get_wire_pitch();
 
     pandora::CartesianPointVector pandora_hit_position_vec;
 
@@ -41,17 +41,19 @@ namespace kaon_reconstruction
     // these are dummy values to get GetSlidingFitTrajectory instance
     lar_content::LArTrackStateVector track_state_vector;
     pandora::IntVector index_vector;
+    const unsigned int sliding_fit_half_window = TrackUtilities::m_sliding_fit_half_window;
  
     lar_content::LArPfoHelper::GetSlidingFitTrajectory(pandora_hit_position_vec,
 						       vertex_position,
-						       TrackUtilities::m_sliding_fit_half_window,
+						       sliding_fit_half_window,
 						       wire_pitch_w,
 						       track_state_vector,
 						       &index_vector);
 
     // the first parameter gives the id of tracks in the event
     // to avoid overriding exsisting tracks, m_rebuild_track_counter is set to 1000
-    output_tracks->emplace_back(this->build_track( m_rebuild_track_counter++, track_state_vector));
+    int track_id = m_rebuild_track_counter;
+    output_tracks->emplace_back(this->build_track( track_id++, track_state_vector));
 
     // always expect to have single track from single track_hit_list
     rebuild_reco_track = output_tracks->at(0);
@@ -61,7 +63,7 @@ namespace kaon_reconstruction
 
   recob::Track TrackRebuilder::build_track(int track_id, lar_content::LArTrackStateVector& track_state_vector) const
   {
-    if (track_state_vector.empty()) std::cout << "BuildTrack - No input trajectory points provided" << endl;
+    if (track_state_vector.empty()) std::cout << "BuildTrack - No input trajectory points provided" << std::endl;
     
     recob::tracking::Positions_t xyz;
     recob::tracking::Momenta_t pxpypz;

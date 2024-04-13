@@ -1,4 +1,3 @@
-#include "ParticleDirectionFinder.h"
 /*
 
  * Header file for Angular Distribution Drawer tool class
@@ -7,9 +6,13 @@
 
  */
 
-
 #ifndef ANGULAR_DISTRIBUTION_DRAWER
 #define ANGULAR_DISTRIBUTION_DRAWER 1
+
+#include "ParticleDirectionFinder.h"
+#include <cmath>
+
+
 
 namespace kaon_reconstruction
 {

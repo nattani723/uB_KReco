@@ -1,11 +1,12 @@
+#ifndef RECONSTRUCTION_ORCHESTRATOR
+#define RECONSTRUCTION_ORCHESTRATOR 1
+
 #include "CCKaonProducer_module.h"
 #include "ParticleDirectionFinder.h"
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"
 #include "AngularDistributionDrawer.h"
 
-#ifndef RECONSTRUCTION_ORCHESTRATOR
-#define RECONSTRUCTION_ORCHESTRATOR 1
 
 namespace kaon_reconstruction {
 
@@ -18,8 +19,8 @@ namespace kaon_reconstruction {
 
     void runReconstruction(SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap, const art::Ptr<recob::Track> k_track, const HitList& hits_from_track);
 
-    const std::vector<HitList> getHitLists();
-    const std::vector<recob::Track> getRebuildTrackList();
+    const std::vector<HitList>& getHitLists();
+    const std::vector<recob::Track>& getRebuildTrackList();
 
 
   private:
@@ -32,9 +33,9 @@ namespace kaon_reconstruction {
     // Other members like unavailableHitList might be defined here if they are shared across methods
   };
   
-  const std::vector<recob::Track> ReconstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList; }
+  const std::vector<recob::Track>& ReconstructionOrchestrator::getRebuildTrackList()  { return rebuildTrackList; }
 
-  const std::vector<ReconstructionOrchestrator::HitList> ReconstructionOrchestrator::getHitLists() { return trackHitLists; }
+  const std::vector<ReconstructionOrchestrator::HitList>& ReconstructionOrchestrator::getHitLists() { return trackHitLists; }
   
   //void ReconstructionOrchestrator::runrecobnstruction(const SPList& sp_list, const recob::Track& k_track) {
   void ReconstructionOrchestrator::runReconstruction(SPList& sp_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap,  const art::Ptr<recob::Track> k_track, const HitList& hits_from_track) {

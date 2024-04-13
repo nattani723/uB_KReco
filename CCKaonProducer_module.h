@@ -98,16 +98,6 @@
 #include "ubevt/Database/UbooneElectronLifetimeProvider.h"
 #include "ubevt/Database/UbooneElectronLifetimeService.h"
 
-//#include "CCKaonAnalyzer_module.h"
-/*
-#include "headers/analyze_Slice.h"
-#include "headers/analyze_Tracks.h"
-#include "headers/analyze_Showers.h"
-#include "headers/analyze_MCTruth.h"
-#include "headers/analyze_OpFlashes.h"
-#include "headers/particle_split_basetool_producer.h"
-#include "headers/track_production_producer.h"
-*/
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
@@ -127,6 +117,7 @@
 
 #include "Pandora/PdgTable.h" 
 
+#include <cmath>
 #include "TCanvas.h"
 #include "TTree.h"
 #include "TMath.h"
@@ -236,7 +227,7 @@ namespace kaon_reconstruction {
   };
 
   
-  DEFINE_ART_MODULE(CCKaonProducer)     
+  //DEFINE_ART_MODULE(CCKaonProducer)     
   
 }
 

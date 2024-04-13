@@ -27,7 +27,7 @@ namespace kaon_reconstruction
       int phi_factor = (int)(std::floor(phi / m_phi_bin_size));
 
       // retrieve PDG info
-      art::Ptr<recob::Hit> hit = spacepointToHitMap.at(*it_sp);
+      //art::Ptr<recob::Hit> hit = spacepointToHitMap.at(*it_sp);
       
       //need to import related code from my dune code
       /*

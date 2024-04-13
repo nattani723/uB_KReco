@@ -5,7 +5,38 @@ using namespace pandora;
 
 namespace kaon_reconstruction
 {
-  
+
+  float TrackUtilities::get_wire_pitch() 
+  {
+      art::ServiceHandle<geo::Geometry> theGeometry;
+      const unsigned int nWirePlanes(theGeometry->MaxPlanes());
+
+      if (nWirePlanes > 3)
+	throw cet::exception("LArPandoraTrackCreation") << " LArPandoraTrackCreation::produce --- More than three wire planes present ";
+
+      if ((0 == theGeometry->Ncryostats()) || (0 == theGeometry->NTPC(geo::CryostatID{0})))
+	throw cet::exception("LArPandoraTrackCreation") << " LArPandoraTrackCreation::produce --- unable to access first tpc in first cryostat ";
+
+      std::unordered_set<geo::_plane_proj> planeSet;
+      for (unsigned int iPlane = 0; iPlane < nWirePlanes; ++iPlane)
+	(void) planeSet.insert(theGeometry->TPC().Plane(iPlane).View());
+
+      if ((nWirePlanes != planeSet.size()) || !planeSet.count(geo::kU) || !planeSet.count(geo::kV) || (planeSet.count(geo::kW) && planeSet.count(geo::kY)))
+	throw cet::exception("LArPandoraTrackCreation") << " LArPandoraTrackCreation::produce --- expect to find u and v views; if there is one further view, it must be w or y ";
+
+      const bool useYPlane((nWirePlanes > 2) && planeSet.count(geo::kY));
+      
+      const float wirePitchU(theGeometry->WirePitch(geo::kU));
+      const float wirePitchV(theGeometry->WirePitch(geo::kV));
+      const float wirePitchW((nWirePlanes < 3) ? 0.5f * (wirePitchU + wirePitchV) : (useYPlane) ? theGeometry->WirePitch(geo::kY) : theGeometry->WirePitch(geo::kW));
+
+      const float sliding_fit_pitch = wirePitchW;
+
+      return sliding_fit_pitch;
+    }
+ 
+
+
   TrackHitCollector::TrackHitCollector() :
       
     m_hit_threshold_for_track(30),

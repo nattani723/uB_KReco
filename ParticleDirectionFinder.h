@@ -9,10 +9,6 @@
 #ifndef PARTICLE_DIRECTION_FINDER
 #define PARTICLE_DIRECTION_FINDER 1
 
-#include <bits/c++config.h>
-#undef _GLIBCXX14_CONSTEXPR
-#define _GLIBCXX14_CONSTEXPR
-
 #include "CCKaonProducer_module.h"
 
 #include "TMath.h"

@@ -322,3 +322,4 @@ namespace kaon_reconstruction {
 }// namespace kaon_reconstruction
 
 
+DEFINE_ART_MODULE(CCKaonProducer)

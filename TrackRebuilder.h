@@ -1,7 +1,6 @@
-#include "ParticleDirectionFinder.h"
-#include "TrackHitCollector.h"
+#ifndef TRACK_REBUILDER
+#define TRACK_REBUILDER 1
 
-#include "art/Framework/Core/EDProducer.h"
 #include "lardataobj/RecoBase/TrackHitMeta.h"
 #include "art/Persistency/Common/PtrMaker.h"
 
@@ -13,8 +12,6 @@
 
 #include <iostream>
 
-#ifndef TRACK_REBUILDER
-#define TRACK_REBUILDER 1
 
 using namespace pandora;
 
