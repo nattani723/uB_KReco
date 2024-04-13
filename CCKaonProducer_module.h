@@ -1,9 +1,9 @@
 #ifndef CCKAON_PRODUCTION
 #define CCKAON_PRODUCTION
 
-#include "art/Framework/Core/EDFilter.h"
+//#include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Core/EDProducer.h"
-#include "art/Framework/Core/EDAnalyzer.h"
+//#include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"
@@ -38,7 +38,7 @@
 #include "lardata/DetectorInfoServices/LArPropertiesService.h" 
 #include "lardata/DetectorInfoServices/DetectorClocksService.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "/exp/uboone/app/users/taniuchi/51_pandora/srcs/larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h" 
+//#include "/exp/uboone/app/users/taniuchi/51_pandora/srcs/larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h" 
 
 #include "larreco/Calorimetry/CalorimetryAlg.h"
 #include "larreco/RecoAlg/TrajectoryMCSFitter.h"
@@ -58,7 +58,7 @@
 #include "lardataobj/RecoBase/EndPoint2D.h"
 #include "lardataobj/RecoBase/Vertex.h"
 #include "lardataobj/RecoBase/SpacePoint.h"
-#include "lardataobj/RecoBase/OpFlash.h"
+//#include "lardataobj/RecoBase/OpFlash.h"
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/RecoBase/Wire.h"
 #include "lardataobj/RecoBase/MCSFitResult.h"
@@ -66,83 +66,83 @@
 #include "lardataobj/RecoBase/PFParticle.h"
 #include "lardataobj/AnalysisBase/ParticleID.h"
 #include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-#include "lardataobj/AnalysisBase/CosmicTag.h"
-#include "lardataobj/AnalysisBase/FlashMatch.h"
+//#include "lardataobj/AnalysisBase/CosmicTag.h"
+//#include "lardataobj/AnalysisBase/FlashMatch.h"
 #include "lardataobj/AnalysisBase/Calorimetry.h"
 #include "lardataobj/AnalysisBase/T0.h"
 #include "lardataobj/MCBase/MCShower.h"
 #include "lardataobj/MCBase/MCTrack.h"
 #include "lardataobj/MCBase/MCStep.h"
-#include "lardataobj/Simulation/SimChannel.h"
+//#include "lardataobj/Simulation/SimChannel.h"
 #include "lardataobj/Simulation/AuxDetSimChannel.h"
 #include "lardataobj/Simulation/GeneratedParticleInfo.h"
-#include "lardataobj/RawData/RawDigit.h"
-#include "lardataobj/RawData/raw.h"
-#include "lardataobj/RawData/BeamInfo.h"
-#include "lardataobj/RawData/TriggerData.h"
-#include "larcoreobj/SummaryData/POTSummary.h"
+//#include "lardataobj/RawData/RawDigit.h"
+//#include "lardataobj/RawData/raw.h"
+//#include "lardataobj/RawData/BeamInfo.h"
+//#include "lardataobj/RawData/TriggerData.h"
+//#include "larcoreobj/SummaryData/POTSummary.h"
 
 
-#include "ubobj/CRT/CRTHit.hh"
-#include "ubobj/RawData/DAQHeaderTimeUBooNE.h"
+//#include "ubobj/CRT/CRTHit.hh"
+//#include "ubobj/RawData/DAQHeaderTimeUBooNE.h"
 
 
-#include "larevt/SpaceCharge/SpaceCharge.h"
-#include "larevt/SpaceChargeServices/SpaceChargeService.h"
+//#include "larevt/SpaceCharge/SpaceCharge.h"
+//#include "larevt/SpaceChargeServices/SpaceChargeService.h"
 
-#include "larsim/EventWeight/Base/MCEventWeight.h"
+//#include "larsim/EventWeight/Base/MCEventWeight.h"
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
-#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
-#include "ubevt/Database/UbooneElectronLifetimeProvider.h"
-#include "ubevt/Database/UbooneElectronLifetimeService.h"
+//#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibService.h"
+//#include "ubevt/Database/TPCEnergyCalib/TPCEnergyCalibProvider.h"
+//#include "ubevt/Database/UbooneElectronLifetimeProvider.h"
+//#include "ubevt/Database/UbooneElectronLifetimeService.h"
 
 
 #include "nusimdata/SimulationBase/MCTruth.h"
 #include "nusimdata/SimulationBase/MCParticle.h"
 #include "nusimdata/SimulationBase/simb.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "nusimdata/SimulationBase/GTruth.h"
+//#include "nusimdata/SimulationBase/MCFlux.h"
+//#include "nusimdata/SimulationBase/GTruth.h"
 
-#include "ubana/AnalysisTree/MCTruth/IMCTruthMatching.h"
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
+//#include "ubana/AnalysisTree/MCTruth/IMCTruthMatching.h"
+//#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
 
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
-#include "ubobj/Optical/UbooneOpticalFilter.h"
+//#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
+//#include "ubobj/Optical/UbooneOpticalFilter.h"
 
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
+//#include "nusimdata/SimulationBase/MCTruth.h"
+//#include "nusimdata/SimulationBase/MCFlux.h"
+//#include "nusimdata/SimulationBase/MCParticle.h"
 
 #include "Pandora/PdgTable.h" 
 
 #include <cmath>
-#include "TCanvas.h"
+//#include "TCanvas.h"
 #include "TTree.h"
 #include "TMath.h"
 #include "TGraph.h"
-#include "TGraph2D.h"
+//#include "TGraph2D.h"
 #include "TGraphDelaunay.h"
-#include "TRandom3.h"
-#include "TH2F.h"
-#include "TH1F.h"
-#include "TH1.h"
+//#include "TRandom3.h"
+//#include "TH2F.h"
+//#include "TH1F.h"
+//#include "TH1.h"
 #include "TFile.h"
-#include "TTimeStamp.h"
+//#include "TTimeStamp.h"
 
 #include <iostream>
-#include <TH2D.h>
-#include <TH3D.h>
-#include <TH1D.h>
+//#include <TH2D.h>
+//#include <TH3D.h>
+//#include <TH1D.h>
 #include <TFile.h>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TTree.h>
-#include <TVectorT.h>
-#include <THStack.h>
-#include <TPDF.h>
-#include <TLegend.h>
+//#include <TVectorT.h>
+//#include <THStack.h>
+//#include <TPDF.h>
+//#include <TLegend.h>
 #include <vector>
 #include <iomanip>
 #include <stdio.h>
@@ -207,8 +207,8 @@ namespace kaon_reconstruction {
 
     detinfo::DetectorProperties const * theDetector ;
     detinfo::DetectorClocks    const *  detClocks   ;
-    spacecharge::SpaceCharge const * SCE;
-    geo::GeometryCore const * geom;
+    //spacecharge::SpaceCharge const * SCE;
+    //geo::GeometryCore const * geom;
 
     Bool_t  reco_nu_cc_filter;
 

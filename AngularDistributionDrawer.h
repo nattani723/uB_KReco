@@ -11,7 +11,11 @@
 
 #include "ParticleDirectionFinder.h"
 #include <cmath>
-
+#include <TH2D.h>
+#include <TFile.h>
+#include <THStack.h>
+#include <TLegend.h>
+#include <TCanvas.h>
 
 
 namespace kaon_reconstruction

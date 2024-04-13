@@ -1,5 +1,5 @@
 #include "CCKaonProducer_module.h"
-#include "ReconstructionOrchestrator.cc"
+//#include "ReconstructionOrchestrator.cc"
 
 //#ifdef __MAKECINT__
 #ifdef __CLING__
@@ -35,8 +35,8 @@ namespace kaon_reconstruction {
 
     theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
     detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
-    SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
-    geom = lar::providerFrom<geo::Geometry>();    
+    //SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    //geom = lar::providerFrom<geo::Geometry>();    
 
   }
   
@@ -295,9 +295,12 @@ namespace kaon_reconstruction {
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
       
+      /*
       ReconstructionOrchestrator orchestrator;
       orchestrator.runReconstruction(spacepointVector, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
       std::vector<Reco::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
+      */
+      std::vector<Reco::Track> rebuildTrackList;
       
       //for(Reco::Track reco_track : rebuildTrackList) {
       for(int i=0; i < rebuildTrackList.size(); i++) {

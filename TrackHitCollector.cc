@@ -1,4 +1,7 @@
 #include "TrackHitCollector.h"
+#include "CCKaonProducer_module.h" 
+#include "/exp/uboone/app/users/taniuchi/51_pandora/srcs/larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h"
+
 
 using namespace pandora;
 
@@ -283,8 +286,8 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
     float extrapolated_start_l(0.f), extrapolated_start_t1(0.f), extrapolated_start_t2(0.f);
     float extrapolated_end_l(0.f), extrapolated_end_t1(0.f), extrapolated_end_t2(0.f);
 
-    pandora::CartesianVector pandora_extrapolated_start_position(extrapolated_start_position.X(), extrapolated_start_position.Y(), extrapolated_start_position.Z());
-    pandora::CartesianVector pandora_extrapolated_end_position(extrapolated_end_position.X(), extrapolated_end_position.Y(), extrapolated_end_position.Z());
+    const pandora::CartesianVector pandora_extrapolated_start_position(extrapolated_start_position.X(), extrapolated_start_position.Y(), extrapolated_start_position.Z());
+    const pandora::CartesianVector pandora_extrapolated_end_position(extrapolated_end_position.X(), extrapolated_end_position.Y(), extrapolated_end_position.Z());
 
     extrapolated_fit.GetLocalPosition(pandora_extrapolated_start_position, extrapolated_start_l, extrapolated_start_t1, extrapolated_start_t2);
     extrapolated_fit.GetLocalPosition(pandora_extrapolated_end_position, extrapolated_end_l, extrapolated_end_t1, extrapolated_end_t2); 

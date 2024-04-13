@@ -9,10 +9,26 @@
 #define TRACK_HIT_COLLECTOR 1
 
 #include "CCKaonProducer_module.h"
+#include "art/Framework/Core/ModuleMacros.h"
+#include "art/Framework/Principal/Event.h"
+#include "art/Framework/Principal/Handle.h"
+
+#include "art/Framework/Services/Registry/ServiceHandle.h" 
+
+#include "larcore/Geometry/Geometry.h"
+#include "lardataobj/RecoBase/Track.h"
+#include "lardataobj/RecoBase/Shower.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Vertex.h"
+#include "lardataobj/RecoBase/SpacePoint.h"
+#include "lardataobj/RecoBase/PFParticle.h"
+
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
 #include "larpandoracontent/LArHelpers/LArHitWidthHelper.h"
 #include "larpandoracontent/LArHelpers/LArConnectionPathwayHelper.h"
 #include "larpandoracontent/LArHelpers/LArGeometryHelper.h"
-#include "larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h"
+#include "/exp/uboone/app/users/taniuchi/51_pandora/srcs/larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h"
+//#include "larpandoracontent/larpandoracontent/LArObjects/LArThreeDSlidingFitResult.h"
 
 namespace kaon_reconstruction 
 {
