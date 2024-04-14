@@ -366,10 +366,10 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
     bool found = true;
     
     while(found) {
-      
+
+      found = false;
+
       //for(size_t i_h=0; i_h<track_hit_list.size(); i_h++){ 
-      std::cout << "collected_hit_list.size(): " << collected_hit_list.size() << std::endl;
-      std::cout << "track_hit_list.size(): " << track_hit_list.size() << std::endl; 
       for(size_t i_h=0; i_h<collected_hit_list.size(); i_h++){ 
 	std::cout << i_h << std::endl;
 	if(std::find(track_hit_list.begin(), track_hit_list.end(), collected_hit_list[i_h]) != track_hit_list.end()) continue;
@@ -378,7 +378,6 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
 
 	if (hitToSpacePointMap.find(collected_hit_list[i_h]) != hitToSpacePointMap.end()) {
 	  hit_position = hitToSpacePointMap.at(collected_hit_list[i_h])->XYZ();
-	  std::cout << "has key to map" << std::endl;
 	} else {
 	  std::cerr << "Warning: Hit not found in map." << std::endl;
 	  continue;  // Skip to the next iteration if appropriate
