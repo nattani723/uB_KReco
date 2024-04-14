@@ -227,7 +227,7 @@ namespace kaon_reconstruction {
   };
 
   
-  //DEFINE_ART_MODULE(CCKaonProducer)     
+  DEFINE_ART_MODULE(CCKaonProducer)     
   
 }
 

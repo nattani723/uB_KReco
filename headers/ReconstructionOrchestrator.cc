@@ -1,7 +1,7 @@
 #ifndef RECONSTRUCTION_ORCHESTRATOR
 #define RECONSTRUCTION_ORCHESTRATOR 1
 
-#include "CCKaonProducer_module.h"
+//#include "../CCKaonProducer_module.h"
 #include "ParticleDirectionFinder.h"
 #include "TrackHitCollector.h"
 #include "TrackRebuilder.h"

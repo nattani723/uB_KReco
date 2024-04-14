@@ -8,7 +8,7 @@
 #ifndef TRACK_HIT_COLLECTOR
 #define TRACK_HIT_COLLECTOR 1
 
-#include "CCKaonProducer_module.h"
+//#include "../CCKaonProducer_module.h"
 #include "art/Framework/Core/ModuleMacros.h"
 #include "art/Framework/Principal/Event.h"
 #include "art/Framework/Principal/Handle.h"

@@ -1,5 +1,5 @@
 #include "CCKaonProducer_module.h"
-//#include "ReconstructionOrchestrator.cc"
+#include "headers/ReconstructionOrchestrator.cc"
 
 //#ifdef __MAKECINT__
 #ifdef __CLING__
@@ -60,10 +60,12 @@ namespace kaon_reconstruction {
     std::unique_ptr<art::Assns<recob::Track, recob::Hit>>  anaTrackHitAssociations(new art::Assns<recob::Track, recob::Hit>);
    
     // get MCTruth information
+    /*
     art::Handle< std::vector<simb::MCTruth> > mctruths;
     evt.getByLabel(fGenieGenModuleLabel, mctruths);
     if (!mctruths.isValid() || mctruths->empty()) return;
     const simb::MCTruth& mctruth = mctruths->front();
+    */
     /*
     if (mctruths->size()!=1) {
       //return;
@@ -107,6 +109,7 @@ namespace kaon_reconstruction {
     // Find the primary neutrino particle and associated muon
     lar_pandora::PFParticleVector pfneutrinos(0);
     lar_pandora::PFParticleVector pfmuons(0);
+    std::vector<int> reco_nu_daughters_id(0);
 
     for (unsigned int i=0; i<pfparticles->size(); ++i) { 
 
@@ -122,9 +125,12 @@ namespace kaon_reconstruction {
       evt.put(std::move(anaTrackHitAssociations));
       return;
     }
-    else art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
+   
+    art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
 
     for (unsigned int i=0; i<pfparticles->size(); ++i) { 
+
+      art::Ptr<recob::PFParticle> pfparticle(pfparticles,i);
 
       // look at particles with neutrino parent and one associated track
       if (pfparticle->Parent()==pfnu->Self() && pfparticleTrackAssn.at(i).size()==1) {
@@ -215,7 +221,7 @@ namespace kaon_reconstruction {
 
     art::FindManyP<recob::SpacePoint> spacepoints_per_pfparticle(pfparticles, evt, fSpacePointproducer);
     //art::FindManyP<recob::Hit> hits_per_spacepoint(spacepointHandle, evt, fSpacePointproducer);
-    std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
+    //std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
     //std::map<art::Ptr<recob::SpacePoint>,  std::vector<art::Ptr<recob::Hit>> > spacepointToHitsMap;
 
 
@@ -223,7 +229,7 @@ namespace kaon_reconstruction {
     std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsFromSpacePointsMap;
     //std::map<art::Ptr<recob::PFParticle>, int> pfParticleToNHitsFromSpacePoints;
 
-    if( !hits_per_cluster.isValid() || !spacepoints_per_pfparticle.isValid() || !hits_per_spacepoint.isValid()  ){
+    if( !findPFParticlesToSPs.isValid() || !findSPToHit.isValid()  ){
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
       return;
@@ -255,7 +261,7 @@ namespace kaon_reconstruction {
 
     for (unsigned int ipfp=0; ipfp < pfpVector.size(); ++ipfp) {
 
-      auto pfp = pfpVector[i];
+      auto pfp = pfpVector[ipfp];
       std::vector<art::Ptr<recob::SpacePoint>> spacepoints_vec  = pfParticleToSpacePointsMap[pfp];
       std::vector<art::Ptr<recob::Hit>> hits_for_pfp = {};
 
@@ -287,7 +293,7 @@ namespace kaon_reconstruction {
     for (int i=0; i<reco_nu_ndaughters; i++) {
 
       art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
-      const recob::Track& track = *ptrack;
+      //const recob::Track& track = *ptrack;
       
       
       // skip cc muon track
@@ -295,18 +301,16 @@ namespace kaon_reconstruction {
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
       
-      /*
+      
       ReconstructionOrchestrator orchestrator;
       orchestrator.runReconstruction(spacepointVector, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
-      std::vector<Reco::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
-      */
-      std::vector<Reco::Track> rebuildTrackList;
+      std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
+      std::vector<std::vector<art::Ptr<recob::Hit>>> trackHitLists = orchestrator.getHitLists();
       
       //for(Reco::Track reco_track : rebuildTrackList) {
-      for(int i=0; i < rebuildTrackList.size(); i++) {
+      for(unsigned int i=0; i < rebuildTrackList.size(); i++) {
 	
-	anaTrackCollection->push_back(rebuildTrackList[i]);
-	
+	anaTrackCollection->push_back(rebuildTrackList[i]);	
 	std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[i];
 	
 	lar_pandora::HitVector anaHitCollection_rebuild_tmp;
@@ -325,4 +329,4 @@ namespace kaon_reconstruction {
 }// namespace kaon_reconstruction
 
 
-DEFINE_ART_MODULE(CCKaonProducer)
+//DEFINE_ART_MODULE(CCKaonProducer)
