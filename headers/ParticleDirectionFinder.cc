@@ -49,7 +49,6 @@ namespace kaon_reconstruction
 	// get sp list inside region of interest
 	this->collect_sp_in_roi(sp_list, k_end, m_region_of_interest, sp_list_roi);
 	
-	std::cout << "sp_list_roi.size() " << sp_list_roi.size() << std::endl;
 	if (sp_list_roi.empty())
 		return STATUS_CODE_NOT_FOUND;
 	
@@ -57,7 +56,6 @@ namespace kaon_reconstruction
 	SPList sp_list_peak_search;
 	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search);
 		
-	std::cout << "sp_list_peak_search.size(): " << sp_list_peak_search.size() << std::endl;
 	if (sp_list_peak_search.empty())
         	return STATUS_CODE_NOT_FOUND;
 
@@ -65,7 +63,6 @@ namespace kaon_reconstruction
 	AngularDistribution3DMap angular_distribution_map;
 	this->fill_angular_distribution_map(sp_list_roi, k_end, angular_distribution_map);
 
-	std::cout << "angular_distribution_map.size(): " << angular_distribution_map.size() << std::endl;
 	if (angular_distribution_map.empty())
 		return STATUS_CODE_NOT_FOUND;
 
@@ -75,14 +72,13 @@ namespace kaon_reconstruction
 	// Store peaks into map from highest to lowest
 	std::map<double, TVector3, std::greater<>> sort_peak_direction_map;
 	this->retrieve_peak_directions(angular_distribution_map, sort_peak_direction_map);
-	std::cout << "sort_peak_direction_map.size(): " << sort_peak_direction_map.size() << std::endl;
+
 	if(sort_peak_direction_map.empty())
 		return STATUS_CODE_NOT_FOUND;
 
 	// Get vector of peak directions
 	this->refine_peak_directions(sort_peak_direction_map, peak_direction_vector);
 
-	std::cout << "peak_direction_vector.size(): " << peak_direction_vector.size() << std::endl;
 	if(peak_direction_vector.empty())
 		return STATUS_CODE_NOT_FOUND;
 

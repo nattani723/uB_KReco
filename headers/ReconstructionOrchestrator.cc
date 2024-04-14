@@ -47,7 +47,7 @@ namespace kaon_reconstruction {
     
     // Run the ParticleDirectionFinder
     auto status = directionFinder.Run(sp_list, k_track, unavailableHitList, peakDirectionVector);
-    std::cout << "peakDirectionVector.size() " << peakDirectionVector.size() << std::endl;
+
     if (status != pandora::STATUS_CODE_SUCCESS) {
       std::cout << "ParticleDirectionFinder FAILED" << std::endl;
       return;
@@ -63,15 +63,15 @@ namespace kaon_reconstruction {
       HitList trackHitList;
       
       // Run the TrackHitCollector
+
       auto collectorStatus = hitCollector.Run(directionFinder.get_k_end(), directionFinder.get_sp_list_roi(), peakDirection, unavailableHitList, trackHitList, spacepointToHitMap, hitToSpacePointMap);
       if (collectorStatus != pandora::STATUS_CODE_SUCCESS) {
 	std::cout << "TrackHitCollector FAILED" << std::endl;
-	return;
+	continue;
       }
       
       //make run function with statuscode return
       //think about how to retrieve reco::track object define getrebuildtracj in this orchestrator?
-      //const recob::Track& primary_track = *k_track;
       trackRebuilder.Run(trackHitList, *k_track, hitToSpacePointMap);
       rebuildTrackList.push_back( trackRebuilder.get_rebuild_reco_track() );
       //rebuildTrackList.push_back( trackRebuilder.track_rebuild(trackHitList, k_trac );

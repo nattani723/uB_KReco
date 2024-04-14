@@ -57,6 +57,7 @@ namespace kaon_reconstruction
 
     // always expect to have single track from single track_hit_list
     rebuild_reco_track = output_tracks->at(0);
+    std::cout << "rebuild_reco_track.Length(): " << rebuild_reco_track.Length() << std::endl;
     return rebuild_reco_track;
 
   }

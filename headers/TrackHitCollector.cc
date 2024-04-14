@@ -112,12 +112,10 @@ namespace kaon_reconstruction
 
     if (sp_list.empty()) return;
 
-
     // Use initial direction to find seed hits for a starting fit
     double highest_l = 0.;
     std::vector<TVector3> running_fit_position_vec;  
     pandora::CartesianPointVector pandora_running_fit_position_vec;
-
 
     // Iterate through each space point in the list
     for (const auto& sp : sp_list) {
@@ -138,9 +136,10 @@ namespace kaon_reconstruction
 
 	auto corresponding_hit = spacepointToHitMap.at(sp); // Retrieve corresponding hit (modify based on actual mapping)
 
-	if (std::find(unavailable_hit_list.begin(), unavailable_hit_list.end(), corresponding_hit) == unavailable_hit_list.end())
-	  track_hit_list.push_back(corresponding_hit); // Add hit to track hit list if NOT unavailable
-
+	//skip hits in primary track
+	if (std::find(unavailable_hit_list.begin(), unavailable_hit_list.end(), corresponding_hit) != unavailable_hit_list.end()) continue;
+	  
+	track_hit_list.push_back(corresponding_hit);	
 	running_fit_position_vec.push_back(hit_position);
 	pandora_running_fit_position_vec.push_back(pandora_hit_position);      
 
@@ -149,11 +148,10 @@ namespace kaon_reconstruction
 
     // Require significant number of initial hits
     if (running_fit_position_vec.size() < m_min_initial_hits_found){
-      // cout << "Requiring significant number of initial hits" << endl;
+      std::cout << "Requiring significant number of initial hits" << std::endl;
       track_hit_list.clear();
       return;
     }
-
 
     // Perform a running fit to collect a pathway of hits
     unsigned int count = 0;
@@ -167,7 +165,6 @@ namespace kaon_reconstruction
     pandora::CartesianVector pandora_extrapolated_end_position(extrapolated_end_position.X(), extrapolated_end_position.Y(), extrapolated_end_position.Z());
 
     const float sliding_fit_pitch = TrackUtilities::get_wire_pitch();
-
     // do we need to sort pandora_running_fit_position by vertex position?
     while (hits_collected){
 
@@ -200,14 +197,12 @@ namespace kaon_reconstruction
       // apply nominal fit
       this->update_extrapolation(count, extrapolated_fit, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
       
-      std::cout << "spacepointToHitMap.size(): " << spacepointToHitMap.size() << std::endl;
-      std::cout << "hitToSpacePointMap.size(): " << hitToSpacePointMap.size() << std::endl;
       hits_collected = this->collect_subsection_hits(extrapolated_fit, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_distance_to_line, m_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
 
 
       // If no hits found, fit by all collected hits
       if (!hits_collected){
-	
+
 	// fill pandora_running_fit_position_trackall_vector by storingg all positions of track hits collected so far
 	pandora::CartesianPointVector pandora_running_fit_position_trackall_vec;
 
@@ -219,21 +214,16 @@ namespace kaon_reconstruction
 
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_trackall(&pandora_running_fit_position_trackall_vec, m_trackall_sliding_fit_window, sliding_fit_pitch);
 	this->update_extrapolation(count, extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
-
       }
 
 
       // If no hits found, as a final effort, reduce the sliding fit window
       if (!hits_collected){
-	
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_micro(&pandora_running_fit_position_vec, m_high_resolution_sliding_fit_window, sliding_fit_pitch);
 	this->update_extrapolation(count, extrapolated_fit_micro, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
-
       }
-
 	    
     }
-
 
   }
 
@@ -304,26 +294,24 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
       if(!is_end_downstream && ((hit_l > extrapolated_start_l) || (hit_l < extrapolated_end_l))) continue;
 
       // Assess whether hit is close to connecting line
+      /*
       if(spacepointToHitMap.find(*it_sp) == spacepointToHitMap.end()){
 	std::cout << "*it_sp is the NOT key of spacepointToHitMap" << std::endl;
 	if(hitToSpacePointMap.find( spacepointToHitMap.at(*it_sp) ) == hitToSpacePointMap.end())
 	  std::cout << "and spacepointToHitMap.find(*it_sp) is NOT the key of hitToSpacePointMap" << std::endl;
       }
+      */
 
       if (this->is_close_to_line(hit_position, extrapolated_start_position, extrapolated_direction, m_distance_to_line))
 	collected_hit_list.push_back(spacepointToHitMap.at(*it_sp));
 
     }
-    std::cout<< "collected_hit_list.size(): " << collected_hit_list.size() << std::endl;
 
     // Now find a continuous path of collected hits
-    const int n_initial_hits(track_hit_list.size());
-    std::cout<< "n_initial_hits: " << n_initial_hits << std::endl; 
-
+    const int n_initial_hits(track_hit_list.size()); 
     this->collect_connected_hits(collected_hit_list, extrapolated_start_position, extrapolated_direction, running_fit_position_vec, pandora_running_fit_position_vec, track_hit_list, hit_connection_distance, hitToSpacePointMap);
     const int n_final_hits(track_hit_list.size());
 
-    std::cout << n_initial_hits << " " << n_final_hits << std::endl;
     return (n_final_hits != n_initial_hits); 
 
   }
@@ -363,6 +351,7 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
   {
     
     // Now add connected hits  
+
     bool found = true;
     
     while(found) {
@@ -371,7 +360,7 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
 
       //for(size_t i_h=0; i_h<track_hit_list.size(); i_h++){ 
       for(size_t i_h=0; i_h<collected_hit_list.size(); i_h++){ 
-	std::cout << i_h << std::endl;
+
 	if(std::find(track_hit_list.begin(), track_hit_list.end(), collected_hit_list[i_h]) != track_hit_list.end()) continue;
 
 	TVector3 hit_position;// = hitToSpacePointMap.at(collected_hit_list[i_h])->XYZ();
@@ -391,10 +380,11 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
 	running_fit_position_vec.push_back(hit_position);
 	pandora_running_fit_position_vec.push_back(pandora_hit_position); 
 	track_hit_list.push_back(collected_hit_list[i_h]);
-	
+
       }      
       
     }
+
   }
   
   //------------------------------------------------------------------------------------------------------------------------------------------
