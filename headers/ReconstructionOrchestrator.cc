@@ -43,14 +43,13 @@ namespace kaon_reconstruction {
     // Container for peak direction vectors calculated by ParticleDirectionFinder
     std::vector<TVector3> peakDirectionVector;
     
-    //std::vector<art::Ptr<recob::Hit>> 
     HitList unavailableHitList = hits_from_track;
-      // = hits_from_tracks.at(ptrack.key());
     
     // Run the ParticleDirectionFinder
     auto status = directionFinder.Run(sp_list, k_track, unavailableHitList, peakDirectionVector);
+    std::cout << "peakDirectionVector.size() " << peakDirectionVector.size() << std::endl;
     if (status != pandora::STATUS_CODE_SUCCESS) {
-      // Handle error or failed status
+      std::cout << "ParticleDirectionFinder FAILED" << std::endl;
       return;
     }
     
@@ -66,7 +65,7 @@ namespace kaon_reconstruction {
       // Run the TrackHitCollector
       auto collectorStatus = hitCollector.Run(directionFinder.get_k_end(), directionFinder.get_sp_list_roi(), peakDirection, unavailableHitList, trackHitList, spacepointToHitMap, hitToSpacePointMap);
       if (collectorStatus != pandora::STATUS_CODE_SUCCESS) {
-	// Handle error or failed status
+	std::cout << "TrackHitCollector FAILED" << std::endl;
 	return;
       }
       

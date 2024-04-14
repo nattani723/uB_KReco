@@ -191,6 +191,7 @@ namespace kaon_reconstruction {
     art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns);
     art::FindManyP<recob::Hit> hits_from_showers(showerListHandle, evt, fHitShowerAssns);
     if(!hits_from_tracks.isValid()){
+      std::cout << "here" << std::endl;
       evt.put(std::move(anaTrackCollection));
       evt.put(std::move(anaTrackHitAssociations));
       return;
@@ -211,13 +212,6 @@ namespace kaon_reconstruction {
 
     art::FindManyP<recob::SpacePoint> findPFParticlesToSPs(pfparticles, evt, fSpacePointproducer);
     std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
-    //std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
-    //art::FindManyP<recob::SpacePoint> spacepoints_per_pfparticle(pfparticles, evt, fSpacePointproducer);
-
-    //until here
-
-
-
 
     art::FindManyP<recob::SpacePoint> spacepoints_per_pfparticle(pfparticles, evt, fSpacePointproducer);
     //art::FindManyP<recob::Hit> hits_per_spacepoint(spacepointHandle, evt, fSpacePointproducer);
@@ -244,6 +238,7 @@ namespace kaon_reconstruction {
     }
 
 
+    std::cout << "spacepointVector.size(): " << spacepointVector.size() << std::endl;
     for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
       const art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
       const art::Ptr<recob::Hit> hit = findSPToHit.at(iSP);
@@ -258,6 +253,8 @@ namespace kaon_reconstruction {
       }
       */
     }
+    std::cout << "spacepointToHitMap.size(): " << spacepointToHitMap.size() << std::endl;
+    std::cout << "hitToSpacePointMap.size(): " << hitToSpacePointMap.size() << std::endl;
 
     for (unsigned int ipfp=0; ipfp < pfpVector.size(); ++ipfp) {
 
@@ -290,6 +287,7 @@ namespace kaon_reconstruction {
 
     
     //loop over primary nu track
+    std::cout << "reco_nu_ndaughters: " << reco_nu_ndaughters << std::endl; 
     for (int i=0; i<reco_nu_ndaughters; i++) {
 
       art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
@@ -300,8 +298,10 @@ namespace kaon_reconstruction {
       if (ptrack.key()==trkmuon.key()) continue;
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-      
-      
+      std::cout << "hits_from_tracks.size(): " << hits_from_tracks.size() << std::endl;
+      std::cout << "hits_from_track.size(): " << hits_from_track.size() << std::endl;
+
+            
       ReconstructionOrchestrator orchestrator;
       orchestrator.runReconstruction(spacepointVector, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
       std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
