@@ -96,7 +96,7 @@ art_make(
 			${Boost_SYSTEM_LIBRARY}
 			CCKaonHeaders
         )
-add_subdirectory(headers)
+add_subdirectory(TrackRebuilder)
 install_headers()
 install_fhicl()
 install_source()

@@ -44,15 +44,15 @@ namespace kaon_reconstruction
       
     m_hit_threshold_for_track(30),
     m_growing_fit_initial_length(10.f),
-    m_initial_fit_distance_to_line(3.f),
+    m_initial_fit_distance_to_line(1.f),
     m_min_initial_hits_found(7),
     m_max_fitting_hits(15),
     m_local_sliding_fit_window(10),
     m_growing_fit_segment_length(5.f),
     m_high_resolution_sliding_fit_window(5),
-    m_distance_to_line(1.f),
-    m_hit_connection_distance(1.f),
-    m_trackall_sliding_fit_window(5)
+    m_distance_to_line(0.75),
+    m_hit_connection_distance(0.75),
+    m_trackall_sliding_fit_window(10)
   {
   }
 
