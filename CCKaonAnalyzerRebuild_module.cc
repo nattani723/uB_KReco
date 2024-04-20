@@ -1,1484 +1,348 @@
 #include "CCKaonAnalyzerRebuild_module.h"
 
-//#include "ubana/SinglePhotonAnalysis/SinglePhoton_module.h"
-#include "headers/analyze_Slice.h"
-#include "headers/analyze_Tracks.h"
-#include "headers/analyze_Showers.h"
-#include "headers/analyze_MCTruth.h"
-#include "headers/analyze_OpFlashes.h"
-
-//#include "headers/particle_split_basetool_14Aug.h"
-#include "headers/particle_split_basetool.h"
-#include "headers/track_production.h"
-
-
-//#include "gallery/Event.h"
-//#include "gallery/ValidHandle.h"
-//#include "headers/analyze_Template.h"
-//#include "headers/second_shower_search.h"
-//#include "headers/analyze_EventWeight.h"
-
-/*
-//#include "ubana/SinglePhotonAnalysis/fiducial_volume.h"
-//#include "ubana/SinglePhotonAnalysis/isolation.h"
-*/
-
-#include "art/Framework/Core/EDAnalyzer.h"
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-
-#include "canvas/Persistency/Common/FindManyP.h"
-#include "canvas/Persistency/Common/PtrVector.h"
-#include "canvas/Persistency/Common/TriggerResults.h"
-
-#include "fhiclcpp/ParameterSet.h"
-#include "fhiclcpp/ParameterSetRegistry.h"
-
-#include "lardata/Utilities/AssociationUtil.h"
-
-#include "larsim/EventWeight/Base/MCEventWeight.h"
-
-#include "larcore/Geometry/Geometry.h"
-
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-
-#include "larcoreobj/SummaryData/POTSummary.h"
-
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-
-#include "PID/LLR_PID.h"
-#include "PID/LLRPID_proton_muon_lookup.h"
-
-#include "PID_K/LLR_PID_K.h"
-#include "PID_K/LLRPID_kaon_proton_lookup.h"
-
-//#include "larreco/RecoAlg/TrackMomentumCalculator.h"
-#include "larreco/RecoAlg/TrajectoryMCSFitter.h"
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
-
-#include "TTree.h"
-#include "TMath.h"
-
-#include <array>
-#include <vector>
-#include <map>
-//#include "LinkDef.h"
-
-
-#include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Core/EDAnalyzer.h"
-#include "art/Framework/Principal/Event.h"
-#include "art/Framework/Principal/Run.h"
-#include "art/Framework/Principal/SubRun.h"
-#include "art/Framework/Principal/Handle.h"
-#include "art/Framework/Principal/View.h"
-#include "canvas/Persistency/Common/Ptr.h"
-#include "canvas/Persistency/Common/PtrVector.h"
-#include "art/Framework/Services/Registry/ServiceHandle.h"
-#include "art/Framework/Services/Optional/TFileService.h"
-#include "art/Framework/Services/Optional/TFileDirectory.h"
-#include "canvas/Persistency/Common/FindMany.h"
-#include "canvas/Persistency/Common/FindManyP.h"
-#include "canvas/Utilities/InputTag.h"
-#include "fhiclcpp/ParameterSet.h"
-#include "messagefacility/MessageLogger/MessageLogger.h"
-#include "art/Utilities/make_tool.h"
-
-
-#include "larcore/Geometry/Geometry.h"
-#include "nusimdata/SimulationBase/MCTruth.h"
-#include "lardataobj/MCBase/MCShower.h"
-#include "lardataobj/MCBase/MCTrack.h"
-#include "lardataobj/MCBase/MCStep.h"
-#include "nusimdata/SimulationBase/MCFlux.h"
-#include "lardataobj/Simulation/SimChannel.h"
-#include "lardataobj/Simulation/AuxDetSimChannel.h"
-#include "lardataobj/AnalysisBase/Calorimetry.h"
-#include "lardataobj/AnalysisBase/ParticleID.h"
-#include "lardataobj/RawData/RawDigit.h"
-#include "lardataobj/RawData/raw.h"
-#include "lardataobj/RawData/BeamInfo.h"
-#include "lardataobj/RawData/TriggerData.h"
-#include "lardata/Utilities/AssociationUtil.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-#include "larcoreobj/SummaryData/POTSummary.h"
-
-#include "lardataobj/AnalysisBase/BackTrackerMatchingData.h"
-#include "nusimdata/SimulationBase/MCParticle.h"
-
-#include "lardataobj/RecoBase/Track.h"
-#include "lardataobj/RecoBase/Shower.h"
-#include "lardataobj/RecoBase/Cluster.h"
-#include "lardataobj/RecoBase/Hit.h"
-#include "lardataobj/RecoBase/EndPoint2D.h"
-#include "lardataobj/RecoBase/Vertex.h"
-#include "lardataobj/RecoBase/OpFlash.h"
-#include "lardataobj/RecoBase/PFParticle.h"
-#include "lardataobj/RecoBase/Wire.h"
-#include "lardataobj/RecoBase/MCSFitResult.h"
-#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
-#include "larreco/Deprecated/BezierTrack.h"
-#include "larreco/RecoAlg/TrackMomentumCalculator.h"
-#include "larsim/EventWeight/Base/MCEventWeight.h"
-#include "ubobj/Trigger/ubdaqSoftwareTriggerData.h"
-#include "lardataobj/AnalysisBase/CosmicTag.h"
-#include "lardataobj/AnalysisBase/FlashMatch.h"
-#include "lardataobj/AnalysisBase/T0.h"
-#include "ubobj/Optical/UbooneOpticalFilter.h"
-#include "ubana/AnalysisTree/MCTruth/IMCTruthMatching.h"
-
-#include "lardataobj/RecoBase/PFParticleMetadata.h"
-    
-
-#include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
-#include "larevt/SpaceChargeServices/SpaceChargeService.h"
-#include "lardata/DetectorInfoServices/DetectorClocksService.h"
-#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
-
-#include "ubana/ParticleID/Algorithms/uB_PlaneIDBitsetHelperFunctions.h"
-
-#include "canvas/Persistency/Common/TriggerResults.h" 
-#include "fhiclcpp/ParameterSetRegistry.h" 
-
-#include <cstddef> // std::ptrdiff_t
-#include <cstring> // std::memcpy()
-#include <vector>
-#include <map>
-#include <iterator> // std::begin(), std::end()
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
-#include <functional> // std::mem_fun_ref
-#include <typeinfo>
-#include <memory> // std::unique_ptr<>
-
-#include "TTree.h"
-#include "TTimeStamp.h"
-
-//#include "ubana/SinglePhotonAnalysis/SinglePhoton_module.h"
-
-//#ifdef __MAKECINT__
 #ifdef __CLING__
 #pragma link C++ class std::vector < std::vector<Float_t> >+; 
 #pragma link C++ class std::vector < std::vector< std::vector<Float_t> > >+; 
 #endif
 
-//const int kMaxTracks=20;
-
 using namespace std;
 namespace Kaon_Analyzer{
-
-  //namespace microboone{
-//namespace single_photon{
 	
 // ======================== Local Function Definition to get the reco origin ======================
-art::Ptr<simb::MCTruth>TrackIDToMCTruth(art::Event const & evt, std::string _geant_producer, int geant_track_id)
-{
-  lar_pandora::MCTruthToMCParticles truthToParticles;
-  lar_pandora::MCParticlesToMCTruth particlesToTruth;
 
-  lar_pandora::LArPandoraHelper::CollectMCParticles(evt, _geant_producer, truthToParticles, particlesToTruth);
-
-  for (auto iter : particlesToTruth) {
-    if (iter.first->TrackId() == geant_track_id) {
-      return iter.second;
+  art::Ptr<simb::MCTruth>TrackIDToMCTruth(art::Event const & evt, std::string _geant_producer, int geant_track_id)
+  {
+    lar_pandora::MCTruthToMCParticles truthToParticles;
+    lar_pandora::MCParticlesToMCTruth particlesToTruth;
+    
+    lar_pandora::LArPandoraHelper::CollectMCParticles(evt, _geant_producer, truthToParticles, particlesToTruth);
+    
+    for (auto iter : particlesToTruth) {
+      if (iter.first->TrackId() == geant_track_id) {
+	return iter.second;
+      }
     }
+    
+    art::Ptr<simb::MCTruth> null_ptr;
+    return null_ptr;
   }
-
-  art::Ptr<simb::MCTruth> null_ptr;
-  return null_ptr;
-}
-
-//==============================================================================================	
-/*
-class CCKaonAnalyzer : public art::EDAnalyzer {
-  public:
-
-    explicit CCKaonAnalyzer(fhicl::ParameterSet const& pset);
-    virtual ~CCKaonAnalyzer();
-
-    void endSubRun(const art::SubRun &subrun);
-    void beginJob();
-    void analyze(const art::Event& evt);
-    void reset();
-
-    //void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, const recob::Track trk, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> &assocMCPart, int track_i=-1, int daughter_i=-1);
-    void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1);
-    //double ModBoxCorrection(const double dQdx, const float x, const float y, const float z);
-    //float GetLocalEFieldMag(const float x, const float y, const float z);
-    void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1);
-    void fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
-                          art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-                          int track_i=-1,
-                          int daughter_i=-1);
-  //void GetPFParticleIdMap(const Kaon_Analyzer::CCKaonAnalyzer::PFParticleHandle &pfParticleHandle, Kaon_Analyzer::CCKaonAnalyzer::PFParticleIdMap &pfParticleMap);
   
-    double length(const simb::MCParticle& part, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi);
-
-    bool isInsideVolume(string volume, double x, double y, double z);
-    bool isInsideVolume(string volume, const TVector3& v) {
-      return isInsideVolume(volume, v.X(), v.Y(), v.Z());
-    }
-
-  //void 
-
-  private:
-
-    searchingfornues::LLRPID llr_pid_calculator;
-    searchingfornues::ProtonMuonLookUpParameters protonmuon_parameters;
-
-    searchingfornuesk::LLRPIDK llr_pid_calculator_k;
-    searchingfornuesk::KaonProtonLookUpParameters protonmuon_parameters_k;
-
-    TTree* fEventTree;
-
-    Int_t   run;                  
-    Int_t   subrun;               
-    Int_t   event;
-
-    Float_t true_nu_energy;
-    Int_t   true_nu_pdg;
-    Int_t   true_nu_mode;
-    Int_t   true_nu_ccnc;
-    Float_t true_nu_vtx_x;
-    Float_t true_nu_vtx_y;
-    Float_t true_nu_vtx_z;
-    Bool_t  true_nu_vtx_inTPC;
-    Bool_t  true_nu_vtx_in5cmTPC;
-    Bool_t  true_nu_vtx_inCCInclusiveTPC;
-
-    Int_t   true_lepton_pdg;
-    Float_t true_lepton_p;
-    Float_t true_lepton_ke;
-    Float_t true_lepton_theta;
-    Float_t true_lepton_costheta;
-    Float_t true_lepton_phi;
-
-    Int_t   true_nkaons;
-    Float_t true_kaon_length;
-    Float_t true_kaon_p;
-    Float_t true_kaon_ke;
-    Float_t true_kaon_theta;
-    Float_t true_kaon_costheta;
-    Float_t true_kaon_phi;
-    Float_t true_kaon_ccmuon_angle;
-    Float_t true_kaon_ccmuon_cosangle;
-    Int_t   true_kaon_end_process;
-    Float_t true_kaon_end_ke;
-    Float_t true_kaon_end_x;
-    Float_t true_kaon_end_y;
-    Float_t true_kaon_end_z;
-    Bool_t  true_kaon_end_inTPC;
-    Bool_t  true_kaon_end_in5cmTPC;
-    Bool_t  true_kaon_end_inCCInclusiveTPC;
-
-    Int_t   true_kaon_ndaughters;
-    Int_t   true_kaon_ndaughters_decay;
-    Int_t   true_kaon_ndaughters_inelastic;
-    Int_t   true_kaon_ndecmup;
-    Int_t   true_kaon_ndecpip;
-    Int_t   true_kaon_ninekap;
-    Int_t   true_kaon_ninepip;
-    Int_t   true_kaon_ninepro;
-    Float_t true_kaon_daughter_length;
-    Float_t true_kaon_daughter_p;
-    Float_t true_kaon_daughter_ke;
-    Float_t true_kaon_daughter_theta;
-    Float_t true_kaon_daughter_costheta;
-    Float_t true_kaon_daughter_angle;
-    Float_t true_kaon_daughter_cosangle;
-    Int_t   true_kaon_daughter_pdg;
-    Float_t true_kaon_daughter_end_x;
-    Float_t true_kaon_daughter_end_y;
-    Float_t true_kaon_daughter_end_z;
-    Bool_t  true_kaon_daughter_end_inTPC;
-    Bool_t  true_kaon_daughter_end_in5cmTPC;
-    Bool_t  true_kaon_daughter_end_inCCInclusiveTPC;
-
-    Bool_t  reco_nu_cc_filter;
-
-    Float_t reco_nu_vtx_x;
-    Float_t reco_nu_vtx_y;
-    Float_t reco_nu_vtx_z;
-    Bool_t  reco_nu_vtx_inTPC;
-    Bool_t  reco_nu_vtx_in5cmTPC;
-    Bool_t  reco_nu_vtx_inCCInclusiveTPC;
-    Int_t   reco_nu_ndaughters;
-    Int_t   reco_nu_cc_nmue;
-
-    Float_t reco_ccmu_vtx_x;
-    Float_t reco_ccmu_vtx_y;
-    Float_t reco_ccmu_vtx_z;
-    Bool_t  reco_ccmu_vtx_inTPC;
-    Bool_t  reco_ccmu_vtx_in5cmTPC;
-    Bool_t  reco_ccmu_vtx_inCCInclusiveTPC;
-    Int_t   reco_ccmu_true_pdg;
-    Int_t   reco_ccmu_true_origin;
-    Bool_t  reco_ccmu_true_primary;
-    Bool_t  reco_ccmu_true_end_inTPC;
-    Bool_t  reco_ccmu_true_end_in5cmTPC;
-    Bool_t  reco_ccmu_true_end_inCCInclusiveTPC;
-    Float_t reco_ccmu_true_length;
-
-    Int_t   reco_ntracks;
-    Int_t   m_reco_track_sliceId[kMaxTracks];
-    Int_t   m_reco_track_is_nuslice[kMaxTracks];
-    Float_t reco_track_distance[kMaxTracks];
-    Int_t   reco_track_nhits0[kMaxTracks];
-    Int_t   reco_track_nhits1[kMaxTracks];
-    Int_t   reco_track_nhits2[kMaxTracks];
-
-    Float_t   reco_track_kin0[kMaxTracks];
-    Float_t   reco_track_kin1[kMaxTracks];
-    Float_t   reco_track_kin2[kMaxTracks];
-    //vector<vector<Float_t>> reco_track_dEdx;
-    //vector<vector<Float_t>> reco_track_ResRan;
-
-    //Float_t reco_track_dEdx_pl0[kMaxTracks][2000];
-    //Float_t reco_track_ResRan_pl0[kMaxTracks][2000];
-
-    //Float_t reco_track_dEdx_pl1[kMaxTracks][2000];
-    //Float_t reco_track_ResRan_pl1[kMaxTracks][2000];
-
-    //Float_t reco_track_dEdx_pl2[kMaxTracks][2000];
-    //Float_t reco_track_ResRan_pl2[kMaxTracks][2000];
-    //array<vector<Float_t>,kMaxTracks> reco_track_ResRan_arr;
-    //array<vector<Float_t>,kMaxTracks> reco_track_dEdx_arr;
-
-    Float_t reco_track_length[kMaxTracks];
-    Float_t reco_track_theta[kMaxTracks];
-    Float_t reco_track_phi[kMaxTracks];
-    Bool_t  reco_track_dir[kMaxTracks];
-
-    Float_t reco_track_P_vtx[kMaxTracks];
-    Float_t reco_track_P_str[kMaxTracks];
-    Float_t reco_track_P_end[kMaxTracks];
-
-    Float_t reco_track_chi2ka_pl0[kMaxTracks];
-    Float_t reco_track_chi2pr_pl0[kMaxTracks];
-    Float_t reco_track_chi2pi_pl0[kMaxTracks];
-    Float_t reco_track_chi2mu_pl0[kMaxTracks];
-    Float_t reco_track_chi2ka_pl1[kMaxTracks];
-    Float_t reco_track_chi2pr_pl1[kMaxTracks];
-    Float_t reco_track_chi2pi_pl1[kMaxTracks];
-    Float_t reco_track_chi2mu_pl1[kMaxTracks];
-    Float_t reco_track_chi2ka_pl2[kMaxTracks];
-    Float_t reco_track_chi2pr_pl2[kMaxTracks];
-    Float_t reco_track_chi2pi_pl2[kMaxTracks];
-    Float_t reco_track_chi2mu_pl2[kMaxTracks];
-    Float_t reco_track_chi2ka_3pl[kMaxTracks];
-    Float_t reco_track_chi2pr_3pl[kMaxTracks];
-    Float_t reco_track_chi2pi_3pl[kMaxTracks];
-    Float_t reco_track_chi2mu_3pl[kMaxTracks];
-    Float_t reco_track_likepr_3pl[kMaxTracks];
-
-
-    Float_t reco_track_Bragg_fwd_ka_pl0[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pr_pl0[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pi_pl0[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_mu_pl0[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_ka_pl1[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pr_pl1[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pi_pl1[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_mu_pl1[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_ka_pl2[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pr_pl2[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_pi_pl2[kMaxTracks];
-    Float_t reco_track_Bragg_fwd_mu_pl2[kMaxTracks];
-
-    Float_t reco_track_MIP_pl0[kMaxTracks];
-    Float_t reco_track_MIP_pl1[kMaxTracks];
-    Float_t reco_track_MIP_pl2[kMaxTracks];
-
-
-    Float_t reco_track_daughter_Bragg_fwd_ka_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pr_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pi_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_mu_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_ka_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pr_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pi_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_mu_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_ka_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pr_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_pi_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_Bragg_fwd_mu_pl2[kMaxTracks][kMaxTracks];
-
-    Float_t reco_track_daughter_MIP_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_MIP_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_MIP_pl2[kMaxTracks][kMaxTracks];
-
-
-    Float_t reco_track_llrpid_3pl[kMaxTracks];
-    Float_t reco_track_total_llrpid_3pl[kMaxTracks];
-    Float_t reco_track_llrpid_k_3pl[kMaxTracks];
-    Bool_t  reco_track_vtx_inTPC[kMaxTracks];
-    Bool_t  reco_track_vtx_in5cmTPC[kMaxTracks];
-    Bool_t  reco_track_vtx_inCCInclusiveTPC[kMaxTracks];
-    Bool_t  reco_track_end_inTPC[kMaxTracks];
-    Bool_t  reco_track_end_in5cmTPC[kMaxTracks];
-    Bool_t  reco_track_end_inCCInclusiveTPC[kMaxTracks];
-    Int_t   reco_track_true_pdg[kMaxTracks];
-    Int_t   reco_track_true_origin[kMaxTracks];
-    Bool_t  reco_track_true_primary[kMaxTracks];
-    Bool_t  reco_track_true_end_inTPC[kMaxTracks];
-    Bool_t  reco_track_true_end_in5cmTPC[kMaxTracks];
-    Bool_t  reco_track_true_end_inCCInclusiveTPC[kMaxTracks];
-    Float_t reco_track_true_length[kMaxTracks];
-
-    Int_t   reco_track_ndaughters[kMaxTracks];
-    Float_t reco_track_daughter_distance[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_vtx_distance[kMaxTracks][kMaxTracks];
-    Float_t reco_angle_track_daughter[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_nhits0[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_nhits1[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_nhits2[kMaxTracks][kMaxTracks];
-
-
-    //vector<vector<vector<Float_t>>> reco_track_daughter_dEdx;
-    //vector<vector<vector<Float_t>>> reco_track_daughter_ResRan;
-
-    //Float_t reco_track_daughter_dEdx_pl0[kMaxTracks][kMaxTracks][2000];
-    //Float_t reco_track_daughter_ResRan_pl0[kMaxTracks][kMaxTracks][2000];
-
-    //Float_t reco_track_daughter_dEdx_pl1[kMaxTracks][kMaxTracks][2000];
-    //Float_t reco_track_daughter_ResRan_pl1[kMaxTracks][kMaxTracks][2000];
-
-    //Float_t reco_track_daughter_dEdx_pl2[kMaxTracks][kMaxTracks][2000];
-    //Float_t reco_track_daughter_ResRan_pl2[kMaxTracks][kMaxTracks][2000];
-
-
-
-    Float_t reco_track_daughter_length[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_theta[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_phi[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2ka_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pr_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pi_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2mu_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2ka_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pr_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pi_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2mu_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2ka_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pr_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pi_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2mu_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2ka_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pr_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2pi_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_chi2mu_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_likepr_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_llrpid_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_llrpid_k_3pl[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_vtx_inTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_vtx_in5cmTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_vtx_inCCInclusiveTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_end_inTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_end_in5cmTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_end_inCCInclusiveTPC[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_true_pdg[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_true_origin[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_true_primary[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_true_end_inTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_true_end_in5cmTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_true_end_inCCInclusiveTPC[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_true_length[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_true_mother[kMaxTracks][kMaxTracks];
-
-    Int_t   k_can_trkid; //track id of reco kaon
-    Int_t   mu_can_trkid; //track id of reco muon
-    Float_t k_mu_can_dis; //distance between kaon and muon end
-    Float_t k_mu_open_angle; //angle between kaon and muon end
-    Float_t k_vtx_dis; //distance between kaon and muon start
-
-    //Int_t k_geant_ID; //kaon track matched true particle geant ID
-    //Int_t k_origin; //kaon track matched true particle origin
-    //Int_t k_pdg; //kaon track matched true particle pdg
-    //Int_t k_isPri; //kaon track matched true particle is primary
-    //Float_t k_endE; //kaon track matched true particle end energy
-    //Int_t k_ness; //kaon track matched true particle is (pdg==321,primary,endE<510)
-
-    //Float_t kaon_vtx_dis; //kaon track and vertex distance (same as k_vtx_dis?)
-    //Float_t k_plen; //kaon track length
-    //Float_t k_phi; //kaon track phi
-    //Float_t k_theta; //kaon track theta
-    //Int_t k_in_5_TPC; //kaon track is within 5 cm from the TPC edges
-    //Int_t k_in_CC_TPC; //kaon track is within CC fiducial volume
-    //Int_t k_hit; //number of kaon dEdx hits from calorimetry
-    //Float_t k_range; //kaon range from calorimetry
-    //Float_t k_KE; //kaon kinectic energy from calorimetry
-    //Float_t k_large_dedx; //dedx median?
-    //Float_t k_small_dedx; //dedx median?
-    //Float_t k_chi_p; //kaon track proton chi2 score
-    //Float_t k_chi_k; //kaon track kaon chi2 score
-    //Float_t k_chi_pi; //kaon track pion chi2 score
-    //Float_t k_chi_mu; //kaon track muon chi2 score
-    //Float_t k_p_max; //kaon track proton bragg peak likelihood maximum forward or backward
-    //Float_t k_k_max; //kaon track kaon bragg peak likelihood maximum forward or backward
-    //Float_t k_pi_max; //kaon track pion bragg peak likelihood maximum forward or backward
-    //Float_t k_mu_max; //kaon track muon bragg peak likelihood maximum forward or backward
-    //Float_t k_mip_max; //kaon track mip bragg peak likelihood maximum forward or backward
-    //Float_t k_L1_ratio; //kaon track mip / (proton+kaon)
-    //Float_t k_LL1; //kaon track log( mip /(proton+kaon) )
-    //Float_t k_L2_ratio; //kaon track mip+muon+pion / (mip+muon+pion+kaon)
-    //Float_t k_LL2; //kaon track log( mip+muon+pion / (mip+muon+pion+kaon) )
-    //Float_t k_Lp_ratio; //kaon track mip+muon / (mip+muon+proton)
-    //Float_t k_LLp;
-    //Float_t k_Lk_ratio; //kaon track mip+muon / (mip+muon+kaon)
-    //Float_t k_LLk; //kaon track log ( (mip+muon) / (mip+muon+kaon) )
-    //Float_t k_pida_mean; //PIDA
-    //Float_t k_pida_med; //PIDA
-    //Float_t k_kde; //PIDA
-    //Float_t k_trm_dqdx; //truncated mean
-    //Float_t k_trm_dedx; //truncated mean
-    //Float_t k_dedx[3][3000]; //kaon track dedx per plane per hit
-    //Float_t k_rr[3][3000]; //kaon track residual range per plane per hit
-    //Float_t mu_dedx[3][3000]; //muon track dedx per plane per hit
-    //Float_t mu_rr[3][3000]; //muon track residual range per plane per hit
-    //
-    //Int_t  mu_pdg; //muon track true matched particle pdg
-    //Int_t  mu_isDec; //muon track true matched particle is true decay?
-    //Int_t  mu_origin; //muon track true matched particle event origin (unknown=0,beam=1,cosmic=2,SN=3,single=4)
-    //Int_t  mu_k_is_Mother; //muon track true matched particle is daugther of true kaon
-    //Int_t  mu_mom_k_inelas; //muon track true matched particle from inelastic K interaction
-    //Int_t  mu_ness; //muon track true matched particle is an interesting true muon (mu_origin==1 && mu_pdg==-13 && mu_isDec==1 && mu_k_is_Mother==1)
-    //Float_t mu_plen; //muon track track length
-    //Float_t mu_phi; //muon track phi
-    //Float_t mu_theta; //muon track theta
-    //Int_t   mu_in_5_TPC; //muon track is within 5 cm from TPC edges
-    //Int_t   mu_in_CC_TPC; //muon track is within CC fiducial volume
-    //Float_t mu_KE; //muon track reconstructed kinetic energy
-    //Int_t   mu_hit; //muon track number of hits
-    //Float_t mu_range; //muon range from calorimetry
-    //Float_t mu_large_dedx;
-    //Float_t mu_small_dedx;
-    //Float_t mu_chi_p;
-    //Float_t mu_chi_k;
-    //Float_t mu_chi_pi;
-    //Float_t mu_chi_mu;
-    //Float_t mu_p_max;
-    //Float_t mu_k_max;
-    //Float_t mu_pi_max;
-    //Float_t mu_mu_max;
-    //Float_t mu_mip_max;
-    //Float_t mu_L1_ratio;
-    //Float_t mu_LL1;
-    //Float_t mu_L2_ratio;
-    //Float_t mu_LL2;
-    //Float_t mu_Lp_ratio;
-    //Float_t mu_LLp;
-    //Float_t mu_Lk_ratio;
-    //Float_t mu_LLk;
-    //Float_t mu_pida_mean;
-    //Float_t mu_pida_med;
-    //Float_t mu_kde;
-    //Float_t mu_trm_dqdx;
-    //Float_t mu_trm_dedx;
-    //std::string mu_mom_process; //muon track true matched particle creation process
-    //
-    //Int_t cc_mu_trkid;
-    //Float_t cc_mu_tlen;
-    //Float_t cc_mu_phi;
-    //Float_t cc_mu_theta;
-    //Float_t cc_mu_range;
-    //Float_t cc_mu_KE;
-    //Int_t   cc_mu_hit;
-    //Float_t cc_mu_large_dedx;
-    //Float_t cc_mu_small_dedx;
-    //Float_t cc_dis_vtx;
-    //Int_t cc_mu_pdg;
-    //Float_t cc_mu_chi_p;
-    //Float_t cc_mu_chi_k;
-    //Float_t cc_mu_chi_pi;
-    //Float_t cc_mu_chi_mu;
-    //Float_t cc_mu_p_max;
-    //Float_t cc_mu_k_max;
-    //Float_t cc_mu_pi_max;
-    //Float_t cc_mu_mu_max;
-    //Float_t cc_mu_mip_max;
-    //Float_t cc_mu_L1_ratio;
-    //Float_t cc_mu_LL1;
-    //Float_t cc_mu_L2_ratio;
-    //Float_t cc_mu_LL2;
-    //Float_t cc_mu_Lp_ratio;
-    //Float_t cc_mu_LLp;
-    //Float_t cc_mu_Lk_ratio;
-    //Float_t cc_mu_LLk;
-    //Float_t cc_mu_pida_mean;
-    //Float_t cc_mu_pida_med;
-    //Float_t cc_mu_kde;
-    //Float_t cc_mu_trm_dqdx;
-    //Float_t cc_mu_trm_dedx;
-    //Int_t pri_Mu_is;
-    //
-    //Int_t Tr_pri_mu_pdg;
-    //Int_t Tr_pri_mu_is;
-    //Int_t Tr_pri_st_k_is;
-    //Int_t Tr_K_Inelas;
-    //Float_t Tr_k_plen;
-    //Float_t Tr_k_endE;
-    //Float_t Tr_k_theta;
-    //Float_t Tr_k_phi;
-    //Int_t Tr_dec_mu_is;
-    //Int_t Tr_dec_mu_pi_pdg;
-    //Float_t Tr_mu_plen;
-    //Float_t Tr_mu_theta;
-    //Float_t Tr_mu_phi;
-    //Int_t Tr_k_inTPC;
-    //Int_t Tr_mu_inTPC;
-    //Int_t Tr_k_in_5_TPC;
-    //Int_t Tr_k_in_CC_TPC;
-    //Int_t Tr_mu_in_5_TPC;
-    //Int_t Tr_mu_in_CC_TPC;
-    //Float_t Tr_kmu_open_ang;
-    //
-    //Int_t longest_trkid;
-    //Float_t longest_trklen;
-    //Int_t vtx_5cm_mult;
-    //Float_t k_start_dedx;
-    //Float_t k_end_dedx;
-    //Float_t mu_start_dedx;
-    //Float_t mu_end_dedx;
-    //
-    //Int_t  kinelas_has_traks;
-    //Int_t  kinelas_reco_trkID;
-    //Float_t kinelas_tlen;
-    //Float_t True_kinelas_KE;
-    //Float_t True_kinelas_tlen;
-
-    Int_t cut_1;
-    Int_t cut_2;
-    Int_t cut_3;
-    Int_t cut_4;
-    Int_t cut_5;
-    Int_t cut_6;
-    Int_t cut_7;
-    Int_t cut_8;
-    Int_t cut_9;
-    Int_t cut_10;
-    Int_t cut_11;
-    Int_t cut_12;
-    Int_t cut_13;
-
-    //const trkf::TrackMomentumCalculator trkmom;
-
-    std::string fDigitModuleLabel;
-    std::string fHitsModuleLabel;
-    std::string fLArG4ModuleLabel;
-    std::string fGenieGenModuleLabel;
-    std::string fTrackModuleLabel;
-    std::string fCalorimetryModuleLabel;
-    std::string fPIDLabel;
-    std::string fHitTruthAssns;
-    std::string fHitTrackAssns;
-    std::string m_pfp_producer;
-    std::string fPFParticleLabel;
-  //    std::string m_pandoraLabel;
-  //   std::string m_is_verbose;  
-
-    //std::vector<Float_t> adEdx;
-  std::vector<Float_t> dv0;
-  std::vector<Float_t> rv0;
-  std::vector<Float_t> dv1;
-  std::vector<Float_t> rv1;
-  std::vector<Float_t> dv2;
-  std::vector<Float_t> rv2;
-
-
-
-    bool isMC;
-
-    //// Tree for the POT subrun info
-    TTree *fSubrunTree;
-    uint m_run, m_subrun;
-    float m_pot;
-    //float event_weight;
-
-    std::map<std::string, std::vector<float>> event_weight;
-
-    std::vector<std::string> evtwgt_funcname;          // the name of the functions used
-    std::vector<std::vector<float>> evtwgt_weight;    // the weights (a vector for each function used)
-    std::vector<int> evtwgt_nweight;                   // number of weights for each function
-    //Int_t evtwgt_nfunc;                                // number of functions used
-
-}; // class CCKaonAnalyzerRebuild
-*/
-
-//========================================================================
-CCKaonAnalyzerRebuild::CCKaonAnalyzerRebuild(fhicl::ParameterSet const& pset) :
-  EDAnalyzer(pset),
-  fHitsModuleLabel          (pset.get< std::string >("HitsModuleLabel","gaushit")),
-  fLArG4ModuleLabel         (pset.get< std::string >("LArG4ModuleLabel","largeant")),
-  fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel","generator")),  
-  fTrackModuleLabel         (pset.get< std::string >("TrackModuleLabel","pandora")),
-  fShowerModuleLabel        (pset.get< std::string >("ShowerModuleLabel","pandora")),
-  //fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","pandoracaliSCE")),
-  fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","pandoraKalmanShowercali")),
-  fPIDLabel                 (pset.get< std::string >("PIDLabel","pandorapid")),
-  fHitTruthAssns            (pset.get< std::string >("HitTruthAssn","gaushitTruthMatch")), 
-  fHitTrackAssns            (pset.get< std::string >("HitTrackAssn","pandora")), 
-  fHitShowerAssns            (pset.get< std::string >("HitShowerAssn","pandora")), 
-  m_pfp_producer            (pset.get< std::string >("pfp_producer","pandora")),
-  fPFParticleLabel          (pset.get< std::string >("PFParticleLabel", "pandora")),
-  fSpacePointproducer       (pset.get< std::string >("SpacePointproducer", "pandora")),
-  //fSpacePointproducer  = p.get< art::InputTag >("SpacePointproducer");
-//  m_pandoraLabel            (pset.get< std::string >("PandoraLabel")),
-//  m_is_verbose              (pset.get<bool>("Verbose",false)),
-  isMC                      (pset.get< bool >("IsMC",true))
-
-  //reco_track_dEdx(nullptr),
-  //reco_track_ResRan(nullptr)
-{
-  //  fm_piPFParticleLabel = pset.get<std::string>("PFParticleLabel");
-  //  Kaon_Analyzer::CCKaonAnalyzerRebuild tmp;
-  //tmp.m_pandoraLabel = pset.get<std::string>("PandoraLabel");
-  //tmp.m_is_verbose = pset.get<bool>("Verbose",false);
   
-  theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
-  detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
-  SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
-  geom = lar::providerFrom<geo::Geometry>();
-
-        m_is_verbose = pset.get<bool>("Verbose",false);
-        m_use_delaunay = pset.get<bool>("useDelaunay",false);
-        m_is_data = pset.get<bool>("isData",false);
-        m_is_overlayed = pset.get<bool>("isOverlayed",false);
-        m_fill_trees = pset.get<bool>("FillTrees",true);
-        m_run_pi0_filter = pset.get<bool>("RunPi0Filter",false);
-        if(m_run_pi0_filter) m_is_data = true;// If running in filter mode, treat all as data
-
-        m_pandoraLabel = pset.get<std::string>("PandoraLabel");
-        m_trackLabel = pset.get<std::string>("TrackLabel");
-	//        m_trackLabel_old = pset.get<std::string>("TrackLabelOld");
-        m_sliceLabel = pset.get<std::string>("SliceLabel","pandora");
-        m_showerLabel = pset.get<std::string>("ShowerLabel");
-        m_caloLabel = pset.get<std::string>("CaloLabel");
-        m_flashLabel = pset.get<std::string>("FlashLabel");
-
-        m_hitfinderLabel = pset.get<std::string>("HitFinderModule", "gaushit");
-        m_badChannelLabel = pset.get<std::string>("BadChannelLabel","badmasks");
-        m_badChannelProducer = pset.get<std::string>("BadChannelProducer","simnfspl1");
-
-        m_generatorLabel = pset.get<std::string>("GeneratorLabel","generator");
-        m_mcTrackLabel = pset.get<std::string>("MCTrackLabel","mcreco");
-        m_mcShowerLabel = pset.get<std::string>("MCShowerLabel","mcreco");
-        m_geantModuleLabel = pset.get<std::string>("GeantModule","largeant");
-        m_backtrackerLabel = pset.get<std::string>("BackTrackerModule","gaushitTruthMatch");
-        m_hitMCParticleAssnsLabel = pset.get<std::string>("HitMCParticleAssnLabel","gaushitTruthMatch");
-
-	m_CRTTzeroLabel = pset.get<std::string>("CRTTzeroLabel","crttzero");
-	m_runCRT = pset.get<bool>("runCRT",false);
-	m_CRTHitProducer = pset.get<std::string>("CRTHitProducer", "crthitcorr");
-
-	m_gain_mc =pset.get<std::vector<double>>("gain_mc");
-	m_wire_spacing = pset.get<double>("wire_spacing");
-	m_width_dqdx_box = pset.get<double>("width_box");
-	m_length_dqdx_box = pset.get<double>("length_box");
-	m_truthmatching_signaldef = pset.get<std::string>("truthmatching_signaldef");
-	m_pidLabel = pset.get<std::string>("ParticleIDLabel","particleid");
-	m_shower3dLabel = pset.get<std::string>("Shower3DLabel","shrreco3d");
-
-        m_run_all_pfps = pset.get<bool>("runAllPFPs",false);
-        rangen = new TRandom3(22);
-        bool_make_sss_plots = true;
-
-
-
-  /*
-  m_pandoraLabel = pset.get<std::string>("PandoraLabel");
-  m_is_verbose = pset.get<bool>("Verbose",false);
-  m_is_data = pset.get<bool>("isData",false); 
-  m_use_delaunay = pset.get<bool>("useDelaunay",false);
-  m_is_overlayed = pset.get<bool>("isOverlayed",false); 
-  m_fill_trees = pset.get<bool>("FillTrees",true);   
-
-  //m_mcTrackLabel = pset.get<std::string>("MCTrackLabel","mcreco");
-  m_showerLabel = pset.get<std::string>("ShowerLabel");
-  m_trackLabel = pset.get<std::string>("TrackLabel");
-  //m_mcShowerLabel = pset.get<std::string>("MCShowerLabel","mcreco");
-  m_shower3dLabel = pset.get<std::string>("Shower3DLabel","shrreco3d");  
-  m_run_all_pfps = pset.get<bool>("runAllPFPs",false); 
-  //m_truthmatching_signaldef = pset.get<std::string>("truthmatching_signaldef");
-
-  m_hitfinderLabel = pset.get<std::string>("HitFinderModule", "gaushit");
-  m_flashLabel = pset.get<std::string>("FlashLabel");
-  m_shower3dLabel = pset.get<std::string>("Shower3DLabel","shrreco3d");
-  m_generatorLabel = pset.get<std::string>("GeneratorLabel","generator");
-  m_geantModuleLabel = pset.get<std::string>("GeantModule","largeant");
-  m_hitMCParticleAssnsLabel = pset.get<std::string>("HitMCParticleAssnLabel","gaushitTruthMatch");
-  m_truthmatching_signaldef = pset.get<std::string>("truthmatching_signaldef");
-  */
-
-
-  // set dedx pdf parameters
-  llr_pid_calculator.set_dedx_binning(0, protonmuon_parameters.dedx_edges_pl_0);
-  llr_pid_calculator.set_par_binning(0, protonmuon_parameters.parameters_edges_pl_0);
-  llr_pid_calculator.set_lookup_tables(0, protonmuon_parameters.dedx_pdf_pl_0);
-
-  llr_pid_calculator.set_dedx_binning(1, protonmuon_parameters.dedx_edges_pl_1);
-  llr_pid_calculator.set_par_binning(1, protonmuon_parameters.parameters_edges_pl_1);
-  llr_pid_calculator.set_lookup_tables(1, protonmuon_parameters.dedx_pdf_pl_1);
-
-  llr_pid_calculator.set_dedx_binning(2, protonmuon_parameters.dedx_edges_pl_2);
-  llr_pid_calculator.set_par_binning(2, protonmuon_parameters.parameters_edges_pl_2);
-  llr_pid_calculator.set_lookup_tables(2, protonmuon_parameters.dedx_pdf_pl_2);
-
-
-  llr_pid_calculator_k.set_dedx_binning(0, protonmuon_parameters_k.dedx_edges_pl_0);
-  llr_pid_calculator_k.set_par_binning(0, protonmuon_parameters_k.parameters_edges_pl_0);
-  llr_pid_calculator_k.set_lookup_tables(0, protonmuon_parameters_k.dedx_pdf_pl_0);
-
-  llr_pid_calculator_k.set_dedx_binning(1, protonmuon_parameters_k.dedx_edges_pl_1);
-  llr_pid_calculator_k.set_par_binning(1, protonmuon_parameters_k.parameters_edges_pl_1);
-  llr_pid_calculator_k.set_lookup_tables(1, protonmuon_parameters_k.dedx_pdf_pl_1);
-
-  llr_pid_calculator_k.set_dedx_binning(2, protonmuon_parameters_k.dedx_edges_pl_2);
-  llr_pid_calculator_k.set_par_binning(2, protonmuon_parameters_k.parameters_edges_pl_2);
-  llr_pid_calculator_k.set_lookup_tables(2, protonmuon_parameters_k.dedx_pdf_pl_2);
-}
- 
-//========================================================================
-CCKaonAnalyzerRebuild::~CCKaonAnalyzerRebuild()
-{
-  //destructor
-}
-
-//========================================================================
-void CCKaonAnalyzerRebuild::endSubRun(const art::SubRun &subrun)
-{
-  //if (!m_isData)
-  //{
+  //========================================================================
+  CCKaonAnalyzerRebuild::CCKaonAnalyzerRebuild(fhicl::ParameterSet const& pset) :
+    EDAnalyzer(pset),
+    fHitsModuleLabel          (pset.get< std::string >("HitsModuleLabel","gaushit")),
+    fLArG4ModuleLabel         (pset.get< std::string >("LArG4ModuleLabel","largeant")),
+    fGenieGenModuleLabel      (pset.get< std::string >("GenieGenModuleLabel","generator")),  
+    fTrackModuleLabel         (pset.get< std::string >("TrackModuleLabel","pandora")),
+    fShowerModuleLabel        (pset.get< std::string >("ShowerModuleLabel","pandora")),
+    fCalorimetryModuleLabel   (pset.get< std::string >("CalorimetryModuleLabel","pandoraKalmanShowercali")),
+    fPIDLabel                 (pset.get< std::string >("PIDLabel","pandorapid")),
+    fHitTruthAssns            (pset.get< std::string >("HitTruthAssn","gaushitTruthMatch")), 
+    fHitTrackAssns            (pset.get< std::string >("HitTrackAssn","pandora")), 
+    fHitShowerAssns            (pset.get< std::string >("HitShowerAssn","pandora")), 
+    m_pfp_producer            (pset.get< std::string >("pfp_producer","pandora")),
+    fPFParticleLabel          (pset.get< std::string >("PFParticleLabel", "pandora")),
+    fSpacePointproducer       (pset.get< std::string >("SpacePointproducer", "pandora")),
+    isMC                      (pset.get< bool >("IsMC",true))
+    
+  {
+    
+    theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
+    detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
+    SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    geom = lar::providerFrom<geo::Geometry>();
+    
+    m_is_verbose = pset.get<bool>("Verbose",false);
+    m_is_data = pset.get<bool>("isData",false);
+    m_is_overlayed = pset.get<bool>("isOverlayed",false);
+    m_fill_trees = pset.get<bool>("FillTrees",true);
+    m_run_pi0_filter = pset.get<bool>("RunPi0Filter",false);
+    if(m_run_pi0_filter) m_is_data = true;// If running in filter mode, treat all as data
+    
+    m_pandoraLabel = pset.get<std::string>("PandoraLabel");
+    m_trackLabel = pset.get<std::string>("TrackLabel");
+    m_sliceLabel = pset.get<std::string>("SliceLabel","pandora");
+    m_showerLabel = pset.get<std::string>("ShowerLabel");
+    m_caloLabel = pset.get<std::string>("CaloLabel");
+    m_flashLabel = pset.get<std::string>("FlashLabel");
+    
+    m_hitfinderLabel = pset.get<std::string>("HitFinderModule", "gaushit");
+    m_generatorLabel = pset.get<std::string>("GeneratorLabel","generator");
+    m_mcTrackLabel = pset.get<std::string>("MCTrackLabel","mcreco");
+    m_mcShowerLabel = pset.get<std::string>("MCShowerLabel","mcreco");
+    m_geantModuleLabel = pset.get<std::string>("GeantModule","largeant");
+    m_backtrackerLabel = pset.get<std::string>("BackTrackerModule","gaushitTruthMatch");
+    m_hitMCParticleAssnsLabel = pset.get<std::string>("HitMCParticleAssnLabel","gaushitTruthMatch");
+    
+    m_CRTTzeroLabel = pset.get<std::string>("CRTTzeroLabel","crttzero");
+    m_runCRT = pset.get<bool>("runCRT",false);
+    m_CRTHitProducer = pset.get<std::string>("CRTHitProducer", "crthitcorr");
+    
+    m_gain_mc =pset.get<std::vector<double>>("gain_mc");
+    m_wire_spacing = pset.get<double>("wire_spacing");
+    m_truthmatching_signaldef = pset.get<std::string>("truthmatching_signaldef");
+    m_pidLabel = pset.get<std::string>("ParticleIDLabel","particleid");
+    m_shower3dLabel = pset.get<std::string>("Shower3DLabel","shrreco3d");
+    
+    m_run_all_pfps = pset.get<bool>("runAllPFPs",false);
+    rangen = new TRandom3(22);
+    bool_make_sss_plots = true;
+    
+    
+    // set dedx pdf parameters
+    llr_pid_calculator.set_dedx_binning(0, protonmuon_parameters.dedx_edges_pl_0);
+    llr_pid_calculator.set_par_binning(0, protonmuon_parameters.parameters_edges_pl_0);
+    llr_pid_calculator.set_lookup_tables(0, protonmuon_parameters.dedx_pdf_pl_0);
+    
+    llr_pid_calculator.set_dedx_binning(1, protonmuon_parameters.dedx_edges_pl_1);
+    llr_pid_calculator.set_par_binning(1, protonmuon_parameters.parameters_edges_pl_1);
+    llr_pid_calculator.set_lookup_tables(1, protonmuon_parameters.dedx_pdf_pl_1);
+    
+    llr_pid_calculator.set_dedx_binning(2, protonmuon_parameters.dedx_edges_pl_2);
+    llr_pid_calculator.set_par_binning(2, protonmuon_parameters.parameters_edges_pl_2);
+    llr_pid_calculator.set_lookup_tables(2, protonmuon_parameters.dedx_pdf_pl_2);
+      
+    llr_pid_calculator_k.set_dedx_binning(0, protonmuon_parameters_k.dedx_edges_pl_0);
+    llr_pid_calculator_k.set_par_binning(0, protonmuon_parameters_k.parameters_edges_pl_0);
+    llr_pid_calculator_k.set_lookup_tables(0, protonmuon_parameters_k.dedx_pdf_pl_0);
+    
+    llr_pid_calculator_k.set_dedx_binning(1, protonmuon_parameters_k.dedx_edges_pl_1);
+    llr_pid_calculator_k.set_par_binning(1, protonmuon_parameters_k.parameters_edges_pl_1);
+    llr_pid_calculator_k.set_lookup_tables(1, protonmuon_parameters_k.dedx_pdf_pl_1);
+    
+    llr_pid_calculator_k.set_dedx_binning(2, protonmuon_parameters_k.dedx_edges_pl_2);
+    llr_pid_calculator_k.set_par_binning(2, protonmuon_parameters_k.parameters_edges_pl_2);
+    llr_pid_calculator_k.set_lookup_tables(2, protonmuon_parameters_k.dedx_pdf_pl_2);
+  }
+  
+  //========================================================================
+  
+  CCKaonAnalyzerRebuild::~CCKaonAnalyzerRebuild()
+  {
+    //destructor
+  }
+  
+  //========================================================================
+  
+  void CCKaonAnalyzerRebuild::endSubRun(const art::SubRun &subrun)
+  {
+    //if (!m_isData)
+    //{
     art::Handle<sumdata::POTSummary> potSummaryHandle;
     m_pot = subrun.getByLabel("generator", potSummaryHandle) ? static_cast<float>(potSummaryHandle->totpot) : 0.f;
     // -- std::cout << "[CCKaonAnalyzerRebuild::endSubRun] Storing POT info!" << std::endl;
-  //}
+    //}
 
-  m_run = subrun.run();
-  m_subrun = subrun.subRun();
-  fSubrunTree->Fill();
-}
-
-//========================================================================
-  void CCKaonAnalyzerRebuild::filter(const art::Event &evt)
-{
-
-  /*
-  auto const TPC = (*geom).begin_TPC();
-  auto ID = TPC.ID();
-  m_Cryostat = ID.Cryostat;
-  m_TPC = ID.TPC;
-  */
-
-  _time2cm = theDetector->SamplingRate() / 1000.0 * theDetector->DriftVelocity( theDetector->Efield(), theDetector->Temperature() );//found in ProtoShowerPandora_tool.cc  
-
-  this->ClearVertex();
+    m_run = subrun.run();
+    m_subrun = subrun.subRun();
+    fSubrunTree->Fill();
+  }
 
 
-  //Collect the PFParticles from the event. This is the core!                                                                                                                                                                                                                                                                 
-        // Collect all the hits. We will need these. Lets grab both the handle as well as a vector of art::Ptr as I like both. 
-        art::ValidHandle<std::vector<recob::Hit>> const & hitHandle = evt.getValidHandle<std::vector<recob::Hit>>(m_hitfinderLabel); 
-        std::vector<art::Ptr<recob::Hit>> hitVector;
-        art::fill_ptr_vector(hitVector,hitHandle);
-
-        //Lets do "THE EXACT SAME STUFF" for Optical Flashes
-        art::ValidHandle<std::vector<recob::OpFlash>> const & flashHandle  = evt.getValidHandle<std::vector<recob::OpFlash>>(m_flashLabel);
-        std::vector<art::Ptr<recob::OpFlash>> flashVector;
-        art::fill_ptr_vector(flashVector,flashHandle);
-
-        //tracks
-        art::ValidHandle<std::vector<recob::Track>> const & trackHandle  = evt.getValidHandle<std::vector<recob::Track>>(m_trackLabel);
-        std::vector<art::Ptr<recob::Track>> trackVector;
-        art::fill_ptr_vector(trackVector,trackHandle);
-
-        //BadChannels
-        art::Handle<std::vector<int> > badChannelHandle;
-        std::vector<int> badChannelVector;
-        if(evt.getByLabel(m_badChannelProducer, m_badChannelLabel, badChannelHandle)){
-            badChannelVector            = *(badChannelHandle);
-        }
-
-
-        //Collect the PFParticles from the event. This is the core!
-
-  art::ValidHandle<std::vector<recob::PFParticle>> const & pfParticleHandle = evt.getValidHandle<std::vector<recob::PFParticle>>(m_pandoraLabel);
-  std::vector<art::Ptr<recob::PFParticle>> pfParticleVector;
-  art::fill_ptr_vector(pfParticleVector,pfParticleHandle);
-
-  //get the cluster handle for the dQ/dx calc
-  art::ValidHandle<std::vector<recob::Cluster>> const & clusterHandle = evt.getValidHandle<std::vector<recob::Cluster>>(m_pandoraLabel);
-  std::vector< art::Ptr<recob::Cluster> > clusterVector;
-  art::fill_ptr_vector(clusterVector,clusterHandle);
-
-
-    //So a cross check
-    /*                                                                                                                                                                                                                                                                                                                      
-    if (!pfParticleHandle.isValid())
-      {
-	mf::LogDebug("SinglePhoton") << "  Failed to find the PFParticles.\n";
-	if(m_run_pi0_filter)
-	  return false;
-	else
-	  return true;
-      }
-    */
-
-    //This is another pandora helper. I don't like PFParticle ID lookups but I guess lets keep for now;                                                                                                                                                                                                                                     
-    // Produce a map of the PFParticle IDs for fast navigation through the hierarchy                                                                                                                                                                                                                                                        
-    //    typedef std::map< size_t, art::Ptr<recob::PFParticle>> PFParticleIdMap;
-    //    CCKaonAnalyzerRebuild::
+  //========================================================================
   
+  void CCKaonAnalyzerRebuild::beginJob()
+  {
     
-    PFParticleIdMap pfParticleMap;
-    this->GetPFParticleIdMap(pfParticleHandle, pfParticleMap);
-  
-    //Slices                                                                                                                                                                                                                                                                                                                                
-    art::ValidHandle<std::vector<recob::Slice>> const & sliceHandle  = evt.getValidHandle<std::vector<recob::Slice>>(m_pandoraLabel);
-    std::vector<art::Ptr<recob::Slice>> sliceVector;
-    art::fill_ptr_vector(sliceVector,sliceHandle);
-    //And some associations                                                                                                                                                                                                                                                                                                                 
-    art::FindManyP<recob::PFParticle> pfparticles_per_slice(sliceHandle, evt, m_pandoraLabel);
-    art::FindManyP<recob::Hit> hits_per_slice(sliceHandle, evt, m_pandoraLabel);
-
-    std::map< art::Ptr<recob::Slice>, std::vector<art::Ptr<recob::PFParticle>> > sliceToPFParticlesMap;
-    std::map<int, std::vector<art::Ptr<recob::PFParticle>> > sliceIDToPFParticlesMap;
-    for(size_t i=0; i< sliceVector.size(); ++i){
-      auto slice = sliceVector[i];
-      sliceToPFParticlesMap[slice] =pfparticles_per_slice.at(slice.key());
-      sliceIDToPFParticlesMap[slice->ID()] = pfparticles_per_slice.at(slice.key());
-    }
-
-    std::map< art::Ptr<recob::Slice>, std::vector<art::Ptr<recob::Hit>> > sliceToHitsMap;
-    std::map<int, std::vector<art::Ptr<recob::Hit>> > sliceIDToHitsMap;
-    for(size_t i=0; i< sliceVector.size(); ++i){
-      auto slice = sliceVector[i];
-      sliceToHitsMap[slice] =hits_per_slice.at(slice.key());
-      sliceIDToHitsMap[slice->ID()] = hits_per_slice.at(slice.key());
-    }
-
-        //And some verticies.        
-        art::ValidHandle<std::vector<recob::Vertex>> const & vertexHandle = evt.getValidHandle<std::vector<recob::Vertex>>(m_pandoraLabel);
-        std::vector<art::Ptr<recob::Vertex>> vertexVector;
-        art::fill_ptr_vector(vertexVector,vertexHandle);
-        art::FindManyP<recob::Vertex> vertices_per_pfparticle(pfParticleHandle, evt, m_pandoraLabel);
-        std::map< art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::Vertex>> > pfParticlesToVerticesMap;
-        for(size_t i=0; i< pfParticleVector.size(); ++i){
-            auto pfp = pfParticleVector[i];
-            pfParticlesToVerticesMap[pfp] =vertices_per_pfparticle.at(pfp.key());
-        }
-
-        //------- 3D showers
-	
-        art::FindOneP<recob::Shower> showerreco3D_per_pfparticle(pfParticleHandle, evt, m_shower3dLabel);
-        std::map<art::Ptr<recob::PFParticle>, art::Ptr<recob::Shower>> pfParticlesToShowerReco3DMap;
-        for(size_t i=0; i< pfParticleVector.size(); ++i){
-            auto pfp = pfParticleVector[i];
-            if(!showerreco3D_per_pfparticle.at(pfp.key()).isNull()){
-                pfParticlesToShowerReco3DMap[pfp] = showerreco3D_per_pfparticle.at(pfp.key());
-            }
-
-        }
-	
-
-        // Once we have actual verticies, lets concentrate on JUST the neutrino PFParticles for now:
-        //--------------------------------
-        // Produce two PFParticle vectors containing final-state particles:
-        // 1. Particles identified as cosmic-rays - recontructed under cosmic-hypothesis
-        // 2. Daughters of the neutrino PFParticle - reconstructed under the neutrino hypothesis
-        std::vector< art::Ptr<recob::PFParticle> > crParticles;
-        std::vector< art::Ptr<recob::PFParticle> > nuParticles;
-        this->GetFinalStatePFParticleVectors(pfParticleMap, pfParticlesToVerticesMap, crParticles, nuParticles);
-
-
-        if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Get Spacepoints"<<std::endl;
-        //Look, here is a map that I just forced myself rather than build using helpers. Not that different is it. But for somereason I only use PFParticles.. huh,
-        //Spacepoint associaitions
-        art::FindManyP<recob::SpacePoint> spacePoints_per_pfparticle(pfParticleHandle, evt, m_pandoraLabel);
-        std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::SpacePoint>> > pfParticleToSpacePointsMap;
-        for(size_t i=0; i< nuParticles.size(); ++i){
-            const art::Ptr<recob::PFParticle> pfp = nuParticles[i];
-            pfParticleToSpacePointsMap[pfp] = spacePoints_per_pfparticle.at(pfp.key());
-        }
-
-
-    if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Get PandoraMetadata"<<std::endl;
-    //add the associaton between PFP and metadata, this is important to look at the slices and scores                                                         
-              
-    art::FindManyP< larpandoraobj::PFParticleMetadata > pfPartToMetadataAssoc(pfParticleHandle, evt, m_pandoraLabel);
-    std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<larpandoraobj::PFParticleMetadata>> > pfParticleToMetadataMap;
-    for(size_t i=0; i< pfParticleVector.size(); ++i){
-      const art::Ptr<recob::PFParticle> pfp = pfParticleVector[i];
-      pfParticleToMetadataMap[pfp] =  pfPartToMetadataAssoc.at(pfp.key());
-    }
-
-
-        if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Get Clusters"<<std::endl;
-
-        //Get a map between the PFP's and the clusters. Although Mark isn't a fan of clusters, they're imporant for the shower dQ/dx
-        //Also need a map between clusters and hits
-        art::FindManyP<recob::Cluster> clusters_per_pfparticle(pfParticleHandle, evt, m_pandoraLabel);
-        art::FindManyP<recob::Hit> hits_per_cluster(clusterHandle, evt, m_pandoraLabel);
-        std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Cluster>> > pfParticleToClustersMap;
-        std::map<art::Ptr<recob::Cluster>,  std::vector<art::Ptr<recob::Hit>> > clusterToHitsMap;
-        //fill map PFP to Clusters
-        for(size_t i=0; i< nuParticles.size(); ++i){
-            auto pfp = nuParticles[i];
-            pfParticleToClustersMap[pfp] = clusters_per_pfparticle.at(pfp.key());
-            // pfParticleToSpacePointsMap[pfp] = spacePoints_per_pfparticle.at(pfp.key());
-            // pfParticleToMetadataMap[pfp] =  pfPartToMetadataAssoc.at(pfp.key());
-        }
-        //fill map Cluster to Hits
-        for(size_t i=0; i< clusterVector.size(); ++i){
-            auto cluster = clusterVector[i];
-            clusterToHitsMap[cluster] = hits_per_cluster.at(cluster.key());
-        }
-
-        if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Build hits to PFP Maps"<<std::endl;
-
-
-
-        //taking out the Larpandora helper functions here because they don't match to non-neutrino slice hits for some reason
-
-        //OK Here we build two IMPORTANT maps for the analysis, (a) given a PFParticle get a vector of hits..
-        //and (b) given a single hit, get the PFParticle it is in (MARK: is it only one? always? RE-MARK: Yes)
-        std::map<art::Ptr<recob::PFParticle>,  std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsMap;
-        //        std::map<art::Ptr<recob::Hit>, art::Ptr<recob::PFParticle>>                hitToPFParticleMap;
-        //Using a pandora helper here, but to be honest we should probably just build using normal associations so keep independant if pssoble
-        // lar_pandora::LArPandoraHelper::BuildPFParticleHitMaps(evt, m_pandoraLabel, pfParticleToHitsMap, hitToPFParticleMap, lar_pandora::LArPandoraHelper::kAddDaughters);
-
-        //use pfp->cluster and cluster->hit to build pfp->hit map
-        //for each PFP
-        for(size_t i=0; i<nuParticles.size(); ++i){
-            auto pfp = nuParticles[i];
-
-            // std::cout<<"starting to match to hits for pfp "<<pfp->Self()<<std::endl;
-            //get the associated clusters
-            std::vector<art::Ptr<recob::Cluster>> clusters_vec  = pfParticleToClustersMap[pfp] ;
-
-            //make empty vector to store hits
-            std::vector<art::Ptr<recob::Hit>> hits_for_pfp = {};
-
-            // std::cout<<"-- there are "<<clusters_vec.size()<<" associated clusters"<<std::endl;
-
-            //for each cluster, get the associated hits
-            for (art::Ptr<recob::Cluster> cluster: clusters_vec){
-                std::vector<art::Ptr<recob::Hit>> hits_vec =  clusterToHitsMap[cluster];
-
-                //   std::cout<<"looking at cluster in pfp "<<pfp->Self()<<" with "<<hits_vec.size() <<" hits"<<std::endl;
-                //insert hits into vector
-                hits_for_pfp.insert( hits_for_pfp.end(), hits_vec.begin(), hits_vec.end() );
-            }
-
-            //fill the map
-            pfParticleToHitsMap[pfp] = hits_for_pfp;
-            //std::cout<<"saving a total of "<<hits_for_pfp.size()<<" hits for pfp "<<pfp->Self()<<std::endl;
-
-        }//for each pfp
-
-
-	    
-    //these are all filled in analyze slice                                                                                                                                                                                                                                                                                             
-    std::vector< art::Ptr<recob::Track> > tracks;
-    std::vector< art::Ptr<recob::Shower> > showers;
-    std::map< art::Ptr<recob::Track> , art::Ptr<recob::PFParticle >> trackToNuPFParticleMap;
-    std::map< art::Ptr<recob::Shower> , art::Ptr<recob::PFParticle>> showerToNuPFParticleMap;
-
-
-    if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Get Tracks and Showers"<<std::endl; 
-    this->CollectTracksAndShowers(nuParticles, pfParticleMap,  pfParticleHandle, evt, tracks, showers, trackToNuPFParticleMap, showerToNuPFParticleMap);
-
-
-
-
-        //**********************************************************************************************/
-        //**********************************************************************************************/
-        //---------------------------------- MC TRUTH Data Only---------------------------
-        //**********************************************************************************************/
-        //**********************************************************************************************/
-
-        //Get the MCtruth handles and vectors
-        std::vector<art::Ptr<simb::MCTruth>> mcTruthVector;
-        std::vector<art::Ptr<simb::MCParticle>> mcParticleVector;
-
-        //Then build a map from MCparticles to Hits and vice versa
-        std::map< art::Ptr<simb::MCParticle>,  std::vector<art::Ptr<recob::Hit> >  >  mcParticleToHitsMap;
-        std::map< art::Ptr<recob::Hit>, art::Ptr<simb::MCParticle> >                  hitToMCParticleMap;
-
-
-        //Apparrently a MCParticle doesn't know its origin (thanks Andy!)
-        //I would also like a map from MCparticle to MCtruth and then I will be done.  and Vice Versa
-        //Note which map is which!       //First  is one-to-many.         //Second is one-to-one
-        std::map< art::Ptr<simb::MCTruth>,    std::vector<art::Ptr<simb::MCParticle>>>  MCTruthToMCParticlesMap;
-        std::map< art::Ptr<simb::MCParticle>, art::Ptr<simb::MCTruth>>                  MCParticleToMCTruthMap;
-        std::map<int, art::Ptr<simb::MCParticle> >                                     MCParticleToTrackIdMap;
-
-        std::vector<art::Ptr<sim::MCTrack>> mcTrackVector;
-        std::vector<art::Ptr<sim::MCShower>> mcShowerVector;
-
-        std::vector<art::Ptr<simb::MCParticle>> matchedMCParticleVector;
-        std::map<art::Ptr<recob::Track>, art::Ptr<simb::MCParticle> > trackToMCParticleMap;
-        std::map<art::Ptr<recob::Shower>, art::Ptr<simb::MCParticle> > showerToMCParticleMap;
-
-        //Given a simb::MCParticle we would like a map to either a sim::MCTrack or sim::MCShower
-        std::map< art::Ptr<simb::MCParticle>, art::Ptr<sim::MCTrack> > MCParticleToMCTrackMap;
-        std::map< art::Ptr<simb::MCParticle>, art::Ptr<sim::MCShower> > MCParticleToMCShowerMap;
-
-
-        //**********************************************************************************************/
-        //**********************************************************************************************/
-        //Some event based properties
-
-
-
-    std::vector<std::pair<art::Ptr<recob::PFParticle>,int>> allPFPSliceIdVec; //stores a pair of all PFP's in the event and the slice ind
-    std::vector<std::pair<art::Ptr<recob::PFParticle>,int>> primaryPFPSliceIdVec; //stores a pair of only the primary PFP's in the event and the slice ind                                                                                                                                                                              
-    std::map<int, double> sliceIdToNuScoreMap; //map between a slice Id and neutrino score                                               
-    std::map<art::Ptr<recob::PFParticle>, bool> PFPToClearCosmicMap; //returns true for clear cosmic, false otherwise                    
-    std::map<art::Ptr<recob::PFParticle>, int> PFPToSliceIdMap; //returns the slice id for all PFP's                                     
-    std::map<art::Ptr<recob::PFParticle>,bool> PFPToNuSliceMap;
-    std::map<art::Ptr<recob::PFParticle>,double> PFPToTrackScoreMap;
-    std::map<int, int> sliceIdToNumPFPsMap;
-    std::cout<<"SinglePhoton::analyze::AnalyzeSlice()\t||\t Starting"<<std::endl;
-
-
-    this->AnalyzeSlices(pfParticleToMetadataMap, pfParticleMap,  primaryPFPSliceIdVec, sliceIdToNuScoreMap, PFPToClearCosmicMap, PFPToSliceIdMap, PFPToNuSliceMap, PFPToTrackScoreMap);
-    //std::cout<<"There are "<< allPFPSliceIdVec.size()<<" pfp-slice id matches stored in the vector"<<std::endl;
-    std::cout<<"SinglePhoton::analyze\t||\tthe number of PPF's with stored clear cosmic info is "<<PFPToClearCosmicMap.size()<<std::endl;
-    std::cout<<"SinglePhoton::analyze\t||\tthe number of PFP's stored in the PFPToSliceIdMap is "<<PFPToSliceIdMap.size()<<std::endl;
-
-    if (PFPToSliceIdMap.size() < 1){
-      std::cout<<"ERROR, not storing PFP's in PFPToSliceIdMap"<<std::endl;
-    }
-
-
-    for (auto pair:sliceIDToPFParticlesMap){ 
-      std::vector<art::Ptr<recob::PFParticle>> pfp_vec = pair.second;
-      int slice_id = pair.first;
-      //if (slice_vec[0]->Slice() != PFPToSliceIdMap[pfp] )                                                                                                                                                                                                                                                                           
-      for(auto pfp: pfp_vec){
-	if (slice_id != PFPToSliceIdMap[pfp] && PFPToSliceIdMap[pfp]>=0){
-	  std::cout<<"sliceIDToPFParticlesMap[slice->ID()] for pfp "<<pfp->Self()<<" is slice "<< slice_id<< "but PFPToSliceIdMap[pfp] = "<<PFPToSliceIdMap[pfp]<<std::endl;
-	}
-      }
-
-    }
-
-
-    //if CRT info, get CRT hits  
-    art::Handle<std::vector<crt::CRTHit>> crthit_h; //only filled when there are hits, otherwise empty 
-    art::Handle<raw::DAQHeaderTimeUBooNE> rawHandle_DAQHeader;
-    double evt_timeGPS_nsec = -999;
-    if(m_runCRT){
-      evt.getByLabel(m_DAQHeaderProducer, rawHandle_DAQHeader);
-      evt.getByLabel(m_CRTHitProducer, crthit_h);
-      raw::DAQHeaderTimeUBooNE const& my_DAQHeader(*rawHandle_DAQHeader);
-      art::Timestamp evtTimeGPS = my_DAQHeader.gps_time();
-      evt_timeGPS_nsec = evtTimeGPS.timeLow();
-
-      std::cout<<"SinglePhoton::analyze \t||\t Got CRT hits"<<std::endl;
-    }
-
-    this->AnalyzeFlashes(flashVector, crthit_h, evt_timeGPS_nsec);
-
-    this->AnalyzeTracks(tracks, trackToNuPFParticleMap, pfParticleToSpacePointsMap,  MCParticleToTrackIdMap, sliceIdToNuScoreMap, PFPToClearCosmicMap,  PFPToSliceIdMap,  PFPToTrackScoreMap, PFPToNuSliceMap,pfParticleMap);
-
-    this->AnalyzeShowers(showers,showerToNuPFParticleMap, pfParticleToHitsMap, pfParticleToClustersMap, clusterToHitsMap,sliceIdToNuScoreMap, PFPToClearCosmicMap,  PFPToSliceIdMap, PFPToNuSliceMap, PFPToTrackScoreMap,pfParticleMap,pfParticlesToShowerReco3DMap); 
-    
-
-
-
-        if(!m_is_data){
-
-            art::ValidHandle<std::vector<simb::MCTruth>> const & mcTruthHandle= evt.getValidHandle<std::vector<simb::MCTruth>>(m_generatorLabel);
-            art::fill_ptr_vector(mcTruthVector,mcTruthHandle);
-            art::ValidHandle<std::vector<simb::MCParticle>> const & mcParticleHandle= evt.getValidHandle<std::vector<simb::MCParticle>>(m_geantModuleLabel);
-            art::fill_ptr_vector(mcParticleVector,mcParticleHandle);
-
-	    this->CollectMCParticles(evt, m_geantModuleLabel, MCTruthToMCParticlesMap, MCParticleToMCTruthMap, MCParticleToTrackIdMap);
-
-            art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData> mcparticles_per_hit(hitHandle, evt, m_hitMCParticleAssnsLabel);
-
-            //mcc9 march miniretreat fix
-            std::vector<art::Ptr<simb::MCParticle>> particle_vec; //vector of all MCParticles associated with a given hit in the reco PFP
-            std::vector<anab::BackTrackerHitMatchingData const *> match_vec; //vector of some backtracker thing
-
-            m_test_matched_hits = 0;
-
-            for(size_t j=0; j<hitVector.size();j++){
-                const art::Ptr<recob::Hit> hit = hitVector[j];
-
-                particle_vec.clear(); match_vec.clear(); //only store per hit
-
-                mcparticles_per_hit.get(hit.key(), particle_vec, match_vec);
-
-                if(particle_vec.size() > 0){
-                    m_test_matched_hits++;
-                }
-
-            }
-
-            this->BuildMCParticleHitMaps(evt, m_geantModuleLabel, hitVector,  mcParticleToHitsMap, hitToMCParticleMap, lar_pandora::LArPandoraHelper::kAddDaughters,  MCParticleToTrackIdMap);
-
-            //std::cout<<"SinglePhoton\t||\t Starting backtracker on recob::track"<<std::endl;
-            //std::vector<double> trk_overlay_vec = recoMCmatching<art::Ptr<recob::Track>>( tracks, trackToMCParticleMap, trackToNuPFParticleMap, pfParticleToHitsMap, mcparticles_per_hit, matchedMCParticleVector);
-
-    std::cout<<"SinglePhoton\t||\t Starting backtracker on recob::shower"<<std::endl;
-    this->showerRecoMCmatching(showers, showerToMCParticleMap, showerToNuPFParticleMap, pfParticleToHitsMap, mcparticles_per_hit, matchedMCParticleVector, pfParticleMap,  MCParticleToTrackIdMap, sliceIdToNuScoreMap, PFPToClearCosmicMap,  PFPToSliceIdMap, PFPToNuSliceMap);
-
-
-
-    std::cout<<"filling info in ncdelta slice tree"<<std::endl;
-    this->AnalyzeRecoMCSlices( m_truthmatching_signaldef, MCParticleToTrackIdMap, showerToNuPFParticleMap , allPFPSliceIdVec, showerToMCParticleMap, trackToNuPFParticleMap, trackToMCParticleMap,  PFPToSliceIdMap);
-	}
-
-    /*
-    this->AnalyzeSlices(pfParticleToMetadataMap, pfParticleMap,  primaryPFPSliceIdVec, sliceIdToNuScoreMap, PFPToClearCosmicMap, PFPToSliceIdMap, PFPToNuSliceMap, PFPToTrackScoreMap);
-    //std::cout<<"There are "<< allPFPSliceIdVec.size()<<" pfp-slice id matches stored in the vector"<<std::endl;                                                                                                                                                                                                                       
-    std::cout<<"SinglePhoton::analyze\t||\tthe number of PPF's with stored clear cosmic info is "<<PFPToClearCosmicMap.size()<<std::endl;
-    std::cout<<"SinglePhoton::analyze\t||\tthe number of PFP's stored in the PFPToSliceIdMap is "<<PFPToSliceIdMap.size()<<std::endl;
-    if (PFPToSliceIdMap.size() < 1){
-      std::cout<<"ERROR, not storing PFP's in PFPToSliceIdMap"<<std::endl;
-    }
-    */
-
-    for (auto pair:PFPToNuSliceMap){
-      auto pfp = pair.first;
-      auto is_nuslice = pair.second;
-      if (is_nuslice){
-	std::cout<<"pfp in nuslice "<<pfp->Self()<<std::endl;
-      }
-
-    }
-
-
-    //---------------------- END OF LOOP, fill vertex ---------------------
-    ncdelta_slice_tree->Fill();
-    vertex_tree->Fill();
-    eventweight_tree->Fill();
-
-
-}
-
-//========================================================================
-void CCKaonAnalyzerRebuild::beginJob()
-{
-
   //initialiseCanvas();
+    
+    art::ServiceHandle<art::TFileService> tfs;
+    
+    fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
+    
+    //gInterpreter->GenerateDictionary("vector<vector<vector<Float_t>> >", "vector");
+    fEventTree->Branch("event", &event, "event/I");
+    fEventTree->Branch("run", &run, "run/I");
+    fEventTree->Branch("subrun", &subrun, "surbrun/I");
+    
+    fEventTree->Branch("IsKaon", &IsKaon, "IsKaon/I");
+    fEventTree->Branch("IsSingleKaon", &IsSingleKaon, "IsSingleKaon/I");
+    fEventTree->Branch("IsAssociatedKaon", &IsAssociatedKaon, "IsAssociatedKaon/I");
+    fEventTree->Branch("IsMuBR", &IsMuBR, "IsMuBR/I");
+    fEventTree->Branch("IsPiBR", &IsPiBR, "IsPiBR/I");
+    fEventTree->Branch("prip", &prip, "prip/I");
+    fEventTree->Branch("prip_k_dau", &prip_k_dau, "prip_k_dau/I");
+    
+    
+    fEventTree->Branch("process",&Process);
+    fEventTree->Branch("endprocess",&EndProcess);
+    
+    fEventTree->Branch("event_weight" ,&event_weight);
+    
+    fEventTree->Branch("evtwgt_funcname" ,&evtwgt_funcname);
+    fEventTree->Branch("evtwgt_weight" ,&evtwgt_weight);
+    fEventTree->Branch("evtwgt_nweight" ,&evtwgt_nweight);
+    
+    fEventTree->Branch("true_nu_energy", &true_nu_energy, "true_nu_energy/F");
+    fEventTree->Branch("true_nu_pdg", &true_nu_pdg, "true_nu_pdg/I");
+    fEventTree->Branch("true_nu_mode", &true_nu_mode, "true_nu_mode/I");
+    fEventTree->Branch("true_nu_ccnc", &true_nu_ccnc, "true_nu_ccnc/I");
+    fEventTree->Branch("true_nu_vtx_x", &true_nu_vtx_x, "true_nu_vtx_x/F");
+    fEventTree->Branch("true_nu_vtx_y", &true_nu_vtx_y, "true_nu_vtx_y/F");
+    fEventTree->Branch("true_nu_vtx_z", &true_nu_vtx_z, "true_nu_vtx_z/F");
+    fEventTree->Branch("true_nu_vtx_inTPC", &true_nu_vtx_inTPC, "true_nu_vtx_inTPC/O");
+    fEventTree->Branch("true_nu_vtx_in5cmTPC", &true_nu_vtx_in5cmTPC, "true_nu_vtx_in5cmTPC/O");
+    fEventTree->Branch("true_nu_vtx_inCCInclusiveTPC", &true_nu_vtx_inCCInclusiveTPC, "true_nu_vtx_inCCInclusiveTPC/O");
+    
+    fEventTree->Branch("true_lepton_pdg", &true_lepton_pdg, "true_lepton_pdg/I");
+    fEventTree->Branch("true_lepton_p", &true_lepton_p, "true_lepton_p/F");
+    fEventTree->Branch("true_lepton_ke", &true_lepton_ke, "true_lepton_ke/F");
+    fEventTree->Branch("true_lepton_theta", &true_lepton_theta, "true_lepton_theta/F");
+    fEventTree->Branch("true_lepton_costheta", &true_lepton_costheta, "true_lepton_costheta/F");
+    fEventTree->Branch("true_lepton_phi", &true_lepton_phi, "true_lepton_phi/F");
+    
+    fEventTree->Branch("true_nkaons", &true_nkaons, "true_nkaons/I");
 
-  art::ServiceHandle<art::TFileService> tfs;
+    fEventTree->Branch("true_kaon_length", &true_kaon_length, "true_kaon_length/F");
+    fEventTree->Branch("true_kaon_p", &true_kaon_p, "true_kaon_p/F");
+    fEventTree->Branch("true_kaon_ke", &true_kaon_ke, "true_kaon_ke/F");
+    fEventTree->Branch("true_kaon_theta", &true_kaon_theta, "true_kaon_theta/F");
+    fEventTree->Branch("true_kaon_costheta", &true_kaon_costheta, "true_kaon_costheta/F");
+    fEventTree->Branch("true_kaon_phi", &true_kaon_phi, "true_kaon_phi/F");
+    fEventTree->Branch("true_kaon_ccmuon_angle", &true_kaon_ccmuon_angle, "true_kaon_ccmuon_angle/F");
+    fEventTree->Branch("true_kaon_ccmuon_cosangle", &true_kaon_ccmuon_cosangle, "true_kaon_ccmuon_cosangle/F");
+    fEventTree->Branch("true_kaon_end_process", &true_kaon_end_process, "true_kaon_end_process/I");
+    fEventTree->Branch("true_kaon_end_ke", &true_kaon_end_ke, "true_kaon_end_ke/F");
+    fEventTree->Branch("true_kaon_start_x", &true_kaon_start_x, "true_kaon_start_x/F");
+    fEventTree->Branch("true_kaon_start_y", &true_kaon_start_y, "true_kaon_start_y/F");
+    fEventTree->Branch("true_kaon_start_z", &true_kaon_start_z, "true_kaon_start_z/F");
+    fEventTree->Branch("true_kaon_end_x", &true_kaon_end_x, "true_kaon_end_x/F");
+    fEventTree->Branch("true_kaon_end_y", &true_kaon_end_y, "true_kaon_end_y/F");
+    fEventTree->Branch("true_kaon_end_z", &true_kaon_end_z, "true_kaon_end_z/F");
+    fEventTree->Branch("true_kaon_end_inTPC", &true_kaon_end_inTPC, "true_kaon_end_inTPC/O");
+    fEventTree->Branch("true_kaon_end_in5cmTPC", &true_kaon_end_in5cmTPC, "true_kaon_end_in5cmTPC/O");
+    fEventTree->Branch("true_kaon_end_inCCInclusiveTPC", &true_kaon_end_inCCInclusiveTPC, "true_kaon_end_inCCInclusiveTPC/O");
+    
 
-  fEventTree = tfs->make<TTree>("Event", "Event Tree from Reco");
+    fEventTree->Branch("true_dau_muon_length", &true_dau_muon_length, "true_dau_muon_length/F");
+    fEventTree->Branch("true_dau_muon_p", &true_dau_muon_p, "true_dau_muon_p/F");
+    fEventTree->Branch("true_dau_muon_ke", &true_dau_muon_ke, "true_dau_muon_ke/F");
+    fEventTree->Branch("true_dau_muon_theta", &true_dau_muon_theta, "true_dau_muon_theta/F");
+    fEventTree->Branch("true_dau_muon_costheta", &true_dau_muon_costheta, "true_dau_muon_costheta/F");
+    fEventTree->Branch("true_dau_muon_phi", &true_dau_muon_phi, "true_dau_muon_phi/F");
+    fEventTree->Branch("true_dau_muon_ccmuon_angle", &true_dau_muon_ccmuon_angle, "true_dau_muon_ccmuon_angle/F");
+    fEventTree->Branch("true_dau_muon_ccmuon_cosangle", &true_dau_muon_ccmuon_cosangle, "true_dau_muon_ccmuon_cosangle/F");
+    fEventTree->Branch("true_dau_muon_end_process", &true_dau_muon_end_process, "true_dau_muon_end_process/I");
+    fEventTree->Branch("true_dau_muon_end_ke", &true_dau_muon_end_ke, "true_dau_muon_end_ke/F");
+    fEventTree->Branch("true_dau_muon_start_x", &true_dau_muon_start_x, "true_dau_muon_start_x/F");
+    fEventTree->Branch("true_dau_muon_start_y", &true_dau_muon_start_y, "true_dau_muon_start_y/F");
+    fEventTree->Branch("true_dau_muon_start_z", &true_dau_muon_start_z, "true_dau_muon_start_z/F");
+    fEventTree->Branch("true_dau_muon_end_x", &true_dau_muon_end_x, "true_dau_muon_end_x/F");
+    fEventTree->Branch("true_dau_muon_end_y", &true_dau_muon_end_y, "true_dau_muon_end_y/F");
+    fEventTree->Branch("true_dau_muon_end_z", &true_dau_muon_end_z, "true_dau_muon_end_z/F");
+    
+    fEventTree->Branch("true_dau_pip_length", &true_dau_pip_length, "true_dau_pip_length/F");
+    fEventTree->Branch("true_dau_pip_p", &true_dau_pip_p, "true_dau_pip_p/F");
+    fEventTree->Branch("true_dau_pip_ke", &true_dau_pip_ke, "true_dau_pip_ke/F");
+    fEventTree->Branch("true_dau_pip_theta", &true_dau_pip_theta, "true_dau_pip_theta/F");
+    fEventTree->Branch("true_dau_pip_costheta", &true_dau_pip_costheta, "true_dau_pip_costheta/F");
+    fEventTree->Branch("true_dau_pip_phi", &true_dau_pip_phi, "true_dau_pip_phi/F");
+    fEventTree->Branch("true_dau_pip_ccmuon_angle", &true_dau_pip_ccmuon_angle, "true_dau_pip_ccmuon_angle/F");
+    fEventTree->Branch("true_dau_pip_ccmuon_cosangle", &true_dau_pip_ccmuon_cosangle, "true_dau_pip_ccmuon_cosangle/F");
+    fEventTree->Branch("true_dau_pip_end_process", &true_dau_pip_end_process, "true_dau_pip_end_process/I");
+    fEventTree->Branch("true_dau_pip_end_ke", &true_dau_pip_end_ke, "true_dau_pip_end_ke/F");
+    fEventTree->Branch("true_dau_pip_start_x", &true_dau_pip_start_x, "true_dau_pip_start_x/F");
+    fEventTree->Branch("true_dau_pip_start_y", &true_dau_pip_start_y, "true_dau_pip_start_y/F");
+    fEventTree->Branch("true_dau_pip_start_z", &true_dau_pip_start_z, "true_dau_pip_start_z/F");
+    fEventTree->Branch("true_dau_pip_end_x", &true_dau_pip_end_x, "true_dau_pip_end_x/F");
+    fEventTree->Branch("true_dau_pip_end_y", &true_dau_pip_end_y, "true_dau_pip_end_y/F");
+    fEventTree->Branch("true_dau_pip_end_z", &true_dau_pip_end_z, "true_dau_pip_end_z/F");
+    
 
-  //gInterpreter->GenerateDictionary("vector<vector<vector<Float_t>> >", "vector");
-  fEventTree->Branch("event", &event, "event/I");
-  fEventTree->Branch("run", &run, "run/I");
-  fEventTree->Branch("subrun", &subrun, "surbrun/I");
-
-  fEventTree->Branch("IsKaon", &IsKaon, "IsKaon/I");
-  fEventTree->Branch("IsSingleKaon", &IsSingleKaon, "IsSingleKaon/I");
-  fEventTree->Branch("IsAssociatedKaon", &IsAssociatedKaon, "IsAssociatedKaon/I");
-  fEventTree->Branch("IsMuBR", &IsMuBR, "IsMuBR/I");
-  fEventTree->Branch("IsPiBR", &IsPiBR, "IsPiBR/I");
-  fEventTree->Branch("prip", &prip, "prip/I");
-  fEventTree->Branch("prip_k_dau", &prip_k_dau, "prip_k_dau/I");
-
-
-  fEventTree->Branch("process",&Process);
-  fEventTree->Branch("endprocess",&EndProcess);
-
-  fEventTree->Branch("event_weight" ,&event_weight);
-
-  fEventTree->Branch("evtwgt_funcname" ,&evtwgt_funcname);
-  fEventTree->Branch("evtwgt_weight" ,&evtwgt_weight);
-  fEventTree->Branch("evtwgt_nweight" ,&evtwgt_nweight);
-
-  fEventTree->Branch("true_nu_energy", &true_nu_energy, "true_nu_energy/F");
-  fEventTree->Branch("true_nu_pdg", &true_nu_pdg, "true_nu_pdg/I");
-  fEventTree->Branch("true_nu_mode", &true_nu_mode, "true_nu_mode/I");
-  fEventTree->Branch("true_nu_ccnc", &true_nu_ccnc, "true_nu_ccnc/I");
-  fEventTree->Branch("true_nu_vtx_x", &true_nu_vtx_x, "true_nu_vtx_x/F");
-  fEventTree->Branch("true_nu_vtx_y", &true_nu_vtx_y, "true_nu_vtx_y/F");
-  fEventTree->Branch("true_nu_vtx_z", &true_nu_vtx_z, "true_nu_vtx_z/F");
-  fEventTree->Branch("true_nu_vtx_inTPC", &true_nu_vtx_inTPC, "true_nu_vtx_inTPC/O");
-  fEventTree->Branch("true_nu_vtx_in5cmTPC", &true_nu_vtx_in5cmTPC, "true_nu_vtx_in5cmTPC/O");
-  fEventTree->Branch("true_nu_vtx_inCCInclusiveTPC", &true_nu_vtx_inCCInclusiveTPC, "true_nu_vtx_inCCInclusiveTPC/O");
-
-  fEventTree->Branch("true_lepton_pdg", &true_lepton_pdg, "true_lepton_pdg/I");
-  fEventTree->Branch("true_lepton_p", &true_lepton_p, "true_lepton_p/F");
-  fEventTree->Branch("true_lepton_ke", &true_lepton_ke, "true_lepton_ke/F");
-  fEventTree->Branch("true_lepton_theta", &true_lepton_theta, "true_lepton_theta/F");
-  fEventTree->Branch("true_lepton_costheta", &true_lepton_costheta, "true_lepton_costheta/F");
-  fEventTree->Branch("true_lepton_phi", &true_lepton_phi, "true_lepton_phi/F");
-
-  fEventTree->Branch("true_nkaons", &true_nkaons, "true_nkaons/I");
-
-  fEventTree->Branch("true_kaon_length", &true_kaon_length, "true_kaon_length/F");
-  fEventTree->Branch("true_kaon_p", &true_kaon_p, "true_kaon_p/F");
-  fEventTree->Branch("true_kaon_ke", &true_kaon_ke, "true_kaon_ke/F");
-  fEventTree->Branch("true_kaon_theta", &true_kaon_theta, "true_kaon_theta/F");
-  fEventTree->Branch("true_kaon_costheta", &true_kaon_costheta, "true_kaon_costheta/F");
-  fEventTree->Branch("true_kaon_phi", &true_kaon_phi, "true_kaon_phi/F");
-  fEventTree->Branch("true_kaon_ccmuon_angle", &true_kaon_ccmuon_angle, "true_kaon_ccmuon_angle/F");
-  fEventTree->Branch("true_kaon_ccmuon_cosangle", &true_kaon_ccmuon_cosangle, "true_kaon_ccmuon_cosangle/F");
-  fEventTree->Branch("true_kaon_end_process", &true_kaon_end_process, "true_kaon_end_process/I");
-  fEventTree->Branch("true_kaon_end_ke", &true_kaon_end_ke, "true_kaon_end_ke/F");
-  fEventTree->Branch("true_kaon_start_x", &true_kaon_start_x, "true_kaon_start_x/F");
-  fEventTree->Branch("true_kaon_start_y", &true_kaon_start_y, "true_kaon_start_y/F");
-  fEventTree->Branch("true_kaon_start_z", &true_kaon_start_z, "true_kaon_start_z/F");
-  fEventTree->Branch("true_kaon_end_x", &true_kaon_end_x, "true_kaon_end_x/F");
-  fEventTree->Branch("true_kaon_end_y", &true_kaon_end_y, "true_kaon_end_y/F");
-  fEventTree->Branch("true_kaon_end_z", &true_kaon_end_z, "true_kaon_end_z/F");
-  fEventTree->Branch("true_kaon_end_inTPC", &true_kaon_end_inTPC, "true_kaon_end_inTPC/O");
-  fEventTree->Branch("true_kaon_end_in5cmTPC", &true_kaon_end_in5cmTPC, "true_kaon_end_in5cmTPC/O");
-  fEventTree->Branch("true_kaon_end_inCCInclusiveTPC", &true_kaon_end_inCCInclusiveTPC, "true_kaon_end_inCCInclusiveTPC/O");
-
-
-  fEventTree->Branch("true_dau_muon_length", &true_dau_muon_length, "true_dau_muon_length/F");
-  fEventTree->Branch("true_dau_muon_p", &true_dau_muon_p, "true_dau_muon_p/F");
-  fEventTree->Branch("true_dau_muon_ke", &true_dau_muon_ke, "true_dau_muon_ke/F");
-  fEventTree->Branch("true_dau_muon_theta", &true_dau_muon_theta, "true_dau_muon_theta/F");
-  fEventTree->Branch("true_dau_muon_costheta", &true_dau_muon_costheta, "true_dau_muon_costheta/F");
-  fEventTree->Branch("true_dau_muon_phi", &true_dau_muon_phi, "true_dau_muon_phi/F");
-  fEventTree->Branch("true_dau_muon_ccmuon_angle", &true_dau_muon_ccmuon_angle, "true_dau_muon_ccmuon_angle/F");
-  fEventTree->Branch("true_dau_muon_ccmuon_cosangle", &true_dau_muon_ccmuon_cosangle, "true_dau_muon_ccmuon_cosangle/F");
-  fEventTree->Branch("true_dau_muon_end_process", &true_dau_muon_end_process, "true_dau_muon_end_process/I");
-  fEventTree->Branch("true_dau_muon_end_ke", &true_dau_muon_end_ke, "true_dau_muon_end_ke/F");
-  fEventTree->Branch("true_dau_muon_start_x", &true_dau_muon_start_x, "true_dau_muon_start_x/F");
-  fEventTree->Branch("true_dau_muon_start_y", &true_dau_muon_start_y, "true_dau_muon_start_y/F");
-  fEventTree->Branch("true_dau_muon_start_z", &true_dau_muon_start_z, "true_dau_muon_start_z/F");
-  fEventTree->Branch("true_dau_muon_end_x", &true_dau_muon_end_x, "true_dau_muon_end_x/F");
-  fEventTree->Branch("true_dau_muon_end_y", &true_dau_muon_end_y, "true_dau_muon_end_y/F");
-  fEventTree->Branch("true_dau_muon_end_z", &true_dau_muon_end_z, "true_dau_muon_end_z/F");
-
-  fEventTree->Branch("true_dau_pip_length", &true_dau_pip_length, "true_dau_pip_length/F");
-  fEventTree->Branch("true_dau_pip_p", &true_dau_pip_p, "true_dau_pip_p/F");
-  fEventTree->Branch("true_dau_pip_ke", &true_dau_pip_ke, "true_dau_pip_ke/F");
-  fEventTree->Branch("true_dau_pip_theta", &true_dau_pip_theta, "true_dau_pip_theta/F");
-  fEventTree->Branch("true_dau_pip_costheta", &true_dau_pip_costheta, "true_dau_pip_costheta/F");
-  fEventTree->Branch("true_dau_pip_phi", &true_dau_pip_phi, "true_dau_pip_phi/F");
-  fEventTree->Branch("true_dau_pip_ccmuon_angle", &true_dau_pip_ccmuon_angle, "true_dau_pip_ccmuon_angle/F");
-  fEventTree->Branch("true_dau_pip_ccmuon_cosangle", &true_dau_pip_ccmuon_cosangle, "true_dau_pip_ccmuon_cosangle/F");
-  fEventTree->Branch("true_dau_pip_end_process", &true_dau_pip_end_process, "true_dau_pip_end_process/I");
-  fEventTree->Branch("true_dau_pip_end_ke", &true_dau_pip_end_ke, "true_dau_pip_end_ke/F");
-  fEventTree->Branch("true_dau_pip_start_x", &true_dau_pip_start_x, "true_dau_pip_start_x/F");
-  fEventTree->Branch("true_dau_pip_start_y", &true_dau_pip_start_y, "true_dau_pip_start_y/F");
-  fEventTree->Branch("true_dau_pip_start_z", &true_dau_pip_start_z, "true_dau_pip_start_z/F");
-  fEventTree->Branch("true_dau_pip_end_x", &true_dau_pip_end_x, "true_dau_pip_end_x/F");
-  fEventTree->Branch("true_dau_pip_end_y", &true_dau_pip_end_y, "true_dau_pip_end_y/F");
-  fEventTree->Branch("true_dau_pip_end_z", &true_dau_pip_end_z, "true_dau_pip_end_z/F");
-
-
-  fEventTree->Branch("true_dau_pin_length", &true_dau_pin_length, "true_dau_pin_length/F");
-  fEventTree->Branch("true_dau_pin_p", &true_dau_pin_p, "true_dau_pin_p/F");
-  fEventTree->Branch("true_dau_pin_ke", &true_dau_pin_ke, "true_dau_pin_ke/F");
-  fEventTree->Branch("true_dau_pin_theta", &true_dau_pin_theta, "true_dau_pin_theta/F");
-  fEventTree->Branch("true_dau_pin_costheta", &true_dau_pin_costheta, "true_dau_pin_costheta/F");
-  fEventTree->Branch("true_dau_pin_phi", &true_dau_pin_phi, "true_dau_pin_phi/F");
-  fEventTree->Branch("true_dau_pin_ccmuon_angle", &true_dau_pin_ccmuon_angle, "true_dau_pin_ccmuon_angle/F");
-  fEventTree->Branch("true_dau_pin_ccmuon_cosangle", &true_dau_pin_ccmuon_cosangle, "true_dau_pin_ccmuon_cosangle/F");
-  fEventTree->Branch("true_dau_pin_end_process", &true_dau_pin_end_process, "true_dau_pin_end_process/I");
-  fEventTree->Branch("true_dau_pin_end_ke", &true_dau_pin_end_ke, "true_dau_pin_end_ke/F");
-  fEventTree->Branch("true_dau_pin_start_x", &true_dau_pin_start_x, "true_dau_pin_start_x/F");
-  fEventTree->Branch("true_dau_pin_start_y", &true_dau_pin_start_y, "true_dau_pin_start_y/F");
-  fEventTree->Branch("true_dau_pin_start_z", &true_dau_pin_start_z, "true_dau_pin_start_z/F");
-  fEventTree->Branch("true_dau_pin_end_x", &true_dau_pin_end_x, "true_dau_pin_end_x/F");
-  fEventTree->Branch("true_dau_pin_end_y", &true_dau_pin_end_y, "true_dau_pin_end_y/F");
-  fEventTree->Branch("true_dau_pin_end_z", &true_dau_pin_end_z, "true_dau_pin_end_z/F");
-
-  fEventTree->Branch("cheat_num_hits", &cheat_num_hits, "cheat_num_hits[20][10]/I");
-  fEventTree->Branch("cheat_ini_hits", &cheat_ini_hits, "cheat_ini_hits[20][10]/I");
-  fEventTree->Branch("cheat_closest_distance", &cheat_closest_distance, "cheat_closest_distance[20][10]/F");
-
-  fEventTree->Branch("cheat_peak_pdg", &cheat_peak_pdg, "cheat_peak_pdg[20][10]/F");
-  fEventTree->Branch("cheat_peak_theta", &cheat_peak_theta, "cheat_peak_theta[20][10]/F");
-  fEventTree->Branch("cheat_pip_trkln", &cheat_pip_trkln, "cheat_pip_trkln/F");
-  fEventTree->Branch("cheat_mup_trkln", &cheat_mup_trkln, "cheat_mup_trkln/F");
-
-  fEventTree->Branch("cheat_peak_phi", &cheat_peak_phi, "cheat_peak_phi[20][10]/F");
-  fEventTree->Branch("best_peak_theta", &best_peak_theta, "best_peak_theta[20][10]/F");
-  fEventTree->Branch("best_peak_phi", &best_peak_phi, "best_peak_phi[20][10]/F");
-  fEventTree->Branch("best_peak_trkln", &best_peak_trkln, "best_peak_trkln[20][10]/F");
-
-  fEventTree->Branch("true_length", &true_length, "true_length[10]/F");
-  fEventTree->Branch("true_p", &true_p, "true_p[10]/F");
-  fEventTree->Branch("true_ke", &true_ke, "true_ke[10]/F");
-  fEventTree->Branch("true_theta", &true_theta, "true_theta[10]/F");
-  fEventTree->Branch("true_costheta", &true_costheta, "true_costheta[10]/F");
-  fEventTree->Branch("true_phi", &true_phi, "true_phi[10]/F");
-  fEventTree->Branch("true_ccmuon_angle", &true_ccmuon_angle, "true_ccmuon_angle[10]/F");
-  fEventTree->Branch("true_ccmuon_cosangle", &true_ccmuon_cosangle, "true_ccmuon_cosangle[10]/F");
-  fEventTree->Branch("true_end_process", &true_end_process, "true_end_process[10]/I");
-  fEventTree->Branch("true_end_ke", &true_end_ke, "true_end_ke[10]/F");
-  fEventTree->Branch("true_end_x", &true_end_x, "true_end_x[10]/F");
-  fEventTree->Branch("true_end_y", &true_end_y, "true_end_y[10]/F");
-  fEventTree->Branch("true_end_z", &true_end_z, "true_end_z[10]/F");
-  fEventTree->Branch("true_end_inTPC", &true_end_inTPC, "true_end_inTPC[10]/O");
-  fEventTree->Branch("true_end_in5cmTPC", &true_end_in5cmTPC, "true_end_in5cmTPC[10]/O");
-  fEventTree->Branch("true_end_inCCInclusiveTPC", &true_end_inCCInclusiveTPC, "true_end_inCCInclusiveTPC[10]/O");
-
-  fEventTree->Branch("true_kaon_ndaughters", &true_kaon_ndaughters, "true_kaon_ndaughters/I");
-  fEventTree->Branch("true_kaon_ndaughters_decay", &true_kaon_ndaughters_decay, "true_kaon_ndaughters_decay/I");
-  fEventTree->Branch("true_kaon_ndaughters_inelastic", &true_kaon_ndaughters_inelastic, "true_kaon_ndaughters_inelastic/I");
-  fEventTree->Branch("true_kaon_ndecmup", &true_kaon_ndecmup, "true_kaon_ndecmup/I");
-  fEventTree->Branch("true_kaon_ndecpip", &true_kaon_ndecpip, "true_kaon_ndecpip/I");
-  fEventTree->Branch("true_kaon_ninekap", &true_kaon_ninekap, "true_kaon_ninekap/I");
-  fEventTree->Branch("true_kaon_ninepip", &true_kaon_ninepip, "true_kaon_ninepip/I");
-  fEventTree->Branch("true_kaon_ninepro", &true_kaon_ninepro, "true_kaon_ninepro/I");
-  fEventTree->Branch("true_kaon_daughter_length", &true_kaon_daughter_length, "true_kaon_daughter_length/F");
-  fEventTree->Branch("true_kaon_daughter_p", &true_kaon_daughter_p, "true_kaon_daughter_p/F");
-  fEventTree->Branch("true_kaon_daughter_ke", &true_kaon_daughter_ke, "true_kaon_daughter_ke/F");
-  fEventTree->Branch("true_kaon_daughter_theta", &true_kaon_daughter_theta, "true_kaon_daughter_theta/F");
-  fEventTree->Branch("true_kaon_daughter_costheta", &true_kaon_daughter_costheta, "true_kaon_daughter_costheta/F");
-  fEventTree->Branch("true_kaon_daughter_angle", &true_kaon_daughter_angle, "true_kaon_daughter_angle/F");
-  fEventTree->Branch("true_kaon_daughter_cosangle", &true_kaon_daughter_cosangle, "true_kaon_daughter_cosangle/F");
-  fEventTree->Branch("true_kaon_daughter_pdg", &true_kaon_daughter_pdg, "true_kaon_daughter_pdg/I");
-  fEventTree->Branch("true_kaon_daughter_start_x", &true_kaon_daughter_start_x, "true_kaon_daughter_start_x/F");
-  fEventTree->Branch("true_kaon_daughter_start_y", &true_kaon_daughter_start_y, "true_kaon_daughter_start_y/F");
-  fEventTree->Branch("true_kaon_daughter_start_z", &true_kaon_daughter_start_z, "true_kaon_daughter_start_z/F");
-  fEventTree->Branch("true_kaon_daughter_end_x", &true_kaon_daughter_end_x, "true_kaon_daughter_end_x/F");
-  fEventTree->Branch("true_kaon_daughter_end_y", &true_kaon_daughter_end_y, "true_kaon_daughter_end_y/F");
-  fEventTree->Branch("true_kaon_daughter_end_z", &true_kaon_daughter_end_z, "true_kaon_daughter_end_z/F");
-  fEventTree->Branch("true_kaon_daughter_end_inTPC", &true_kaon_daughter_end_inTPC, "true_kaon_daughter_endInTPC/O");
-  fEventTree->Branch("true_kaon_daughter_end_in5cmTPC", &true_kaon_daughter_end_in5cmTPC, "true_kaon_daughter_end_in5cmTPC/O");
-  fEventTree->Branch("true_kaon_daughter_end_inCCInclusiveTPC", &true_kaon_daughter_end_inCCInclusiveTPC, "true_kaon_daughter_end_inCCInclusiveTPC/O");
-
-  fEventTree->Branch("true_nhyperons", &true_nhyperons, "true_nhyperons/I");
-
-  fEventTree->Branch("true_nkaons_anti", &true_nkaons_anti, "true_nkaons_anti/I");
-  fEventTree->Branch("true_kaon_length_anti", &true_kaon_length_anti, "true_kaon_length_anti/F");
-  fEventTree->Branch("true_kaon_p_anti", &true_kaon_p_anti, "true_kaon_p_anti/F");
-  fEventTree->Branch("true_kaon_ke_anti", &true_kaon_ke_anti, "true_kaon_ke_anti/F");
-  fEventTree->Branch("true_kaon_theta_anti", &true_kaon_theta_anti, "true_kaon_theta_anti/F");
-  fEventTree->Branch("true_kaon_costheta_anti", &true_kaon_costheta_anti, "true_kaon_costheta_anti/F");
-  fEventTree->Branch("true_kaon_phi_anti", &true_kaon_phi_anti, "true_kaon_phi_anti/F");
-  fEventTree->Branch("true_kaon_ccmuon_angle_anti", &true_kaon_ccmuon_angle_anti, "true_kaon_ccmuon_angle_anti/F");
-  fEventTree->Branch("true_kaon_ccmuon_cosangle_anti", &true_kaon_ccmuon_cosangle_anti, "true_kaon_ccmuon_cosangle_anti/F");
-  fEventTree->Branch("true_kaon_end_process_anti", &true_kaon_end_process_anti, "true_kaon_end_process_anti/I");
-  fEventTree->Branch("true_kaon_end_ke_anti", &true_kaon_end_ke_anti, "true_kaon_end_ke_anti/F");
-  fEventTree->Branch("true_kaon_end_x_anti", &true_kaon_end_x_anti, "true_kaon_end_x_anti/F");
-  fEventTree->Branch("true_kaon_end_y_anti", &true_kaon_end_y_anti, "true_kaon_end_y_anti/F");
-  fEventTree->Branch("true_kaon_end_z_anti", &true_kaon_end_z_anti, "true_kaon_end_z_anti/F");
-  fEventTree->Branch("true_kaon_end_inTPC_anti", &true_kaon_end_inTPC_anti, "true_kaon_end_inTPC_anti/O");
-  fEventTree->Branch("true_kaon_end_in5cmTPC_anti", &true_kaon_end_in5cmTPC_anti, "true_kaon_end_in5cmTPC_anti/O");
-  fEventTree->Branch("true_kaon_end_inCCInclusiveTPC_anti", &true_kaon_end_inCCInclusiveTPC_anti, "true_kaon_end_inCCInclusiveTPC_anti/O");
+    fEventTree->Branch("true_dau_pin_length", &true_dau_pin_length, "true_dau_pin_length/F");
+    fEventTree->Branch("true_dau_pin_p", &true_dau_pin_p, "true_dau_pin_p/F");
+    fEventTree->Branch("true_dau_pin_ke", &true_dau_pin_ke, "true_dau_pin_ke/F");
+    fEventTree->Branch("true_dau_pin_theta", &true_dau_pin_theta, "true_dau_pin_theta/F");
+    fEventTree->Branch("true_dau_pin_costheta", &true_dau_pin_costheta, "true_dau_pin_costheta/F");
+    fEventTree->Branch("true_dau_pin_phi", &true_dau_pin_phi, "true_dau_pin_phi/F");
+    fEventTree->Branch("true_dau_pin_ccmuon_angle", &true_dau_pin_ccmuon_angle, "true_dau_pin_ccmuon_angle/F");
+    fEventTree->Branch("true_dau_pin_ccmuon_cosangle", &true_dau_pin_ccmuon_cosangle, "true_dau_pin_ccmuon_cosangle/F");
+    fEventTree->Branch("true_dau_pin_end_process", &true_dau_pin_end_process, "true_dau_pin_end_process/I");
+    fEventTree->Branch("true_dau_pin_end_ke", &true_dau_pin_end_ke, "true_dau_pin_end_ke/F");
+    fEventTree->Branch("true_dau_pin_start_x", &true_dau_pin_start_x, "true_dau_pin_start_x/F");
+    fEventTree->Branch("true_dau_pin_start_y", &true_dau_pin_start_y, "true_dau_pin_start_y/F");
+    fEventTree->Branch("true_dau_pin_start_z", &true_dau_pin_start_z, "true_dau_pin_start_z/F");
+    fEventTree->Branch("true_dau_pin_end_x", &true_dau_pin_end_x, "true_dau_pin_end_x/F");
+    fEventTree->Branch("true_dau_pin_end_y", &true_dau_pin_end_y, "true_dau_pin_end_y/F");
+    fEventTree->Branch("true_dau_pin_end_z", &true_dau_pin_end_z, "true_dau_pin_end_z/F");
+    
+    fEventTree->Branch("cheat_num_hits", &cheat_num_hits, "cheat_num_hits[20][10]/I");
+    fEventTree->Branch("cheat_ini_hits", &cheat_ini_hits, "cheat_ini_hits[20][10]/I");
+    fEventTree->Branch("cheat_closest_distance", &cheat_closest_distance, "cheat_closest_distance[20][10]/F");
+    
+    fEventTree->Branch("cheat_peak_pdg", &cheat_peak_pdg, "cheat_peak_pdg[20][10]/F");
+    fEventTree->Branch("cheat_peak_theta", &cheat_peak_theta, "cheat_peak_theta[20][10]/F");
+    fEventTree->Branch("cheat_pip_trkln", &cheat_pip_trkln, "cheat_pip_trkln/F");
+    fEventTree->Branch("cheat_mup_trkln", &cheat_mup_trkln, "cheat_mup_trkln/F");
+    
+    fEventTree->Branch("cheat_peak_phi", &cheat_peak_phi, "cheat_peak_phi[20][10]/F");
+    fEventTree->Branch("best_peak_theta", &best_peak_theta, "best_peak_theta[20][10]/F");
+    fEventTree->Branch("best_peak_phi", &best_peak_phi, "best_peak_phi[20][10]/F");
+    fEventTree->Branch("best_peak_trkln", &best_peak_trkln, "best_peak_trkln[20][10]/F");
+    
+    fEventTree->Branch("true_length", &true_length, "true_length[10]/F");
+    fEventTree->Branch("true_p", &true_p, "true_p[10]/F");
+    fEventTree->Branch("true_ke", &true_ke, "true_ke[10]/F");
+    fEventTree->Branch("true_theta", &true_theta, "true_theta[10]/F");
+    fEventTree->Branch("true_costheta", &true_costheta, "true_costheta[10]/F");
+    fEventTree->Branch("true_phi", &true_phi, "true_phi[10]/F");
+    fEventTree->Branch("true_ccmuon_angle", &true_ccmuon_angle, "true_ccmuon_angle[10]/F");
+    fEventTree->Branch("true_ccmuon_cosangle", &true_ccmuon_cosangle, "true_ccmuon_cosangle[10]/F");
+    fEventTree->Branch("true_end_process", &true_end_process, "true_end_process[10]/I");
+    fEventTree->Branch("true_end_ke", &true_end_ke, "true_end_ke[10]/F");
+    fEventTree->Branch("true_end_x", &true_end_x, "true_end_x[10]/F");
+    fEventTree->Branch("true_end_y", &true_end_y, "true_end_y[10]/F");
+    fEventTree->Branch("true_end_z", &true_end_z, "true_end_z[10]/F");
+    fEventTree->Branch("true_end_inTPC", &true_end_inTPC, "true_end_inTPC[10]/O");
+    fEventTree->Branch("true_end_in5cmTPC", &true_end_in5cmTPC, "true_end_in5cmTPC[10]/O");
+    fEventTree->Branch("true_end_inCCInclusiveTPC", &true_end_inCCInclusiveTPC, "true_end_inCCInclusiveTPC[10]/O");
+    
+    fEventTree->Branch("true_kaon_ndaughters", &true_kaon_ndaughters, "true_kaon_ndaughters/I");
+    fEventTree->Branch("true_kaon_ndaughters_decay", &true_kaon_ndaughters_decay, "true_kaon_ndaughters_decay/I");
+    fEventTree->Branch("true_kaon_ndaughters_inelastic", &true_kaon_ndaughters_inelastic, "true_kaon_ndaughters_inelastic/I");
+    fEventTree->Branch("true_kaon_ndecmup", &true_kaon_ndecmup, "true_kaon_ndecmup/I");
+    fEventTree->Branch("true_kaon_ndecpip", &true_kaon_ndecpip, "true_kaon_ndecpip/I");
+    fEventTree->Branch("true_kaon_ninekap", &true_kaon_ninekap, "true_kaon_ninekap/I");
+    fEventTree->Branch("true_kaon_ninepip", &true_kaon_ninepip, "true_kaon_ninepip/I");
+    fEventTree->Branch("true_kaon_ninepro", &true_kaon_ninepro, "true_kaon_ninepro/I");
+    fEventTree->Branch("true_kaon_daughter_length", &true_kaon_daughter_length, "true_kaon_daughter_length/F");
+    fEventTree->Branch("true_kaon_daughter_p", &true_kaon_daughter_p, "true_kaon_daughter_p/F");
+    fEventTree->Branch("true_kaon_daughter_ke", &true_kaon_daughter_ke, "true_kaon_daughter_ke/F");
+    fEventTree->Branch("true_kaon_daughter_theta", &true_kaon_daughter_theta, "true_kaon_daughter_theta/F");
+    fEventTree->Branch("true_kaon_daughter_costheta", &true_kaon_daughter_costheta, "true_kaon_daughter_costheta/F");
+    fEventTree->Branch("true_kaon_daughter_angle", &true_kaon_daughter_angle, "true_kaon_daughter_angle/F");
+    fEventTree->Branch("true_kaon_daughter_cosangle", &true_kaon_daughter_cosangle, "true_kaon_daughter_cosangle/F");
+    fEventTree->Branch("true_kaon_daughter_pdg", &true_kaon_daughter_pdg, "true_kaon_daughter_pdg/I");
+    fEventTree->Branch("true_kaon_daughter_start_x", &true_kaon_daughter_start_x, "true_kaon_daughter_start_x/F");
+    fEventTree->Branch("true_kaon_daughter_start_y", &true_kaon_daughter_start_y, "true_kaon_daughter_start_y/F");
+    fEventTree->Branch("true_kaon_daughter_start_z", &true_kaon_daughter_start_z, "true_kaon_daughter_start_z/F");
+    fEventTree->Branch("true_kaon_daughter_end_x", &true_kaon_daughter_end_x, "true_kaon_daughter_end_x/F");
+    fEventTree->Branch("true_kaon_daughter_end_y", &true_kaon_daughter_end_y, "true_kaon_daughter_end_y/F");
+    fEventTree->Branch("true_kaon_daughter_end_z", &true_kaon_daughter_end_z, "true_kaon_daughter_end_z/F");
+    fEventTree->Branch("true_kaon_daughter_end_inTPC", &true_kaon_daughter_end_inTPC, "true_kaon_daughter_endInTPC/O");
+    fEventTree->Branch("true_kaon_daughter_end_in5cmTPC", &true_kaon_daughter_end_in5cmTPC, "true_kaon_daughter_end_in5cmTPC/O");
+    fEventTree->Branch("true_kaon_daughter_end_inCCInclusiveTPC", &true_kaon_daughter_end_inCCInclusiveTPC, "true_kaon_daughter_end_inCCInclusiveTPC/O");
+    
+    fEventTree->Branch("true_nhyperons", &true_nhyperons, "true_nhyperons/I");
+    
+    fEventTree->Branch("true_nkaons_anti", &true_nkaons_anti, "true_nkaons_anti/I");
+    fEventTree->Branch("true_kaon_length_anti", &true_kaon_length_anti, "true_kaon_length_anti/F");
+    fEventTree->Branch("true_kaon_p_anti", &true_kaon_p_anti, "true_kaon_p_anti/F");
+    fEventTree->Branch("true_kaon_ke_anti", &true_kaon_ke_anti, "true_kaon_ke_anti/F");
+    fEventTree->Branch("true_kaon_theta_anti", &true_kaon_theta_anti, "true_kaon_theta_anti/F");
+    fEventTree->Branch("true_kaon_costheta_anti", &true_kaon_costheta_anti, "true_kaon_costheta_anti/F");
+    fEventTree->Branch("true_kaon_phi_anti", &true_kaon_phi_anti, "true_kaon_phi_anti/F");
+    fEventTree->Branch("true_kaon_ccmuon_angle_anti", &true_kaon_ccmuon_angle_anti, "true_kaon_ccmuon_angle_anti/F");
+    fEventTree->Branch("true_kaon_ccmuon_cosangle_anti", &true_kaon_ccmuon_cosangle_anti, "true_kaon_ccmuon_cosangle_anti/F");
+    fEventTree->Branch("true_kaon_end_process_anti", &true_kaon_end_process_anti, "true_kaon_end_process_anti/I");
+    fEventTree->Branch("true_kaon_end_ke_anti", &true_kaon_end_ke_anti, "true_kaon_end_ke_anti/F");
+    fEventTree->Branch("true_kaon_end_x_anti", &true_kaon_end_x_anti, "true_kaon_end_x_anti/F");
+    fEventTree->Branch("true_kaon_end_y_anti", &true_kaon_end_y_anti, "true_kaon_end_y_anti/F");
+    fEventTree->Branch("true_kaon_end_z_anti", &true_kaon_end_z_anti, "true_kaon_end_z_anti/F");
+    fEventTree->Branch("true_kaon_end_inTPC_anti", &true_kaon_end_inTPC_anti, "true_kaon_end_inTPC_anti/O");
+    fEventTree->Branch("true_kaon_end_in5cmTPC_anti", &true_kaon_end_in5cmTPC_anti, "true_kaon_end_in5cmTPC_anti/O");
+    fEventTree->Branch("true_kaon_end_inCCInclusiveTPC_anti", &true_kaon_end_inCCInclusiveTPC_anti, "true_kaon_end_inCCInclusiveTPC_anti/O");
 
   fEventTree->Branch("true_kaon_ndaughters_anti", &true_kaon_ndaughters_anti, "true_kaon_ndaughters_anti/I");
   fEventTree->Branch("true_kaon_ndaughters_decay_anti", &true_kaon_ndaughters_decay_anti, "true_kaon_ndaughters_decay_anti/I");
@@ -1533,8 +397,6 @@ void CCKaonAnalyzerRebuild::beginJob()
   fEventTree->Branch("reco_nshowers", &reco_ntracks, "reco_nshowers/I");
   fEventTree->Branch("nTracks", &nTracks, "nTracks/I");
   fEventTree->Branch("nShowers", &nShowers, "nShowers/I");
-  //  fEventTree->Branch("m_reco_track_sliceId", &m_reco_track_sliceId, "m_reco_track_sliceId[20]/F");
-  //fEventTree->Branch("m_reco_track_is_nuslice", &m_reco_track_is_nuslice, "m_reco_track_is_nuslice[20]/F");
 
   fEventTree->Branch("reco_track_start_x", &reco_track_start_x, "reco_track_start_x[20]/F");
   fEventTree->Branch("reco_track_start_y", &reco_track_start_y, "reco_track_start_y[20]/F");
@@ -1552,9 +414,6 @@ void CCKaonAnalyzerRebuild::beginJob()
   fEventTree->Branch("reco_track_kin0", &reco_track_kin0, "reco_track_kin0[20]/F");
   fEventTree->Branch("reco_track_kin1", &reco_track_kin1, "reco_track_kin1[20]/F");
   fEventTree->Branch("reco_track_kin2", &reco_track_kin2, "reco_track_kin2[20]/F");
-  //fEventTree->Branch("reco_track_dEdx" ,&reco_track_dEdx);
-  //fEventTree->Branch("reco_track_ResRan" ,&reco_track_ResRan);
-  //
 
   fEventTree->Branch("reco_track_dEdx_pl0", &reco_track_dEdx_pl0,"reco_track_dEdx_pl0[20][2000]");
   fEventTree->Branch("reco_track_ResRan_pl0", &reco_track_ResRan_pl0,"reco_track_ResRan_pl0[20][2000]");
@@ -1700,9 +559,6 @@ void CCKaonAnalyzerRebuild::beginJob()
   fEventTree->Branch("reco_track_daughter_nhits1", &reco_track_daughter_nhits1, "reco_track_daughter_nhits1[20][20]/I");
   fEventTree->Branch("reco_track_daughter_nhits2", &reco_track_daughter_nhits2, "reco_track_daughter_nhits2[20][20]/I");
 
-  //fEventTree->Branch("reco_track_daughter_dEdx", &reco_track_daughter_dEdx);
-  //fEventTree->Branch("reco_track_daughter_ResRan", &reco_track_daughter_ResRan);
-  //
   fEventTree->Branch("reco_track_daughter_dEdx_pl0", &reco_track_daughter_dEdx_pl0, "reco_track_daughter_dEdx_pl0[20][20][2000]/F");
   fEventTree->Branch("reco_track_daughter_ResRan_pl0", &reco_track_daughter_ResRan_pl0, "reco_track_daughter_ResRan_pl0[20][20][2000]/F");
 
@@ -1768,155 +624,11 @@ void CCKaonAnalyzerRebuild::beginJob()
   fEventTree->Branch("reco_track_daughter_MIP_pl1", &reco_track_daughter_MIP_pl1, "reco_track_daughter_MIP_pl1[20][20]/F");
   fEventTree->Branch("reco_track_daughter_MIP_pl2", &reco_track_daughter_MIP_pl2, "reco_track_daughter_MIP_pl2[20][20]/F");
 
-
-
   fEventTree->Branch("k_can_trkid", &k_can_trkid,"k_can_trkid/I");
   fEventTree->Branch("mu_can_trkid", &mu_can_trkid,"mu_can_trkid/I");
   fEventTree->Branch("k_mu_can_dis", &k_mu_can_dis,"k_mu_can_dis/F");
   fEventTree->Branch("k_mu_open_angle", &k_mu_open_angle,"k_mu_open_angle/F");
   fEventTree->Branch("k_vtx_dis", &k_vtx_dis,"k_vtx_dis/F");
-  //fEventTree->Branch("k_geant_ID", &k_geant_ID,"k_geant_ID/I");
-  //fEventTree->Branch("k_origin", &k_origin,"k_origin/I");
-  //fEventTree->Branch("k_pdg", &k_pdg,"k_pdg/I");
-  //fEventTree->Branch("k_isPri", &k_isPri,"k_isPri/I");
-  //fEventTree->Branch("k_endE", &k_endE,"k_endE/F");
-  //fEventTree->Branch("k_ness", &k_ness,"k_ness/I");
-  //fEventTree->Branch("kaon_vtx_dis", &kaon_vtx_dis,"kaon_vtx_dis/F");
-  //fEventTree->Branch("k_plen", &k_plen,"k_plen/F");
-  //fEventTree->Branch("k_phi", &k_phi,"k_phi/F");
-  //fEventTree->Branch("k_theta", &k_theta,"k_theta/F");
-  //fEventTree->Branch("k_in_5_TPC", &k_in_5_TPC,"k_in_5_TPC/I");
-  //fEventTree->Branch("k_in_CC_TPC", &k_in_CC_TPC,"k_in_CC_TPC/I");
-  //fEventTree->Branch("k_hit", &k_hit,"k_hit/I");
-  //fEventTree->Branch("k_range", &k_range,"k_range/F");
-  //fEventTree->Branch("k_KE", &k_KE,"k_KE/F");
-  //fEventTree->Branch("k_large_dedx", &k_large_dedx,"k_large_dedx/F");
-  //fEventTree->Branch("k_small_dedx", &k_small_dedx,"k_small_dedx/F");
-  //fEventTree->Branch("k_chi_p", &k_chi_p,"k_chi_p/F");
-  //fEventTree->Branch("k_chi_k", &k_chi_k,"k_chi_k/F");
-  //fEventTree->Branch("k_chi_pi", &k_chi_pi,"k_chi_pi/F");
-  //fEventTree->Branch("k_chi_mu", &k_chi_mu,"k_chi_mu/F");
-  //fEventTree->Branch("k_p_max", &k_p_max,"k_p_max/F");
-  //fEventTree->Branch("k_k_max", &k_k_max,"k_k_max/F");
-  //fEventTree->Branch("k_pi_max", &k_pi_max,"k_pi_max/F");
-  //fEventTree->Branch("k_mu_max", &k_mu_max,"k_mu_max/F");
-  //fEventTree->Branch("k_mip_max", &k_mip_max,"k_mip_max/F");
-  //fEventTree->Branch("k_L1_ratio", &k_L1_ratio,"k_L1_ratio/F");
-  //fEventTree->Branch("k_LL1", &k_LL1,"k_LL1/F");
-  //fEventTree->Branch("k_L2_ratio", &k_L2_ratio,"k_L2_ratio/F");
-  //fEventTree->Branch("k_LL2", &k_LL2,"k_LL2/F");
-  //fEventTree->Branch("k_Lp_ratio", &k_Lp_ratio,"k_Lp_ratio/F");
-  //fEventTree->Branch("k_LLp", &k_LLp,"k_LLp/F");
-  //fEventTree->Branch("k_Lk_ratio", &k_Lk_ratio,"k_Lk_ratio/F");
-  //fEventTree->Branch("k_LLk", &k_LLk,"k_LLk/F");
-  //fEventTree->Branch("k_pida_mean", &k_pida_mean,"k_pida_mean/F");
-  //fEventTree->Branch("k_pida_med", &k_pida_med,"k_pida_med/F");
-  //fEventTree->Branch("k_kde", &k_kde,"k_kde/F");
-  //fEventTree->Branch("k_trm_dqdx", &k_trm_dqdx,"k_trm_dqdx/F");
-  //fEventTree->Branch("k_trm_dedx", &k_trm_dedx,"k_trm_dedx/F");
-  //fEventTree->Branch("k_dedx",k_dedx,"k_dedx[3][3000]/F");
-  //fEventTree->Branch("k_rr",k_rr,"k_rr[3][3000]/F");
-  //fEventTree->Branch("mu_pdg", &mu_pdg,"mu_pdg/I");
-  //fEventTree->Branch("mu_isDec", &mu_isDec,"mu_isDec/I");
-  //fEventTree->Branch("mu_origin", &mu_origin,"mu_origin/I");
-  //fEventTree->Branch("mu_k_is_Mother", &mu_k_is_Mother,"mu_k_is_Mother/I");
-  //fEventTree->Branch("mu_mom_k_inelas", &mu_mom_k_inelas,"mu_mom_k_inelas/I");
-  //fEventTree->Branch("mu_ness", &mu_ness,"mu_ness/I");
-  //fEventTree->Branch("mu_plen", &mu_plen,"mu_plen/F");
-  //fEventTree->Branch("mu_phi", &mu_phi,"mu_phi/F");
-  //fEventTree->Branch("mu_theta", &mu_theta,"mu_theta/F");
-  //fEventTree->Branch("mu_in_5_TPC", &mu_in_5_TPC,"mu_in_5_TPC/I");
-  //fEventTree->Branch("mu_in_CC_TPC", &mu_in_CC_TPC,"mu_in_CC_TPC/I");
-  //fEventTree->Branch("mu_KE", &mu_KE,"mu_KE/F");
-  //fEventTree->Branch("mu_hit", &mu_hit,"mu_hit/I");
-  //fEventTree->Branch("mu_range", &mu_range,"mu_range/F");
-  //fEventTree->Branch("mu_large_dedx", &mu_large_dedx,"mu_large_dedx/F");
-  //fEventTree->Branch("mu_small_dedx", &mu_small_dedx,"mu_small_dedx/F");
-  //fEventTree->Branch("mu_chi_p", &mu_chi_p,"mu_chi_p/F");
-  //fEventTree->Branch("mu_chi_k", &mu_chi_k,"mu_chi_k/F");
-  //fEventTree->Branch("mu_chi_pi", &mu_chi_pi,"mu_chi_pi/F");
-  //fEventTree->Branch("mu_chi_mu", &mu_chi_mu,"mu_chi_mu/F");
-  //fEventTree->Branch("mu_p_max", &mu_p_max,"mu_p_max/F");
-  //fEventTree->Branch("mu_k_max", &mu_k_max,"mu_k_max/F");
-  //fEventTree->Branch("mu_pi_max", &mu_pi_max,"mu_pi_max/F");
-  //fEventTree->Branch("mu_mu_max", &mu_mu_max,"mu_mu_max/F");
-  //fEventTree->Branch("mu_mip_max", &mu_mip_max,"mu_mip_max/F");
-  //fEventTree->Branch("mu_L1_ratio", &mu_L1_ratio,"mu_L1_ratio/F");
-  //fEventTree->Branch("mu_LL1", &mu_LL1,"mu_LL1/F");
-  //fEventTree->Branch("mu_L2_ratio", &mu_L2_ratio,"mu_L2_ratio/F");
-  //fEventTree->Branch("mu_LL2", &mu_LL2,"mu_LL2/F");
-  //fEventTree->Branch("mu_Lp_ratio", &mu_Lp_ratio,"mu_Lp_ratio/F");
-  //fEventTree->Branch("mu_LLp", &mu_LLp,"mu_LLp/F");
-  //fEventTree->Branch("mu_Lk_ratio", &mu_Lk_ratio,"mu_Lk_ratio/F");
-  //fEventTree->Branch("mu_LLk", &mu_LLk,"mu_LLk/F");
-  //fEventTree->Branch("mu_pida_mean", &mu_pida_mean,"mu_pida_mean/F");
-  //fEventTree->Branch("mu_pida_med", &mu_pida_med,"mu_pida_med/F");
-  //fEventTree->Branch("mu_kde", &mu_kde,"mu_kde/F");
-  //fEventTree->Branch("mu_trm_dqdx", &mu_trm_dqdx,"mu_trm_dqdx/F");
-  //fEventTree->Branch("mu_trm_dedx", &mu_trm_dedx,"mu_trm_dedx/F");
-  //fEventTree->Branch("mu_dedx",mu_dedx,"mu_dedx[3][3000]/F");
-  //fEventTree->Branch("mu_rr",mu_rr,"mu_rr[3][3000]/F");
-  //fEventTree->Branch("mu_mom_process",&mu_mom_process);
-  //fEventTree->Branch("cc_mu_trkid", &cc_mu_trkid,"cc_mu_trkid/I");
-  //fEventTree->Branch("cc_mu_tlen", &cc_mu_tlen,"cc_mu_tlen/F");
-  //fEventTree->Branch("cc_mu_phi", &cc_mu_phi,"cc_mu_phi/F");
-  //fEventTree->Branch("cc_mu_theta", &cc_mu_theta,"cc_mu_theta/F");
-  //fEventTree->Branch("cc_mu_range", &cc_mu_range,"cc_mu_range/F");
-  //fEventTree->Branch("cc_mu_KE", &cc_mu_KE,"cc_mu_KE/F");
-  //fEventTree->Branch("cc_mu_hit", &cc_mu_hit,"cc_mu_hit/I");
-  //fEventTree->Branch("cc_mu_large_dedx", &cc_mu_large_dedx,"cc_mu_large_dedx/F");
-  //fEventTree->Branch("cc_mu_small_dedx", &cc_mu_small_dedx,"cc_mu_small_dedx/F");
-  //fEventTree->Branch("cc_dis_vtx", &cc_dis_vtx,"cc_dis_vtx/F");
-  //fEventTree->Branch("cc_mu_pdg", &cc_mu_pdg,"cc_mu_pdg/I");
-  //fEventTree->Branch("cc_mu_chi_p", &cc_mu_chi_p,"cc_mu_chi_p/F");
-  //fEventTree->Branch("cc_mu_chi_k", &cc_mu_chi_k,"cc_mu_chi_k/F");
-  //fEventTree->Branch("cc_mu_chi_pi", &cc_mu_chi_pi,"cc_mu_chi_pi/F");
-  //fEventTree->Branch("cc_mu_chi_mu", &cc_mu_chi_mu,"cc_mu_chi_mu/F");
-  //fEventTree->Branch("cc_mu_p_max", &cc_mu_p_max,"cc_mu_p_max/F");
-  //fEventTree->Branch("cc_mu_k_max", &cc_mu_k_max,"cc_mu_k_max/F");
-  //fEventTree->Branch("cc_mu_pi_max", &cc_mu_pi_max,"cc_mu_pi_max/F");
-  //fEventTree->Branch("cc_mu_mu_max", &cc_mu_mu_max,"cc_mu_mu_max/F");
-  //fEventTree->Branch("cc_mu_mip_max", &cc_mu_mip_max,"cc_mu_mip_max/F");
-  //fEventTree->Branch("cc_mu_L1_ratio", &cc_mu_L1_ratio,"cc_mu_L1_ratio/F");
-  //fEventTree->Branch("cc_mu_LL1", &cc_mu_LL1,"cc_mu_LL1/F");
-  //fEventTree->Branch("cc_mu_L2_ratio", &cc_mu_L2_ratio,"cc_mu_L2_ratio/F");
-  //fEventTree->Branch("cc_mu_LL2", &cc_mu_LL2,"cc_mu_LL2/F");
-  //fEventTree->Branch("cc_mu_Lp_ratio", &cc_mu_Lp_ratio,"cc_mu_Lp_ratio/F");
-  //fEventTree->Branch("cc_mu_LLp", &cc_mu_LLp,"cc_mu_LLp/F");
-  //fEventTree->Branch("cc_mu_Lk_ratio", &cc_mu_Lk_ratio,"cc_mu_Lk_ratio/F");
-  //fEventTree->Branch("cc_mu_LLk", &cc_mu_LLk,"cc_mu_LLk/F");
-  //fEventTree->Branch("cc_mu_pida_mean", &cc_mu_pida_mean,"cc_mu_pida_mean/F");
-  //fEventTree->Branch("cc_mu_pida_med", &cc_mu_pida_med,"cc_mu_pida_med/F");
-  //fEventTree->Branch("cc_mu_kde", &cc_mu_kde,"cc_mu_kde/F");
-  //fEventTree->Branch("cc_mu_trm_dqdx", &cc_mu_trm_dqdx,"cc_mu_trm_dqdx/F");
-  //fEventTree->Branch("cc_mu_trm_dedx", &cc_mu_trm_dedx,"cc_mu_trm_dedx/F");
-  //fEventTree->Branch("longest_trkid", &longest_trkid,"longest_trkid/I");
-  //fEventTree->Branch("longest_trklen", &longest_trklen,"longest_trklen/F");
-  //fEventTree->Branch("Tr_pri_mu_pdg", &Tr_pri_mu_pdg,"Tr_pri_mu_pdg/I");
-  //fEventTree->Branch("pri_Mu_is", &pri_Mu_is,"pri_Mu_is/I");
-  //fEventTree->Branch("Tr_pri_st_k_is", &Tr_pri_st_k_is,"Tr_pri_st_k_is/I");
-  //fEventTree->Branch("Tr_K_Inelas", &Tr_K_Inelas,"Tr_K_Inelas/I");
-  //fEventTree->Branch("Tr_k_plen", &Tr_k_plen,"Tr_k_plen/F");
-  //fEventTree->Branch("Tr_k_theta", &Tr_k_theta,"Tr_k_theta/F");
-  //fEventTree->Branch("Tr_k_phi", &Tr_k_phi,"Tr_k_phi/F");
-  //fEventTree->Branch("Tr_dec_mu_is", &Tr_dec_mu_is,"Tr_dec_mu_is/I");
-  //fEventTree->Branch("Tr_dec_mu_pi_pdg", &Tr_dec_mu_pi_pdg,"Tr_dec_mu_pi_pdg/I");
-  //fEventTree->Branch("Tr_mu_plen", &Tr_mu_plen,"Tr_mu_plen/F");
-  //fEventTree->Branch("Tr_k_endE", &Tr_k_endE,"Tr_k_endE/F");
-  //fEventTree->Branch("Tr_mu_theta", &Tr_mu_theta,"Tr_mu_theta/F");
-  //fEventTree->Branch("Tr_mu_phi", &Tr_mu_phi,"Tr_mu_phi/F");
-  //fEventTree->Branch("Tr_k_inTPC", &Tr_k_inTPC,"Tr_k_inTPC/I");
-  //fEventTree->Branch("Tr_mu_inTPC", &Tr_mu_inTPC,"Tr_mu_inTPC/I");
-  //fEventTree->Branch("Tr_k_in_5_TPC", &Tr_k_in_5_TPC,"Tr_k_in_5_TPC/I");
-  //fEventTree->Branch("Tr_k_in_CC_TPC", &Tr_k_in_CC_TPC,"Tr_k_in_CC_TPC/I");
-  //fEventTree->Branch("Tr_mu_in_5_TPC", &Tr_mu_in_5_TPC,"Tr_mu_in_5_TPC/I");
-  //fEventTree->Branch("Tr_mu_in_CC_TPC", &Tr_mu_in_CC_TPC,"Tr_mu_in_CC_TPC/I");
-  //fEventTree->Branch("Tr_kmu_open_ang", &Tr_kmu_open_ang,"Tr_kmu_open_ang/F");
-  //fEventTree->Branch("vtx_5cm_mult", &vtx_5cm_mult,"vtx_5cm_mult/I");
-  //fEventTree->Branch("k_start_dedx", &k_start_dedx,"k_start_dedx/F");
-  //fEventTree->Branch("k_end_dedx", &k_end_dedx,"k_end_dedx/F");
-  //fEventTree->Branch("mu_start_dedx", &mu_start_dedx,"mu_start_dedx/F");
-  //fEventTree->Branch("mu_end_dedx", &mu_end_dedx,"mu_end_dedx/F");
   fEventTree->Branch("cut_1", &cut_1,"cut_1/I");
   fEventTree->Branch("cut_2", &cut_2,"cut_2/I");
   fEventTree->Branch("cut_3", &cut_3,"cut_3/I");
@@ -1930,13 +642,6 @@ void CCKaonAnalyzerRebuild::beginJob()
   fEventTree->Branch("cut_11", &cut_11,"cut_11/I");
   fEventTree->Branch("cut_12", &cut_12,"cut_12/I");
   fEventTree->Branch("cut_13", &cut_13,"cut_13/I");
-  fEventTree->Branch("PFP_have_nuslice",& PFP_have_nuslice);
-
-  //fEventTree->Branch("kinelas_has_traks", &kinelas_has_traks,"kinelas_has_traks/I");
-  //fEventTree->Branch("kinelas_reco_trkID", &kinelas_reco_trkID,"kinelas_reco_trkID/I");
-  //fEventTree->Branch("kinelas_tlen", &kinelas_tlen,"kinelas_tlen/F");
-  //fEventTree->Branch("True_kinelas_KE", &True_kinelas_KE,"True_kinelas_KE/F");
-  //fEventTree->Branch("True_kinelas_tlen", &True_kinelas_tlen,"True_kinelas_tlen/F");
 
   fSubrunTree = tfs->make<TTree>("subruns", "SubRun Tree");
   fSubrunTree->Branch("run", &m_run, "run/i");
@@ -1944,19 +649,11 @@ void CCKaonAnalyzerRebuild::beginJob()
   //if (!m_isData)
   fSubrunTree->Branch("pot", &m_pot, "pot/F");
     
-  vertex_tree = tfs->make<TTree>("vertex_tree", "vertex_tree");
-  pot_tree = tfs->make<TTree>("pot_tree", "pot_tree");
-  eventweight_tree = tfs->make<TTree>("eventweight_tree", "eventweight_tree");
-  ncdelta_slice_tree = tfs->make<TTree>("ncdelta_slice_tree", "ncdelta_slice_tree");
-
-  this->CreateTrackBranches();
-  this->CreateShowerBranches();
-  this->CreateMCTruthBranches();
-  this->CreateSliceBranches();
 
 }
 
 void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
+
   reset();  
   run=evt.run();
   subrun=evt.subRun();
@@ -2014,26 +711,10 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     true_nu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",mctruth.GetNeutrino().Nu().Position().Vect());
     
 
-    /*
-    //sim::ParticleList::const_iterator itPart = ptList.begin(),
-    for(size_t iPart = 0; iPart < ptList.size(); ++iPart){
-      const simb::MCParticle* pPart = (itPart++)->second;
-      if (!pPart) {
-	throw art::Exception(art::errors::LogicError)
-	  << "GEANT particle #" << iPart << " returned a null pointer";
-      }
-      TrackIDtoIndex.emplace(TrackID, iPart);
-      gpdg.push_back(pPart->PdgCode());
-      gmother.push_back(pPart->Mother());
-      
-    }
-    */
-
     // print true information
     for (auto const& pPart : ptList) {
 
-      //if (pPart->Process()!="Primary" && pPart->E()-pPart->Mass()<0.001) continue;
-      
+      /*
       cout << "trackId " << pPart->TrackId();
       cout << ", mother " << pPart->Mother();
       cout << ", pdg " << pPart->PdgCode();
@@ -2050,7 +731,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       cout << ", delta Z " << pPart->EndZ()-pPart->Vz();
       cout << ", ndaughters " << pPart->NumberDaughters();
       cout << endl;
-      
+      */
 
       /*
       cout << "trackId " << pPart->TrackId();
@@ -2100,53 +781,6 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     flag_prim_k = true;
 
 
-    /*
-    if(IsKaon == false){
-
-      //if(std::find(prip.begin(),prip.end(),321)!=prip.end() && std::find(prip.begin(),prip.end(),-321)==prip.end() && std::find(prip.begin(),prip.end(),13)!=prip.end()){
-    if(std::find(prip.begin(),prip.end(),321)!=prip.end() && std::find(prip.begin(),prip.end(),13)!=prip.end()){
-      IsKaon = true;
-      cout << "IS K+" << endl;
-
-      if( std::find(prip.begin(),prip.end(),3212)!=prip.end() || std::find(prip.begin(),prip.end(),3222)!=prip.end() || std::find(prip.begin(),prip.end(),3112)!=prip.end() || std::find(prip.begin(),prip.end(),3122)!=prip.end()){
-	IsAssociatedKaon = true;
-	
-	if(true_nu_pdg==14 && true_nu_ccnc==0 && true_nu_vtx_inCCInclusiveTPC==1){
-	  
-	  cout << "IS ASSOCIATED KAON" << endl;
-	  cout << "Run " << run;
-	  cout << " Subrun " << subrun;
-	  cout << " Event " << event << endl;
-	  cout << "Primary K+ ID: " << prim_k_id << endl;
-	  
-	}
-      }
-      else{
-	IsSingleKaon = true;
-	if(true_nu_pdg==14 && true_nu_ccnc==0 && true_nu_vtx_inCCInclusiveTPC==1){
-	//if(true_nu_pdg==14 && true_nu_ccnc==0 && true_kaon_ke>=0 && true_nu_vtx_inCCInclusiveTPC==1){
-	  cout << "IS SINGLE KAON!!!!" << endl;
-	  cout << "Run " << run;
-	  cout << " Subrun " << subrun;
-	  cout << " Event " << event << endl;
-	  cout << "Primary K+ ID: " << prim_k_id << endl;
-	  
-	  }
-      }
-
-      if( std::find(prip_k_dau.begin(),prip_k_dau.end(),-13)!=prip_k_dau.end()){
-	IsMuBR = true;
-	cout << "IS KAON -> MU" << endl;
-      }
-      else if( std::find(prip_k_dau.begin(),prip_k_dau.end(),211)!=prip_k_dau.end() ){
-	IsPiBR = true;
-	cout << "IS KAON -> PI" << endl;
-      }
-
-    }
-
-    }
-*/
 
   //-----------------------------
 
@@ -2193,13 +827,13 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       }
       simb::MCTruth mctruth = mctruths->at(0);
 
+
     // get MCParticles
-    /*
     art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
     if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle)){
       art::fill_ptr_vector(ptList, mcParticleHandle); 
     }
-    */
+
 
     // true neutrino information
     true_nu_energy = mctruth.GetNeutrino().Nu().E();
@@ -2720,108 +1354,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
     }//is true signal
 
-    this->filter(evt);
+    //this->filter(evt);
   
-    # if 0
-    //Collect the PFParticles from the event. This is the core!                                                                                                                                                                                                                                                                             
-    art::ValidHandle<std::vector<recob::PFParticle>> const & pfParticleHandle = evt.getValidHandle<std::vector<recob::PFParticle>>(m_pandoraLabel);
-    std::vector<art::Ptr<recob::PFParticle>> pfParticleVector;
-    art::fill_ptr_vector(pfParticleVector,pfParticleHandle);
-    //So a cross check
-    /*                                                                                                                                                                                                                                                                                                                      
-    if (!pfParticleHandle.isValid())
-      {
-	mf::LogDebug("SinglePhoton") << "  Failed to find the PFParticles.\n";
-	if(m_run_pi0_filter)
-	  return false;
-	else
-	  return true;
-      }
-    */
-
-    //This is another pandora helper. I don't like PFParticle ID lookups but I guess lets keep for now;                                                                                                                                                                                                                                     
-    // Produce a map of the PFParticle IDs for fast navigation through the hierarchy                                                                                                                                                                                                                                                        
-    //    typedef std::map< size_t, art::Ptr<recob::PFParticle>> PFParticleIdMap;
-    //    CCKaonAnalyzerRebuild::
-  
-    
-    PFParticleIdMap pfParticleMap;
-    this->GetPFParticleIdMap(pfParticleHandle, pfParticleMap);
-  
-    //Slices                                                                                                                                                                                                                                                                                                                                
-    art::ValidHandle<std::vector<recob::Slice>> const & sliceHandle  = evt.getValidHandle<std::vector<recob::Slice>>(m_pandoraLabel);
-    std::vector<art::Ptr<recob::Slice>> sliceVector;
-    art::fill_ptr_vector(sliceVector,sliceHandle);
-    //And some associations                                                                                                                                                                                                                                                                                                                 
-    art::FindManyP<recob::PFParticle> pfparticles_per_slice(sliceHandle, evt, m_pandoraLabel);
-    art::FindManyP<recob::Hit> hits_per_slice(sliceHandle, evt, m_pandoraLabel);
-
-    std::map< art::Ptr<recob::Slice>, std::vector<art::Ptr<recob::PFParticle>> > sliceToPFParticlesMap;
-    std::map<int, std::vector<art::Ptr<recob::PFParticle>> > sliceIDToPFParticlesMap;
-    for(size_t i=0; i< sliceVector.size(); ++i){
-      auto slice = sliceVector[i];
-      sliceToPFParticlesMap[slice] =pfparticles_per_slice.at(slice.key());
-      sliceIDToPFParticlesMap[slice->ID()] = pfparticles_per_slice.at(slice.key());
-    }
-
-    std::map< art::Ptr<recob::Slice>, std::vector<art::Ptr<recob::Hit>> > sliceToHitsMap;
-    std::map<int, std::vector<art::Ptr<recob::Hit>> > sliceIDToHitsMap;
-    for(size_t i=0; i< sliceVector.size(); ++i){
-      auto slice = sliceVector[i];
-      sliceToHitsMap[slice] =hits_per_slice.at(slice.key());
-      sliceIDToHitsMap[slice->ID()] = hits_per_slice.at(slice.key());
-    }
-
-    if(m_is_verbose) std::cout<<"SinglePhoton::analyze() \t||\t Get PandoraMetadata"<<std::endl;
-    //add the associaton between PFP and metadata, this is important to look at the slices and scores                                                                                                                                                                                                                                       
-    art::FindManyP< larpandoraobj::PFParticleMetadata > pfPartToMetadataAssoc(pfParticleHandle, evt, m_pandoraLabel);
-    std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<larpandoraobj::PFParticleMetadata>> > pfParticleToMetadataMap;
-    for(size_t i=0; i< pfParticleVector.size(); ++i){
-      const art::Ptr<recob::PFParticle> pfp = pfParticleVector[i];
-      pfParticleToMetadataMap[pfp] =  pfPartToMetadataAssoc.at(pfp.key());
-    }
-    
-    //these are all filled in analyze slice                                                                                                                                                                                                                                                                                             
-    std::vector<std::pair<art::Ptr<recob::PFParticle>,int>> allPFPSliceIdVec; //stores a pair of all PFP's in the event and the slice ind                                                                                                                                                                                               
-    std::vector<std::pair<art::Ptr<recob::PFParticle>,int>> primaryPFPSliceIdVec; //stores a pair of only the primary PFP's in the event and the slice ind                                                                                                                                                                              
-    std::map<int, double> sliceIdToNuScoreMap; //map between a slice Id and neutrino score                                                                                                                                                                                                                                              
-    std::map<art::Ptr<recob::PFParticle>, bool> PFPToClearCosmicMap; //returns true for clear cosmic, false otherwise                                                                                                                                                                                                                   
-    std::map<art::Ptr<recob::PFParticle>, int> PFPToSliceIdMap; //returns the slice id for all PFP's                                                                                                                                                                                                                                    
-    std::map<art::Ptr<recob::PFParticle>,bool> PFPToNuSliceMap;
-    std::map<art::Ptr<recob::PFParticle>,double> PFPToTrackScoreMap;
-    std::map<int, int> sliceIdToNumPFPsMap;
-    //std::cout<<"SinglePhoton::analyze::AnalyzeSlice()\t||\t Starting"<<std::endl;
-
-    
-    this->AnalyzeSlices(pfParticleToMetadataMap, pfParticleMap,  primaryPFPSliceIdVec, sliceIdToNuScoreMap, PFPToClearCosmicMap, PFPToSliceIdMap, PFPToNuSliceMap, PFPToTrackScoreMap);
-    //std::cout<<"There are "<< allPFPSliceIdVec.size()<<" pfp-slice id matches stored in the vector"<<std::endl;                                                                                                                                                                                                                       
-    //std::cout<<"SinglePhoton::analyze\t||\tthe number of PPF's with stored clear cosmic info is "<<PFPToClearCosmicMap.size()<<std::endl;
-    //std::cout<<"SinglePhoton::analyze\t||\tthe number of PFP's stored in the PFPToSliceIdMap is "<<PFPToSliceIdMap.size()<<std::endl;
-    if (PFPToSliceIdMap.size() < 1){
-      std::cout<<"ERROR, not storing PFP's in PFPToSliceIdMap"<<std::endl;
-    }
-
-    for (auto pair:PFPToNuSliceMap){
-      auto pfp = pair.first;
-      auto is_nuslice = pair.second;
-      if (is_nuslice){
-	std::cout<<"pfp in nuslice "<<pfp->Self()<<std::endl;
-      }
-
-    }
-
-    for (auto pair:sliceIDToPFParticlesMap){
-      std::vector<art::Ptr<recob::PFParticle>> pfp_vec = pair.second;
-      int slice_id = pair.first;
-      //if (slice_vec[0]->Slice() != PFPToSliceIdMap[pfp] )                                                                                                                                                                                                                                                                           
-      for(auto pfp: pfp_vec){
-	if (slice_id != PFPToSliceIdMap[pfp] && PFPToSliceIdMap[pfp]>=0){
-	  //std::cout<<"sliceIDToPFParticlesMap[slice->ID()] for pfp "<<pfp->Self()<<" is slice "<< slice_id<< "but PFPToSliceIdMap[pfp] = "<<PFPToSliceIdMap[pfp]<<std::endl;
-	}
-      }
-
-    }    
-    #endif
 
   }//isMC
 
@@ -2840,89 +1374,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       reco_nu_cc_filter = trigRes->at(itp).accept();
     }
   }
-  /*
-  art::Handle<std::vector< recob::PFParticle > > pfphandle;
-  vector< art::Ptr< recob::PFParticle > > pfpvector;
-  vector< art::Ptr< recob::PFParticle > > pfpvectorPandora;
-  if(evt.getByLabel(fPFParticleLabel,pfphandle)) art::fill_ptr_vector(pfpvector,pfphandle);
-  if(!pfpvector.size()) return;
-
-  art::FindManyP< larpandoraobj::PFParticleMetadata > pfpmeta(pfphandle,evt,"pandora");
-  art::FindManyP<recob::Slice> nuslice(pfpvector, evt, "pandora");
-
-  size_t pfpkey = 999999; 
-
-  for(const art::Ptr< recob::PFParticle > &pfp : pfpvector){
-
-    const std::vector< art::Ptr<larpandoraobj::PFParticleMetadata> > &pfParticleMetadataList(pfpmeta.at(pfp.key()));
-
-    if (pfParticleMetadataList.empty()) continue;
-
-    for (const art::Ptr<larpandoraobj::PFParticleMetadata> &pfpmd : pfParticleMetadataList ) {
-      auto pfParticlePropertiesMap = pfpmd->GetPropertiesMap();
-      if (pfParticlePropertiesMap.empty()) continue;
-      for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it) {
-	if(!(it->first == "TrackScore")) continue; 
-	cout << "PFParticle properties: " << it->first << " Key: " << pfpmd.key() << " Value: " << it->second << endl;
-	pfpkey = pfp.key();
-	pfpvectorPandora.push_back(pfp);
-      }
-    }
-    auto slices = nuslice.at(pfp.key());
-    cout << "Slices: " << slices.size() << endl;
-  }
-  */
-
-  art::Handle< vector< recob::PFParticle > > pfphandle;
-  vector< art::Ptr< recob::PFParticle > > pfpvector;
-  vector< art::Ptr< recob::PFParticle > > pfpvectorPandora;
-
-  if(evt.getByLabel(fPFParticleLabel,pfphandle)) art::fill_ptr_vector(pfpvector,pfphandle);
-  if(!pfpvector.size()) return;
-
-  art::FindManyP< larpandoraobj::PFParticleMetadata > pfpmeta(pfphandle,evt,"pandora");
-  art::FindManyP<recob::Slice> nuslice(pfpvector, evt, "pandora");
-
-  size_t pfpkey = 999999;
-
-  for(const art::Ptr< recob::PFParticle > &pfp : pfpvector){
-
-    const std::vector< art::Ptr<larpandoraobj::PFParticleMetadata> > &pfParticleMetadataList(pfpmeta.at(pfp.key()));
-
-    if (pfParticleMetadataList.empty()) continue;
 
 
-    for (const art::Ptr<larpandoraobj::PFParticleMetadata> &pfpmd : pfParticleMetadataList ) {
-      auto pfParticlePropertiesMap = pfpmd->GetPropertiesMap();
-      //for (const larpandoraobj::PFParticleMetadata pfpmd : pfParticleMetadataList ) {
-      //auto pfParticlePropertiesMap = pfpmd.GetPropertiesMap();
-      if (pfParticlePropertiesMap.empty()) continue; //cout << pfParticlePropertiesMap.size() << endl;
-      for (std::map<std::string, float>::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it) {
-	if(!(it->first == "TrackScore")) continue;
-	//cout << "PFParticle properties: " << it->first << " Key: " << pfpmd.key() << " Value: " << it->second << endl;
-	pfpkey = pfp.key();
-	pfpvectorPandora.push_back(pfp);
-      }
-    }// for all metadata items in the particle metadata
-    if(pfp.key() == pfpkey){
-      /*
-      cout << "PFP ID: " <<  pfp->Self() <<endl;
-      cout << "PFP IsPrimary: " << pfp->IsPrimary() <<endl;
-      cout << "PFP parent: " << pfp->Parent() <<endl;
-      cout << "PFP PDG: " << pfp->PdgCode() <<endl;
-      cout << "PFP key: " << pfp.key() << "=====================\n" <<endl;
-      */
-    }
-
-    auto slices = nuslice.at(pfp.key());
-    //cout << "Slices: " << slices.size() << endl;
-    //" ID: " << slice->ID() endl;
-
-    //for(size_t i=0; i< slices.size(); ++i){
-    //auto slice = slices[i];
-    //}
-
-  }// for entries in list
 
 
 
@@ -2931,24 +1384,18 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-
-  // -- std::cout << "Event passed NuCC filter" << std::endl;
   cut_1=1;
 
   // Collect all recontructed particles
   art::Handle<std::vector<recob::PFParticle>> pfparticles;
   evt.getByLabel(m_pfp_producer, pfparticles);
 
-  //cout << "pfpvector.size(): " << pfpvector.size() << endl;
-  //cout << "pfparticles->size(): " << pfparticles->size() << endl;
-  //cout << "pfphandle->size(): " << pfphandle->size() << endl;
 
   if (pfparticles->size()==0) {
     std::cout << "No PFParticles found" << std::endl;
     fEventTree->Fill();
     return;
   }
-  // -- std::cout << "Number of PFParticles " << pfparticles->size() << std::endl;
   cut_2=1;	  
 
   // Get PFParticle associations
@@ -2997,15 +1444,11 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   cut_6=1;	  
 
   art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
-  //--cout << "Found one neutrino";
-  //--cout << " ID " << pfnu->Self();
-  //--cout << " PDG " << pfnu->PdgCode();
-  //--cout << " Number of daughters " << pfnu->Daughters().size() << endl;
 
   reco_nu_vtx_x = pfparticleVertexAssn.at(pfnu.key()).front()->position().X();
   reco_nu_vtx_y = pfparticleVertexAssn.at(pfnu.key()).front()->position().Y();
   reco_nu_vtx_z = pfparticleVertexAssn.at(pfnu.key()).front()->position().Z();
-  //--cout << "Neutrino vertex (x,y,z) = " << reco_nu_vtx_x << ", " << reco_nu_vtx_y << ", " << reco_nu_vtx_z << endl;
+
   reco_nu_vtx_inTPC = isInsideVolume("TPC",reco_nu_vtx_x,reco_nu_vtx_y,reco_nu_vtx_z);
   reco_nu_vtx_in5cmTPC = isInsideVolume("5cmTPC",reco_nu_vtx_x,reco_nu_vtx_y,reco_nu_vtx_z);
   reco_nu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",reco_nu_vtx_x,reco_nu_vtx_y,reco_nu_vtx_z);
@@ -3022,12 +1465,6 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     if (pfparticle->Parent()==pfnu->Self() && pfparticleTrackAssn.at(i).size()==1) {
 
       art::Ptr<recob::Track> track = pfparticleTrackAssn.at(i).front();
-      //--cout << "Neutrino daughter";
-      //--cout << " ID: " << pfparticle->Self();
-     //-- cout << " PDG: " << pfparticle->PdgCode();
-     //-- cout << " Track key: " << track.key() << endl;
-     //-- cout << " Z : " << track->Start().Z() << " - " << track->End().Z() << endl;
-     //-- cout << " length : " << track->Length() << endl;
 
       reco_nu_daughters_id.push_back(track.key());
 
@@ -3041,7 +1478,6 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   }
 
   reco_nu_ndaughters = reco_nu_daughters_id.size();
-  //--std::cout << "Number of neutrino daughters with one associated track " << reco_nu_ndaughters << std::endl;
   reco_nu_cc_nmue = pfmuons.size();
 
   if (pfmuons.size()!=1) {
@@ -3053,16 +1489,11 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
   art::Ptr<recob::PFParticle> pfmuon = pfmuons.front();
   art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
-  //--cout << "Found CC muon";
-  //--cout << " ID " << pfmuon->Self();
-  //--cout << " PDG " << pfmuon->PdgCode();
-  //--cout << " Parent " << pfmuon->Parent();
-  //--cout << " Track key " << trkmuon.key() << endl;
 
   reco_ccmu_vtx_x = pfparticleVertexAssn.at(pfmuon.key()).front()->position().X();
   reco_ccmu_vtx_y = pfparticleVertexAssn.at(pfmuon.key()).front()->position().Y();
   reco_ccmu_vtx_z = pfparticleVertexAssn.at(pfmuon.key()).front()->position().Z();
-  //--cout << "CC muon start (x,y,z) = " << reco_ccmu_vtx_x << ", " << reco_ccmu_vtx_y << ", " << reco_ccmu_vtx_z << endl;
+
   reco_ccmu_vtx_inTPC = isInsideVolume("TPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
   reco_ccmu_vtx_in5cmTPC = isInsideVolume("5cmTPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
   reco_ccmu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
@@ -3125,106 +1556,25 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   //if (showerListHandle.isValid()) NShowers=showerlist.size();
   //int nshowers = 0;
 
-  //cout << "NTracks: " << NTracks << ", NShowers: " << NShowers << endl;
 
   //selection cuts
   std::vector<int> kaon_can_trkID;
   std::vector<int> muon_can_trkID;
-
-  /*
-  std::map<art::Ptr<recob::Track>, art::Ptr<recob::PFParticle>> trackToPFParticleMap;
-  const std::map<art::Ptr<recob::PFParticle>, int> pfParticleToSliceIDMap;
-  const std::map<int, std::vector<art::Ptr<recob::Hit>>> sliceIDToHitsMap;
-  const std::map<art::Ptr<recob::PFParticle>, std::vector<art::Ptr<recob::Hit>> > pfParticleToHitsMap;
-      
-  for(size_t t =0; t< tracklist.size(); t++){
-    art::Ptr<recob::Track> track = trackslist[t];
-    art::Ptr<recob::PFParticle> pfp = trackToPFParticleMap[track];
-    int sliceid = pfParticleToSliceIDMap.at(pfp);
-    auto slicehits = sliceIDToHitsMap.at(sliceid);
-    auto trackhits = pfParticleToHitsMap.at(pfp);
-
-    std::cout<<"SinglePhoton::SSS\t||\ttrack "<<t<<" is in slice "<<sliceid<<" which has "<<slicehits.size()<<" hits. This track has  "<<trackhits.size()<<" of them. "<<std::endl;
-    total_track_hits+=trackhits.size();
-    if(nu_slice_id !=  sliceid && nu_slice_id != -999){
-      std::cout<<"ERROR!! In Second Shower Search, the neutrino slice ID changed? this: "<<sliceid<<", last: "<<nu_slice_id<<std::endl;
-      exit(EXIT_FAILURE);
-    }
-    nu_slice_id = sliceid;
-
-
-    for(auto &h: trackhits){
-      associated_hits.push_back(h);
-    }
-
+  
+  std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData>> assocMCPartt;
+  if (isMC) {
+    assocMCPartt = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> (new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitListHandle, evt, fHitTruthAssns));
   }
-  */
-
-  // loop over tracks again to look for kaon track //->using reconinfo not true?
-  //--cout << "Looking for kaon tracks from " << NTracks << " tracks available" << endl;
-  //
-std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData>> assocMCPartt;
-    if (isMC) {
-      assocMCPartt = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> (new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitListHandle, evt, fHitTruthAssns));
-    }
   // loop over nu daughters
   trkf::TrackMomentumCalculator trkmom;
   //trkmom.SetMinLength(50);
-
+  
   //initialiseCanvas();
 
   cout << "reco_nu_ndaughters: " << reco_nu_ndaughters << endl;
   for (int i=0; i<reco_nu_ndaughters; i++) {
   //for (int i=0; i<NTracks; i++) {
 
-    std::map<int,int> mrgidpdg;
-    std::map<int,int> mrgidpdg_3D;
-    std::map<int,TVector3> mrgidmom;
-    vector<TH1D*> h_angular_distribution_pfparticle_cheat;
-    vector<TH2D*> h_angular_distribution_pfparticle_cheat_3D;
-    vector<TH1D*> h_angular_distribution_pfparticle;
-    vector<TH2D*> h_angular_distribution_pfparticle_3D;
-    vector<TH2D*> h_angular_distribution_pfparticle_surface;
-    vector<TH3D*> h_angular_distribution_pfparticle_sphere;
-    vector<bool> v_trk_flg;
-    vector<bool> v_trk_flg_3D;
-    vector<bool> v_trk_flg_surface;
-    vector<bool> v_trk_flg_peak;
-    vector<int> v_pdg;
-    vector<int> v_pdg_3D;
-    vector<int> v_pdg_peak;
-    //vector<TVector2> view_peak_vector_cheat;
-    std::map<double, TVector2, std::greater<>> view_peak_map;
-    std::map<int, std::map<double, TVector2, std::greater<>>> view_peak_map_cheat;
-    //vector<TVector2> view_peak_vector;
-    vector<TVector2> best_peak_bins;
-    std::map<int, vector<TVector2>> best_peak_bins_cheat;
-
-    std::map<int, std::map<int, double>> angular_distribution_mrgid_map;
-    std::map<int, std::map<int, std::map<int, double>>> angular_distribution_mrgid_map_3D;
-    std::map<int, double> angular_distribution_map_track;
-    std::map<int, double> angular_distribution_map_shower;
-    std::map<int, std::map<int, double>> angular_distribution_map_3D_track;
-    std::map<int, std::map<int, double>> angular_distribution_map_3D_shower;
-    std::map<int, std::map<int, double>> angular_distribution_map_3D_pfparticle;
-
-    std::vector<art::Ptr<recob::Hit>> unavailable_hit_list;
-    std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list;
-    std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat;
-    //std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat_pip;
-    //std::vector<art::Ptr<recob::Hit>> shower_spine_hit_list_cheat_mup;
-
-    std::vector<std::vector<art::Ptr<recob::Hit>>> shower_spine_hit_list_vector;
-    std::vector<std::vector<art::Ptr<recob::Hit>>> shower_spine_hit_list_cheat_vector;
-    std::vector<std::vector<art::Ptr<recob::Hit>>> shower_spine_hit_list_cheat_pip_vector;
-    std::vector<std::vector<art::Ptr<recob::Hit>>> shower_spine_hit_list_cheat_mup_vector;
-    std::vector<art::Ptr<recob::Hit>> true_pi0_hit_list;
-
-    std::vector<art::Ptr<recob::Hit>> hits_from_reco;
-    std::vector<art::Ptr<recob::Hit>> hits_from_true_pip;
-    std::vector<art::Ptr<recob::Hit>> hits_from_true_mup;
-
-    //art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
 
     int currentMergedId = 1;
     int currentMergedId_3D = 1;
@@ -3234,25 +1584,11 @@ std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData
     //art::Ptr<recob::Track> ptrack(trackListHandle,i);
     const recob::Track& track = *ptrack;
 
-    /*
-    std::map<art::Ptr<recob::PFParticle>,bool> PFPToNuSliceMap;
-    std::map<art::Ptr<recob::PFParticle>, int> PFPToSliceIdMap;
-    std::map<art::Ptr<recob::Track>, art::Ptr<recob::PFParticle>> trackToNuPFParticleMap;
-
-    const art::Ptr<recob::PFParticle> pfps = trackToNuPFParticleMap[ptrack];
-    m_reco_track_is_nuslice[ntracks] = PFPToNuSliceMap[pfps];
-    m_reco_track_sliceId[ntracks] = PFPToSliceIdMap[pfps];
-    cout << PFPToNuSliceMap[pfps] << " " << PFPToSliceIdMap[pfps] << endl;
-    */
-
     // skip cc muon track
-    if (ptrack.key()==trkmuon.key()) cout << "HEY THIS IS CC MUON" << endl;
     if (ptrack.key()==trkmuon.key()) continue;
 
-    cout << track.Vertex().X() << endl;
     // check track start and end
     TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
-
     TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
 
     reco_track_start_x[ntracks] = track.Vertex().X();
@@ -3286,51 +1622,14 @@ std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData
     reco_track_P_str[ntracks] = track.StartMomentum();
     reco_track_P_end[ntracks] = track.EndMomentum();
 
-    //TVector3 endmom = track.EndMomentumVector<TVector3>(); 
-    //TVector3 strmom = track.StartMomentumVector<TVector3>(); 
-    //TVector3 vtxmom = track.VertexMomentumVector<TVector3>(); 
-
-    //auto trkf::TrackMomentumCalculator trkm;
-    //cout << "mom calc: " << trkmom.GetTrackMomentum(trklen, 321) <<endl;
-    //
-    //double llhmom =  trkmom.GetMomentumMultiScatterLLHD(ptrack);
-
     // check kaon track start and end distance from vertex
     double end_dis=TMath::Sqrt((reco_nu_vtx_x-end.X())*(reco_nu_vtx_x-end.X()) +
                                (reco_nu_vtx_y-end.Y())*(reco_nu_vtx_y-end.Y()) +
                                (reco_nu_vtx_z-end.Z())*(reco_nu_vtx_z-end.Z()));
     reco_track_dir[ntracks] = (st_vtx<end_dis);
 
-    //cout << "Track id " << ptrack.key();
-    //cout << " X " << pos.X() << " - " << end.X();
-    //cout << " Z " << pos.Z() << " - " << end.Z();
-    //cout << " length " << trklen << endl;
-
     //fillCalorimetry(fmcal.at(ptrack.key()),track,assocMCPartt,ntracks);
     fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
-
-    /*
-    // check calorimetry
-    int hits_p0=0;
-    int hits_p1=0;
-    int hits_p2=0;
-
-    std::vector<art::Ptr<anab::Calorimetry>> calos=fmcal.at(ptrack.key());
-    
-    for(unsigned int ical=0; ical<calos.size(); ++ical){
-      if(!calos[ical]) continue;
-      if(!calos[ical]->PlaneID().isValid) continue;
-      int planenum = calos[ical]->PlaneID().Plane;
-      if(planenum<0||planenum>2) continue; 
-      if(planenum==0) hits_p0=calos[ical]->dEdx().size();
-      if(planenum==1) hits_p1=calos[ical]->dEdx().size();
-      if(planenum==2) hits_p2=calos[ical]->dEdx().size();
-    }
-    
-    reco_track_nhits0[ntracks] = hits_p0;
-    reco_track_nhits1[ntracks] = hits_p1;
-    reco_track_nhits2[ntracks] = hits_p2;
-    */
   
     // check PID
     if (trackPIDAssn.isValid()){
@@ -3340,62 +1639,6 @@ std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData
       fillPID(trackPIDAssn.at(ptrack.key()), angle_y, ntracks);
     }
 
-    /*
-      std::vector<art::Ptr<anab::ParticleID>> trackPID=trackPIDAssn.at(ptrack.key());
-      if (trackPID.size()>0){
-        double chi2ka[3] = {0,0,0};
-        double chi2pr[3] = {0,0,0};
-        double chi2pi[3] = {0,0,0};
-        double chi2mu[3] = {0,0,0};
-        std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
-        for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
-          anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
-          if (AlgScore.fAlgName == "Chi2") {
-            if (anab::kVariableType(AlgScore.fVariableType) == anab::kGOF) {
-              for (int pl=0; pl<3; pl++) {
-                if (UBPID::uB_getSinglePlane(AlgScore.fPlaneMask)==pl) {
-                  if (AlgScore.fAssumedPdg==321)  chi2ka[pl]=AlgScore.fValue;
-                  if (AlgScore.fAssumedPdg==2212) chi2pr[pl]=AlgScore.fValue;
-                  if (AlgScore.fAssumedPdg==211)  chi2pi[pl]=AlgScore.fValue;
-                  if (AlgScore.fAssumedPdg==13)   chi2mu[pl]=AlgScore.fValue;
-                }
-              }
-            }
-          }
-          if (AlgScore.fAlgName == "ThreePlaneProtonPID") {
-            if (anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood) {
-              if (AlgScore.fPlaneMask==UBPID::uB_SinglePlaneGetBitset(2)) {
-                if (anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward) {
-                  if (AlgScore.fAssumedPdg==2212) reco_track_3pidpr[ntracks]=AlgScore.fValue;
-                }
-              }
-            }
-          } 
-        }
-        if (chi2ka[2]>0) reco_track_chi2ka[ntracks] = chi2ka[2];
-        if (chi2pr[2]>0) reco_track_chi2pr[ntracks] = chi2pr[2];
-        if (chi2pi[2]>0) reco_track_chi2pi[ntracks] = chi2pi[2];
-        if (chi2mu[2]>0) reco_track_chi2mu[ntracks] = chi2mu[2];
-        double delta_z = end.Z()-pos.Z();
-        double delta_y = end.Y()-pos.Y();
-        double theta0 = TMath::ATan2(delta_z,delta_y) - TMath::Pi()/3;
-        double theta1 = TMath::ATan2(delta_z,delta_y) + TMath::Pi()/3.;
-        double theta2 = TMath::ATan2(delta_z,delta_y);
-        double wpl0 = TMath::Power(TMath::Sin(theta0),2) >= 0.05 ? 1 : 0;
-        double wpl1 = TMath::Power(TMath::Sin(theta1),2) >= 0.05 ? 1 : 0;
-        double wpl2 = TMath::Power(TMath::Sin(theta2),2) >= 0.05 ? 1 : 0;
-        double chi2ka_3pl = (wpl0*chi2ka[0] + wpl1*chi2ka[1] + wpl2*chi2ka[2])/(wpl0 + wpl1 + wpl2);
-        double chi2pr_3pl = (wpl0*chi2pr[0] + wpl1*chi2pr[1] + wpl2*chi2pr[2])/(wpl0 + wpl1 + wpl2);
-        double chi2pi_3pl = (wpl0*chi2pi[0] + wpl1*chi2pi[1] + wpl2*chi2pi[2])/(wpl0 + wpl1 + wpl2);
-        double chi2mu_3pl = (wpl0*chi2mu[0] + wpl1*chi2mu[1] + wpl2*chi2mu[2])/(wpl0 + wpl1 + wpl2);
-        if (chi2ka_3pl>0) reco_track_chi2ka_3pl[ntracks] = chi2ka_3pl;
-        if (chi2pr_3pl>0) reco_track_chi2pr_3pl[ntracks] = chi2pr_3pl;
-        if (chi2pi_3pl>0) reco_track_chi2pi_3pl[ntracks] = chi2pi_3pl;
-        if (chi2mu_3pl>0) reco_track_chi2mu_3pl[ntracks] = chi2mu_3pl;
-      }
-    }
-    */
-
     // find true matched particle
       //std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData>> assocMCPart;
     if (isMC) {
@@ -3404,42 +1647,6 @@ std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
       fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
       fillTrackMatching(hits_from_track, particles_per_hit, ntracks);
-      /*
-      simb::MCParticle const* matched_mcparticle = NULL;
-      std::unordered_map<int,double> trkide;
-      double maxe=-1, tote=0;
-      std::vector<simb::MCParticle const*> particle_vec;
-      std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-    
-      for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
-        particle_vec.clear(); match_vec.clear();
-        particles_per_hit.get(hits_from_track[i_h].key(),particle_vec,match_vec);
-        for(size_t i_p=0; i_p<particle_vec.size(); ++i_p){
-          trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-          tote += match_vec[i_p]->energy;
-          if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
-            maxe = trkide[ particle_vec[i_p]->TrackId() ];
-            matched_mcparticle = particle_vec[i_p];
-          }
-        }
-      }
-    
-      if(matched_mcparticle){
-        reco_track_true_pdg[ntracks] = matched_mcparticle->PdgCode();
-        const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",matched_mcparticle->TrackId());
-        reco_track_true_origin[ntracks]=int(mc_truth->Origin());
-        reco_track_true_primary[ntracks]=matched_mcparticle->Process()=="primary";
-        double x = matched_mcparticle->EndX();
-        double y = matched_mcparticle->EndY();
-        double z = matched_mcparticle->EndZ();
-        reco_track_true_end_inTPC[ntracks] = isInsideVolume("TPC",x,y,z);
-        reco_track_true_end_in5cmTPC[ntracks] = isInsideVolume("5cmTPC",x,y,z);
-        reco_track_true_end_inCCInclusiveTPC[ntracks] = isInsideVolume("CCInclusiveTPC",x,y,z);
-        TLorentzVector mcstart, mcend;
-        unsigned int pstarti, pendi;
-        reco_track_true_length[ntracks] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-      }
-      */
 
     }//isMC
   
@@ -3480,8 +1687,6 @@ std::unique_ptr<art::FindManyP<simb::MCParticle,anab::BackTrackerHitMatchingData
       // check distance to vertex
       //if (track2_distance<10) { //7cm, 
       if (track2_distance<40) { //7cm, 
-      //if (track2_distance<30) { //7cm, 
-      //if (track2_distance<100) { //7cm,
 	cout << "this is daughter track" << endl;
         reco_track_daughter_distance[ntracks][ndaughters] = track2_distance;
 
@@ -7004,78 +5209,6 @@ void CCKaonAnalyzerRebuild::fillShowerMatching(std::vector<art::Ptr<recob::Hit>>
         return fabs((a1*(b2-c2)+b1*(c2-a2)+c1*(a2-b2))/2.0);
     }
 
-    int CCKaonAnalyzerRebuild::quick_delaunay_fit(int n, double *X, double *Y, int *num_triangles, double * area){
-
-        std::vector<double> z(n,0.0);
-
-        TGraph2D *g = new TGraph2D(n,X,Y,&z[0]);
-        TGraphDelaunay delan(g);
-        delan.SetMarginBinsContent(0);
-        delan.ComputeZ(0,0);
-        delan.FindAllTriangles();
-        (*num_triangles)=delan.GetNdt();
-
-        //Grab the locations of all the trianges. These will be intergers referencing to position in X,Y arrays
-        Int_t *MT = delan.GetMTried();
-        Int_t *NT = delan.GetNTried();
-        Int_t *PT = delan.GetPTried();
-
-        (*area)=0.0;
-        for(int i = 0; i<delan.GetNdt(); i++){
-            (*area)+=triangle_area(X[MT[i]-1],Y[MT[i]-1],X[NT[i]-1],Y[NT[i]-1],X[PT[i]-1],Y[PT[i]-1]);
-        }
-
-        delete g;
-        return 0;
-    }
-
-    int CCKaonAnalyzerRebuild::delaunay_hit_wrapper(const std::vector<art::Ptr<recob::Hit>>& hits, std::vector<int> & num_hits, std::vector<int>& num_triangles, std::vector<double> & area){
-
-        int n = hits.size();
-        std::vector<double> C0,T0;
-        std::vector<double> C1,T1;
-        std::vector<double> C2,T2;
-        size_t n_0=0;
-        size_t n_1=0;
-        size_t n_2=0;
-
-        for(int i=0;i<n; i++){
-            const art::Ptr<recob::Hit> hit = hits[i];
-            switch(hit->View()){
-                case 0:
-                    C0.push_back((double)hit->Channel());         
-                    T0.push_back(hit->PeakTime());         
-                    n_0++;
-                    break;
-                case 1:
-                    C1.push_back((double)hit->Channel());         
-                    T1.push_back(hit->PeakTime());         
-                    n_1++;
-                    break;
-                case 2:
-                    C2.push_back((double)hit->Channel());         
-                    T2.push_back(hit->PeakTime());         
-                    n_2++;
-                    break;
-                default:
-                    break;
-            }
-        }
-        if(m_use_delaunay){
-            if(n_0>0) this->quick_delaunay_fit(n_0, &C0[0]  , &T0[0]  , &num_triangles[0],&area[0]);
-            if(n_1>0) this->quick_delaunay_fit(n_1, &C1[0]  , &T1[0]  , &num_triangles[1],&area[1]);
-            if(n_2>0) this->quick_delaunay_fit(n_2, &C2[0]  , &T2[0]  , &num_triangles[2],&area[2]);
-        }
-        num_hits[0] = n_0;
-        num_hits[1] = n_1;
-        num_hits[2] = n_2;
-
-        //std::cout<<"Plane 0: "<<n_0<<" hits with "<<num_triangles[0]<<" triangles of area: "<< area[0]<<std::endl;
-        //std::cout<<"Plane 1: "<<n_1<<" hits with "<<num_triangles[1]<<" triangles of area: "<< area[1]<<std::endl;
-        //std::cout<<"Plane 2: "<<n_2<<" hits with "<<num_triangles[2]<<" triangles of area: "<< area[2]<<std::endl;
-
-        return 0;
-    }
 
     int CCKaonAnalyzerRebuild::spacecharge_correction(const art::Ptr<simb::MCParticle> & mcparticle, std::vector<double> & corrected, std::vector<double> & input){
         corrected.resize(3);
