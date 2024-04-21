@@ -367,13 +367,6 @@ void CCKaonAnalyzer::beginJob()
 
 
   fEventTree->Branch("reco_track_distance", &reco_track_distance, "reco_track_distance[20]/F");
-  fEventTree->Branch("reco_track_nhits0", &reco_track_nhits0, "reco_track_nhits0[20]/I");
-  fEventTree->Branch("reco_track_nhits1", &reco_track_nhits1, "reco_track_nhits1[20]/I");
-  fEventTree->Branch("reco_track_nhits2", &reco_track_nhits2, "reco_track_nhits2[20]/I");
-
-  fEventTree->Branch("reco_track_kin0", &reco_track_kin0, "reco_track_kin0[20]/F");
-  fEventTree->Branch("reco_track_kin1", &reco_track_kin1, "reco_track_kin1[20]/F");
-  fEventTree->Branch("reco_track_kin2", &reco_track_kin2, "reco_track_kin2[20]/F");
 
   fEventTree->Branch("reco_track_length", &reco_track_length, "reco_track_length[20]/F");
   fEventTree->Branch("reco_track_theta", &reco_track_theta, "reco_track_theta[20]/F");
@@ -411,10 +404,6 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_Bragg_fwd_mu_pl2", &reco_track_Bragg_fwd_mu_pl2, "reco_track_Bragg_fwd_mu_pl2[20]/F");
 
 
-  fEventTree->Branch("reco_track_MIP_pl0", &reco_track_MIP_pl0, "reco_track_MIP_pl0[20]/F");
-  fEventTree->Branch("reco_track_MIP_pl1", &reco_track_MIP_pl1, "reco_track_MIP_pl1[20]/F");
-  fEventTree->Branch("reco_track_MIP_pl2", &reco_track_MIP_pl2, "reco_track_MIP_pl2[20]/F");
-
 
   fEventTree->Branch("reco_track_chi2ka_3pl", &reco_track_chi2ka_3pl, "reco_track_chi2ka_3pl[20]/F");
   fEventTree->Branch("reco_track_chi2pr_3pl", &reco_track_chi2pr_3pl, "reco_track_chi2pr_3pl[20]/F");
@@ -449,6 +438,11 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_match_epdg", &reco_track_daughter_match_epdg, "reco_track_daughter_match_epdg[20][20][10]/I");
   fEventTree->Branch("reco_track_daughter_match_hitpdg", &reco_track_daughter_match_hitpdg, "reco_track_daughter_match_hitpdg[20][20][10]/I");
 
+  fEventTree->Branch("reco_track_daughter_match_e_rebuild", &reco_track_daughter_match_e_rebuild, "reco_track_daughter_match_e_rebuild[20][20][10]/F");
+  fEventTree->Branch("reco_track_daughter_match_hit_rebuild", &reco_track_daughter_match_hit_rebuild, "reco_track_daughter_match_hit_rebuild[20][20][10]/F");
+  fEventTree->Branch("reco_track_daughter_match_epdg_rebuild", &reco_track_daughter_match_epdg_rebuild, "reco_track_daughter_match_epdg_rebuild[20][20][10]/I");
+  fEventTree->Branch("reco_track_daughter_match_hitpdg_rebuild", &reco_track_daughter_match_hitpdg_rebuild, "reco_track_daughter_match_hitpdg_rebuild[20][20][10]/I");
+
   fEventTree->Branch("reco_track_daughter_shower_match_e", &reco_track_daughter_shower_match_e, "reco_track_daughter_shower_match_e[20][20][10]/F");
   fEventTree->Branch("reco_track_daughter_shower_match_hit", &reco_track_daughter_shower_match_hit, "reco_track_daughter_shower_match_hit[20][20][10]/F");
   fEventTree->Branch("reco_track_daughter_shower_match_epdg", &reco_track_daughter_shower_match_epdg, "reco_track_daughter_shower_match_epdg[20][20][10]/I");
@@ -481,7 +475,7 @@ void CCKaonAnalyzer::beginJob()
 
   fEventTree->Branch("reco_shower_ndaughters", &reco_shower_ndaughters, "reco_shower_ndaughters[20]/I");
   fEventTree->Branch("reco_track_daughter_distance_sh", &reco_track_daughter_distance_sh, "reco_track_daughter_distance_sh[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_vtx_distance_sh", &reco_track_daughter_vtx_distance_sh, "reco_track_daughter_vtx_distance_sh[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_vtx_distance_rebuild", &reco_track_daughter_vtx_distance_rebuild, "reco_track_daughter_vtx_distance_rebuild[20][20]/F");
   fEventTree->Branch("reco_angle_track_daughter_sh", &reco_angle_track_daughter_sh, "reco_angle_track_daughter_sh[20][20]/F");
   fEventTree->Branch("reco_angle_daughter_track_daughter_sh", &reco_angle_daughter_track_daughter_sh, "reco_angle_daughter_track_daughter_sh[20][20]/F");
   fEventTree->Branch("reco_track_daughter_length_sh", &reco_track_daughter_length_sh, "reco_track_daughter_length_sh[20][20]/F");
@@ -506,23 +500,6 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_distance", &reco_track_daughter_distance, "reco_track_daughter_distance[20][20]/F");
   fEventTree->Branch("reco_track_daughter_vtx_distance", &reco_track_daughter_vtx_distance, "reco_track_daughter_vtx_distance[20][20]/F");
   fEventTree->Branch("reco_angle_track_daughter", &reco_angle_track_daughter, "reco_angle_track_daughter[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_nhits0", &reco_track_daughter_nhits0, "reco_track_daughter_nhits0[20][20]/I");
-  fEventTree->Branch("reco_track_daughter_nhits1", &reco_track_daughter_nhits1, "reco_track_daughter_nhits1[20][20]/I");
-  fEventTree->Branch("reco_track_daughter_nhits2", &reco_track_daughter_nhits2, "reco_track_daughter_nhits2[20][20]/I");
-
-
-
-  //fEventTree->Branch("reco_track_daughter_dEdx", &reco_track_daughter_dEdx);
-  //fEventTree->Branch("reco_track_daughter_ResRan", &reco_track_daughter_ResRan);
-  //
-  //fEventTree->Branch("reco_track_daughter_dEdx_pl0", &reco_track_daughter_dEdx_pl0, "reco_track_daughter_dEdx_pl0[20][20][2000]/F");
-  //fEventTree->Branch("reco_track_daughter_ResRan_pl0", &reco_track_daughter_ResRan_pl0, "reco_track_daughter_ResRan_pl0[20][20][2000]/F");
-
-  //fEventTree->Branch("reco_track_daughter_dEdx_pl1", &reco_track_daughter_dEdx_pl1, "reco_track_daughter_dEdx_pl1[20][20][2000]/F");
-  //fEventTree->Branch("reco_track_daughter_ResRan_pl1", &reco_track_daughter_ResRan_pl1, "reco_track_daughter_ResRan_pl1[20][20][2000]/F");
-
-  //fEventTree->Branch("reco_track_daughter_dEdx_pl2", &reco_track_daughter_dEdx_pl2, "reco_track_daughter_dEdx_pl2[20][20][2000]/F");
-  //fEventTree->Branch("reco_track_daughter_ResRan_pl2", &reco_track_daughter_ResRan_pl2, "reco_track_daughter_ResRan_pl2[20][20][2000]/F");
 
   fEventTree->Branch("reco_track_daughter_length", &reco_track_daughter_length, "reco_track_daughter_length[20][20]/F");
   fEventTree->Branch("reco_track_daughter_theta", &reco_track_daughter_theta, "reco_track_daughter_theta[20][20]/F");
@@ -552,7 +529,14 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_end_inTPC", &reco_track_daughter_end_inTPC, "reco_track_daughter_end_inTPC[20][20]/O");
   fEventTree->Branch("reco_track_daughter_end_in5cmTPC", &reco_track_daughter_end_in5cmTPC, "reco_track_daughter_end_in5cmTPC[20][20]/O");
   fEventTree->Branch("reco_track_daughter_end_inCCInclusiveTPC", &reco_track_daughter_end_inCCInclusiveTPC, "reco_track_daughter_end_inCCInclusiveTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_true_pdg", &reco_track_daughter_old_true_pdg, "reco_track_daughter_old_true_pdg[20][20]/I");
+  fEventTree->Branch("reco_track_daughter_true_pdg_rebuild", &reco_track_daughter_true_pdg_rebuild, "reco_track_daughter_true_pdg_rebuild[20][20]/I");
+  fEventTree->Branch("reco_track_daughter_true_origin_rebuild", &reco_track_daughter_true_origin_rebuild, "reco_track_daughter_true_origin_rebuild[20][20]/I");
+  fEventTree->Branch("reco_track_daughter_true_primary_rebuild", &reco_track_daughter_true_primary_rebuild, "reco_track_daughter_true_primary_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_true_end_inTPC_rebuild", &reco_track_daughter_true_end_inTPC_rebuild, "reco_track_daughter_true_end_inTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_true_end_in5cmTPC_rebuild", &reco_track_daughter_true_end_in5cmTPC_rebuild, "reco_track_daughter_true_end_in5cmTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_true_end_inCCInclusiveTPC_rebuild", &reco_track_daughter_true_end_inCCInclusiveTPC_rebuild, "reco_track_daughter_true_end_inCCInclusiveTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_true_length_rebuild", &reco_track_daughter_true_length_rebuild, "reco_track_daughter_true_length_rebuild[20][20]/F");
+
   fEventTree->Branch("reco_track_daughter_true_pdg", &reco_track_daughter_true_pdg, "reco_track_daughter_true_pdg[20][20]/I");
   fEventTree->Branch("reco_track_daughter_true_origin", &reco_track_daughter_true_origin, "reco_track_daughter_true_origin[20][20]/I");
   fEventTree->Branch("reco_track_daughter_true_primary", &reco_track_daughter_true_primary, "reco_track_daughter_true_primary[20][20]/O");
@@ -577,54 +561,56 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_Bragg_fwd_mu_pl2", &reco_track_daughter_Bragg_fwd_mu_pl2, "reco_track_daughter_Bragg_fwd_mu_pl2[20][20]/F");
 
 
-  fEventTree->Branch("reco_track_daughter_MIP_pl0", &reco_track_daughter_MIP_pl0, "reco_track_daughter_MIP_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_MIP_pl1", &reco_track_daughter_MIP_pl1, "reco_track_daughter_MIP_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_MIP_pl2", &reco_track_daughter_MIP_pl2, "reco_track_daughter_MIP_pl2[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_start_x_rebuild", &reco_track_daughter_start_x_rebuild, "reco_track_daughter_start_x_rebuild[20][20]/F"); 
+  fEventTree->Branch("reco_track_daughter_start_y_rebuild", &reco_track_daughter_start_y_rebuild, "reco_track_daughter_start_y_rebuild[20][20]/F"); 
+  fEventTree->Branch("reco_track_daughter_start_z_rebuild", &reco_track_daughter_start_z_rebuild, "reco_track_daughter_start_z_rebuild[20][20]/F"); 
+  fEventTree->Branch("reco_track_daughter_end_x_rebuild", &reco_track_daughter_end_x_rebuild, "reco_track_daughter_end_x_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_end_y_rebuild", &reco_track_daughter_end_y_rebuild, "reco_track_daughter_end_y_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_end_z_rebuild", &reco_track_daughter_end_z_rebuild, "reco_track_daughter_end_z_rebuild[20][20]/F");
 
 
-
-  fEventTree->Branch("reco_track_ndaughters_old", &reco_track_ndaughters_old, "reco_track_ndaughters_old[20]/I");
-  fEventTree->Branch("reco_track_daughter_old_distance", &reco_track_daughter_old_distance, "reco_track_daughter_old_distance[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_length", &reco_track_daughter_old_length, "reco_track_daughter_old_length[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_theta", &reco_track_daughter_old_theta, "reco_track_daughter_old_theta[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_phi", &reco_track_daughter_old_phi, "reco_track_daughter_old_phi[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2ka_pl0", &reco_track_daughter_old_chi2ka_pl0, "reco_track_daughter_old_chi2ka_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pr_pl0", &reco_track_daughter_old_chi2pr_pl0, "reco_track_daughter_old_chi2pr_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pi_pl0", &reco_track_daughter_old_chi2pi_pl0, "reco_track_daughter_old_chi2pi_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2mu_pl0", &reco_track_daughter_old_chi2mu_pl0, "reco_track_daughter_old_chi2mu_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2ka_pl1", &reco_track_daughter_old_chi2ka_pl1, "reco_track_daughter_old_chi2ka_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pr_pl1", &reco_track_daughter_old_chi2pr_pl1, "reco_track_daughter_old_chi2pr_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pi_pl1", &reco_track_daughter_old_chi2pi_pl1, "reco_track_daughter_old_chi2pi_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2mu_pl1", &reco_track_daughter_old_chi2mu_pl1, "reco_track_daughter_old_chi2mu_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2ka_pl2", &reco_track_daughter_old_chi2ka_pl2, "reco_track_daughter_old_chi2ka_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pr_pl2", &reco_track_daughter_old_chi2pr_pl2, "reco_track_daughter_old_chi2pr_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pi_pl2", &reco_track_daughter_old_chi2pi_pl2, "reco_track_daughter_old_chi2pi_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2mu_pl2", &reco_track_daughter_old_chi2mu_pl2, "reco_track_daughter_old_chi2mu_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2ka_3pl", &reco_track_daughter_old_chi2ka_3pl, "reco_track_daughter_old_chi2ka_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pr_3pl", &reco_track_daughter_old_chi2pr_3pl, "reco_track_daughter_old_chi2pr_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2pi_3pl", &reco_track_daughter_old_chi2pi_3pl, "reco_track_daughter_old_chi2pi_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_chi2mu_3pl", &reco_track_daughter_old_chi2mu_3pl, "reco_track_daughter_old_chi2mu_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_likepr_3pl", &reco_track_daughter_old_likepr_3pl, "reco_track_daughter_old_likepr_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_llrpid_3pl", &reco_track_daughter_old_llrpid_3pl, "reco_track_daughter_old_llrpid_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_llrpid_k_3pl", &reco_track_daughter_old_llrpid_k_3pl, "reco_track_daughter_old_llrpid_k_3pl[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_vtx_inTPC", &reco_track_daughter_old_vtx_inTPC, "reco_track_daughter_old_vtx_inTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_vtx_in5cmTPC", &reco_track_daughter_old_vtx_in5cmTPC, "reco_track_daughter_old_vtx_in5cmTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_vtx_inCCInclusiveTPC", &reco_track_daughter_old_vtx_inCCInclusiveTPC, "reco_track_daughter_old_vtx_inCCInclusiveTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_end_inTPC", &reco_track_daughter_old_end_inTPC, "reco_track_daughter_old_end_inTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_end_in5cmTPC", &reco_track_daughter_old_end_in5cmTPC, "reco_track_daughter_old_end_in5cmTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_end_inCCInclusiveTPC", &reco_track_daughter_old_end_inCCInclusiveTPC, "reco_track_daughter_old_end_inCCInclusiveTPC[20][20]/O");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_ka_pl0", &reco_track_daughter_old_Bragg_fwd_ka_pl0, "reco_track_daughter_old_Bragg_fwd_ka_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pr_pl0", &reco_track_daughter_old_Bragg_fwd_pr_pl0, "reco_track_daughter_old_Bragg_fwd_pr_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pi_pl0", &reco_track_daughter_old_Bragg_fwd_pi_pl0, "reco_track_daughter_old_Bragg_fwd_pi_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_mu_pl0", &reco_track_daughter_old_Bragg_fwd_mu_pl0, "reco_track_daughter_old_Bragg_fwd_mu_pl0[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_ka_pl1", &reco_track_daughter_old_Bragg_fwd_ka_pl1, "reco_track_daughter_old_Bragg_fwd_ka_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pr_pl1", &reco_track_daughter_old_Bragg_fwd_pr_pl1, "reco_track_daughter_old_Bragg_fwd_pr_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pi_pl1", &reco_track_daughter_old_Bragg_fwd_pi_pl1, "reco_track_daughter_old_Bragg_fwd_pi_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_mu_pl1", &reco_track_daughter_old_Bragg_fwd_mu_pl1, "reco_track_daughter_old_Bragg_fwd_mu_pl1[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_ka_pl2", &reco_track_daughter_old_Bragg_fwd_ka_pl2, "reco_track_daughter_old_Bragg_fwd_ka_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pr_pl2", &reco_track_daughter_old_Bragg_fwd_pr_pl2, "reco_track_daughter_old_Bragg_fwd_pr_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_pi_pl2", &reco_track_daughter_old_Bragg_fwd_pi_pl2, "reco_track_daughter_old_Bragg_fwd_pi_pl2[20][20]/F");
-  fEventTree->Branch("reco_track_daughter_old_Bragg_fwd_mu_pl2", &reco_track_daughter_old_Bragg_fwd_mu_pl2, "reco_track_daughter_old_Bragg_fwd_mu_pl2[20][20]/F");
+  fEventTree->Branch("reco_track_ndaughters_rebuild", &reco_track_ndaughters_rebuild, "reco_track_ndaughters_rebuild[20]/I");
+  fEventTree->Branch("reco_track_daughter_distance_rebuild", &reco_track_daughter_distance_rebuild, "reco_track_daughter_distance_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_length_rebuild", &reco_track_daughter_length_rebuild, "reco_track_daughter_length_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_theta_rebuild", &reco_track_daughter_theta_rebuild, "reco_track_daughter_theta_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_phi_rebuild", &reco_track_daughter_phi_rebuild, "reco_track_daughter_phi_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2ka_pl0_rebuild", &reco_track_daughter_chi2ka_pl0_rebuild, "reco_track_daughter_chi2ka_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pr_pl0_rebuild", &reco_track_daughter_chi2pr_pl0_rebuild, "reco_track_daughter_chi2pr_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pi_pl0_rebuild", &reco_track_daughter_chi2pi_pl0_rebuild, "reco_track_daughter_chi2pi_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2mu_pl0_rebuild", &reco_track_daughter_chi2mu_pl0_rebuild, "reco_track_daughter_chi2mu_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2ka_pl1_rebuild", &reco_track_daughter_chi2ka_pl1_rebuild, "reco_track_daughter_chi2ka_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pr_pl1_rebuild", &reco_track_daughter_chi2pr_pl1_rebuild, "reco_track_daughter_chi2pr_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pi_pl1_rebuild", &reco_track_daughter_chi2pi_pl1_rebuild, "reco_track_daughter_chi2pi_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2mu_pl1_rebuild", &reco_track_daughter_chi2mu_pl1_rebuild, "reco_track_daughter_chi2mu_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2ka_pl2_rebuild", &reco_track_daughter_chi2ka_pl2_rebuild, "reco_track_daughter_chi2ka_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pr_pl2_rebuild", &reco_track_daughter_chi2pr_pl2_rebuild, "reco_track_daughter_chi2pr_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pi_pl2_rebuild", &reco_track_daughter_chi2pi_pl2_rebuild, "reco_track_daughter_chi2pi_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2mu_pl2_rebuild", &reco_track_daughter_chi2mu_pl2_rebuild, "reco_track_daughter_chi2mu_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2ka_3pl_rebuild", &reco_track_daughter_chi2ka_3pl_rebuild, "reco_track_daughter_chi2ka_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pr_3pl_rebuild", &reco_track_daughter_chi2pr_3pl_rebuild, "reco_track_daughter_chi2pr_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2pi_3pl_rebuild", &reco_track_daughter_chi2pi_3pl_rebuild, "reco_track_daughter_chi2pi_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_chi2mu_3pl_rebuild", &reco_track_daughter_chi2mu_3pl_rebuild, "reco_track_daughter_chi2mu_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_likepr_3pl_rebuild", &reco_track_daughter_likepr_3pl_rebuild, "reco_track_daughter_likepr_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_llrpid_3pl_rebuild", &reco_track_daughter_llrpid_3pl_rebuild, "reco_track_daughter_llrpid_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_llrpid_k_3pl_rebuild", &reco_track_daughter_llrpid_k_3pl_rebuild, "reco_track_daughter_llrpid_k_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_vtx_inTPC_rebuild", &reco_track_daughter_vtx_inTPC_rebuild, "reco_track_daughter_vtx_inTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_vtx_in5cmTPC_rebuild", &reco_track_daughter_vtx_in5cmTPC_rebuild, "reco_track_daughter_vtx_in5cmTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_vtx_inCCInclusiveTPC_rebuild", &reco_track_daughter_vtx_inCCInclusiveTPC_rebuild, "reco_track_daughter_vtx_inCCInclusiveTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_end_inTPC_rebuild", &reco_track_daughter_end_inTPC_rebuild, "reco_track_daughter_end_inTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_end_in5cmTPC_rebuild", &reco_track_daughter_end_in5cmTPC_rebuild, "reco_track_daughter_end_in5cmTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_end_inCCInclusiveTPC_rebuild", &reco_track_daughter_end_inCCInclusiveTPC_rebuild, "reco_track_daughter_end_inCCInclusiveTPC_rebuild[20][20]/O");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_ka_pl0_rebuild", &reco_track_daughter_Bragg_fwd_ka_pl0_rebuild, "reco_track_daughter_Bragg_fwd_ka_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pr_pl0_rebuild", &reco_track_daughter_Bragg_fwd_pr_pl0_rebuild, "reco_track_daughter_Bragg_fwd_pr_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pi_pl0_rebuild", &reco_track_daughter_Bragg_fwd_pi_pl0_rebuild, "reco_track_daughter_Bragg_fwd_pi_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_mu_pl0_rebuild", &reco_track_daughter_Bragg_fwd_mu_pl0_rebuild, "reco_track_daughter_Bragg_fwd_mu_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_ka_pl1_rebuild", &reco_track_daughter_Bragg_fwd_ka_pl1_rebuild, "reco_track_daughter_Bragg_fwd_ka_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pr_pl1_rebuild", &reco_track_daughter_Bragg_fwd_pr_pl1_rebuild, "reco_track_daughter_Bragg_fwd_pr_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pi_pl1_rebuild", &reco_track_daughter_Bragg_fwd_pi_pl1_rebuild, "reco_track_daughter_Bragg_fwd_pi_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_mu_pl1_rebuild", &reco_track_daughter_Bragg_fwd_mu_pl1_rebuild, "reco_track_daughter_Bragg_fwd_mu_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_ka_pl2_rebuild", &reco_track_daughter_Bragg_fwd_ka_pl2_rebuild, "reco_track_daughter_Bragg_fwd_ka_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pr_pl2_rebuild", &reco_track_daughter_Bragg_fwd_pr_pl2_rebuild, "reco_track_daughter_Bragg_fwd_pr_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_pi_pl2_rebuild", &reco_track_daughter_Bragg_fwd_pi_pl2_rebuild, "reco_track_daughter_Bragg_fwd_pi_pl2_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_Bragg_fwd_mu_pl2_rebuild", &reco_track_daughter_Bragg_fwd_mu_pl2_rebuild, "reco_track_daughter_Bragg_fwd_mu_pl2_rebuild[20][20]/F");
 
 
 
@@ -1707,99 +1693,15 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
     }//isMC
 
-    int ndaughters_old = 0; 
-    for (int j=0; j<NTracks; j++) {
-      art::Ptr<recob::Track> ptrack_dau_old(trackListHandle,j);
-      const recob::Track& track_dau_old = *ptrack_dau_old;
-    
-      // skip all primary tracks
-      if (track_dau_old.ID()==trkmuon->ID()){
-	cout << "HEY THIS IS CC MUON" << endl;
-	continue;
-      }
-      //if (track_dau.ID()==trkmuon->ID()) continue;
-      
-      bool skip = false;
-      for (int k=0; k<reco_nu_ndaughters; k++) {
-        //if (int(ptrack_dau.key())==reco_nu_daughters_id[k]) {
-        if (int(track_dau_old.ID())==reco_nu_daughters_id[k]) {
-          skip=true;
-          break;
-        }
-      }
-      if (skip) continue;
-     
-
-      TVector3 pos2_old(track_dau_old.Vertex().X(),track_dau_old.Vertex().Y(),track_dau_old.Vertex().Z());
-
-      double track_dau_distance_old=TMath::Sqrt((end.X()-pos2_old.X())*(end.X()-pos2_old.X()) +
-                                         (end.Y()-pos2_old.Y())*(end.Y()-pos2_old.Y()) +
-                                         (end.Z()-pos2_old.Z())*(end.Z()-pos2_old.Z()));
-
-      // check distance to vertex
-      if (track_dau_distance_old<10) { //7cm, 
-
-	cout << "this is daughter track" << endl;
-        reco_track_daughter_old_distance[ntracks][ndaughters_old] = track_dau_distance_old;
-
-        TVector3 end2_old(track_dau_old.End().X(),track_dau_old.End().Y(),track_dau_old.End().Z());
-
-        reco_track_daughter_old_vtx_inTPC[ntracks][ndaughters_old] = isInsideVolume("TPC",pos2_old);
-        reco_track_daughter_old_vtx_in5cmTPC[ntracks][ndaughters_old] = isInsideVolume("5cmTPC",pos2_old);
-        reco_track_daughter_old_vtx_inCCInclusiveTPC[ntracks][ndaughters_old] = isInsideVolume("CCInclusiveTPC",pos2_old);
-      
-        reco_track_daughter_old_end_inTPC[ntracks][ndaughters_old] = isInsideVolume("TPC",end2_old);
-        reco_track_daughter_old_end_in5cmTPC[ntracks][ndaughters_old] = isInsideVolume("5cmTPC",end2_old);
-        reco_track_daughter_old_end_inCCInclusiveTPC[ntracks][ndaughters_old] = isInsideVolume("CCInclusiveTPC",end2_old);
-
-        // track length and angles
-        reco_track_daughter_old_length[ntracks][ndaughters_old] = track_dau_old.Length();
-        reco_track_daughter_old_theta[ntracks][ndaughters_old] = track_dau_old.Theta();
-        reco_track_daughter_old_phi[ntracks][ndaughters_old] = track_dau_old.Phi();
-
-        //fillCalorimetry_old(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old);
-        fillCalorimetry(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old,false);
-
-        // check PID
-        if (rebuilttrackPIDAssn.isValid()) {
-          double delta_z = end2_old.Z()-pos2_old.Z();
-          double delta_y = end2_old.Y()-pos2_old.Y();
-          double angle_y = TMath::ATan2(delta_z, delta_y);
-          //fillPID_old(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old);
-          fillPID(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old, false);
-        }      
-
-	if(isMC){
-          art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
-          std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack_dau_old.key());
-	  art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
-	  fillTrueMatching(hits_from_track, particles_per_hit, ntracks, ndaughters_old, true, false);
-	  mergeChecker(hits_from_track, particles_per_hit, ntracks, ndaughters_old, true, false); 
-	}
-      
-        ndaughters_old++;
-
-      } // remove condition on gap between K+ end and daughter start
-    
-      reco_track_ndaughters_old[ntracks] = ndaughters_old;
- 
-    }
-
-
-    // check if there is a track at the end
     int ndaughters = 0;
-    cout << "RebuiltNTracks: " << RebuiltNTracks << endl;
-    for (int j=0; j<RebuiltNTracks; j++) {
-    
-      art::Ptr<recob::Track> ptrack_dau(rebuilttrackListHandle,j);
+    for (int j=0; j<NTracks; j++) {
+      art::Ptr<recob::Track> ptrack_dau(trackListHandle,j);
       const recob::Track& track_dau = *ptrack_dau;
     
       // skip all primary tracks
       if (track_dau.ID()==trkmuon->ID()){
-	cout << "HEY THIS IS CC MUON" << endl;
 	continue;
       }
-      //if (track_dau.ID()==trkmuon->ID()) continue;
       
       bool skip = false;
       for (int k=0; k<reco_nu_ndaughters; k++) {
@@ -1810,8 +1712,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
         }
       }
       if (skip) continue;
-      
-      cout << "daughter id is " << track_dau.ID() << endl;
+     
 
       TVector3 pos2(track_dau.Vertex().X(),track_dau.Vertex().Y(),track_dau.Vertex().Z());
 
@@ -1819,12 +1720,9 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
                                          (end.Y()-pos2.Y())*(end.Y()-pos2.Y()) +
                                          (end.Z()-pos2.Z())*(end.Z()-pos2.Z()));
 
-      cout << "distance to vertex: " << track_dau_distance << endl;
-
       // check distance to vertex
       if (track_dau_distance<10) { //7cm, 
-      //if (track_dau_distance<30) { //7cm,
-	cout << "this is daughter track" << endl;
+
         reco_track_daughter_distance[ntracks][ndaughters] = track_dau_distance;
 
         TVector3 end2(track_dau.End().X(),track_dau.End().Y(),track_dau.End().Z());
@@ -1849,17 +1747,98 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
         reco_track_daughter_theta[ntracks][ndaughters] = track_dau.Theta();
         reco_track_daughter_phi[ntracks][ndaughters] = track_dau.Phi();
 
+        //fillCalorimetry_old(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old);
+        fillCalorimetry(fmcal.at(ptrack_dau.key()),ntracks,ndaughters,false);
+
+        // check PID
+        if (rebuilttrackPIDAssn.isValid()) {
+          double delta_z = end2.Z()-pos2.Z();
+          double delta_y = end2.Y()-pos2.Y();
+          double angle_y = TMath::ATan2(delta_z, delta_y);
+          //fillPID_old(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old);
+          fillPID(trackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters, false);
+        }      
+
+	if(isMC){
+          art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
+          std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack_dau.key());
+	  art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
+	  fillTrueMatching(hits_from_track, particles_per_hit, ntracks, ndaughters, true, false);
+	  mergeChecker(hits_from_track, particles_per_hit, ntracks, ndaughters, true, false); 
+	}
+      
+        ndaughters++;
+
+      } // remove condition on gap between K+ end and daughter start
+    
+      reco_track_ndaughters[ntracks] = ndaughters;
+ 
+    }
+
+
+    // check if there is a track at the end
+    int ndaughters_rebuild = 0;
+    for (int j=0; j<RebuiltNTracks; j++) {
+    
+      art::Ptr<recob::Track> ptrack_dau(rebuilttrackListHandle,j);
+      const recob::Track& track_dau = *ptrack_dau;
+    
+      // skip all primary tracks
+      if (track_dau.ID()==trkmuon->ID()){
+	continue;
+      }
+      //if (track_dau.ID()==trkmuon->ID()) continue;
+      
+      bool skip = false;
+      for (int k=0; k<reco_nu_ndaughters; k++) {
+        //if (int(ptrack_dau.key())==reco_nu_daughters_id[k]) {
+        if (int(track_dau.ID())==reco_nu_daughters_id[k]) {
+          skip=true;
+          break;
+        }
+      }
+      if (skip) continue;
+      
+      TVector3 pos2(track_dau.Vertex().X(),track_dau.Vertex().Y(),track_dau.Vertex().Z());
+
+      double track_dau_distance=TMath::Sqrt((end.X()-pos2.X())*(end.X()-pos2.X()) +
+					    (end.Y()-pos2.Y())*(end.Y()-pos2.Y()) +
+					    (end.Z()-pos2.Z())*(end.Z()-pos2.Z()));
+
+      // check distance to vertex
+      if (track_dau_distance<10) { //7cm, 
+        reco_track_daughter_distance_rebuild[ntracks][ndaughters_rebuild] = track_dau_distance;
+
+        TVector3 end2(track_dau.End().X(),track_dau.End().Y(),track_dau.End().Z());
+
+	reco_track_daughter_start_x_rebuild[ntracks][ndaughters_rebuild] = track_dau.Vertex().X();
+	reco_track_daughter_start_y_rebuild[ntracks][ndaughters_rebuild] = track_dau.Vertex().Y();
+	reco_track_daughter_start_z_rebuild[ntracks][ndaughters_rebuild] = track_dau.Vertex().Z();
+	reco_track_daughter_end_x_rebuild[ntracks][ndaughters_rebuild] = track_dau.End().X();
+	reco_track_daughter_end_y_rebuild[ntracks][ndaughters_rebuild] = track_dau.End().Y();
+	reco_track_daughter_end_z_rebuild[ntracks][ndaughters_rebuild] = track_dau.End().Z();
+
+        reco_track_daughter_vtx_inTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("TPC",pos2);
+        reco_track_daughter_vtx_in5cmTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("5cmTPC",pos2);
+        reco_track_daughter_vtx_inCCInclusiveTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("CCInclusiveTPC",pos2);
+      
+        reco_track_daughter_end_inTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("TPC",end2);
+        reco_track_daughter_end_in5cmTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("5cmTPC",end2);
+        reco_track_daughter_end_inCCInclusiveTPC_rebuild[ntracks][ndaughters_rebuild] = isInsideVolume("CCInclusiveTPC",end2);
+
+        // track length and angles
+        reco_track_daughter_length_rebuild[ntracks][ndaughters_rebuild] = track_dau.Length();
+        reco_track_daughter_theta_rebuild[ntracks][ndaughters_rebuild] = track_dau.Theta();
+        reco_track_daughter_phi_rebuild[ntracks][ndaughters_rebuild] = track_dau.Phi();
+
         double start_dis=TMath::Sqrt((reco_nu_vtx_x-pos2.X())*(reco_nu_vtx_x-pos2.X()) +
                                      (reco_nu_vtx_y-pos2.Y())*(reco_nu_vtx_y-pos2.Y()) +
                                      (reco_nu_vtx_z-pos2.Z())*(reco_nu_vtx_z-pos2.Z()));    
 
-        reco_track_daughter_vtx_distance[ntracks][ndaughters] = start_dis;
+        reco_track_daughter_vtx_distance_rebuild[ntracks][ndaughters_rebuild] = start_dis;
 
-	cout << "ptrack_dau.key(): " << ptrack_dau.key() << endl;
-	cout << "call fillcalorimetry for a daughter track in event " << event << ", track_dau.ID() " << track_dau.ID() << endl;
-	cout << "track length is " << track_dau.Length() << endl;
-        //fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters);
-        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters,true);
+	//cout << "track length is " << track_dau.Length() << endl;
+        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters_rebuild,true);
 
         // check PID
         if (rebuilttrackPIDAssn.isValid()) {
@@ -1867,7 +1846,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
           double delta_y = end2.Y()-pos2.Y();
           double angle_y = TMath::ATan2(delta_z, delta_y);
           //fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters);
-          fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters, true);
+          fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters_rebuild, true);
         }      
 
         // find true matched particle
@@ -1879,15 +1858,15 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 	  mergeChecker(hits_from_rebuilttrack, particles_per_hit, ntracks, ndaughters, true, true);
 	}//isMC
 
-        ndaughters++;
+        ndaughters_rebuild++;
 
       } // remove condition on gap between K+ end and daughter start
     
-      reco_track_ndaughters[ntracks] = ndaughters;
+      reco_track_ndaughters_rebuild[ntracks] = ndaughters_rebuild;
           	
     }//NTrack loop
 
-      
+    int ndaughters_sh = 0;
     for (int j_s=0; j_s<NShowers; j_s++) {
       art::Ptr<recob::Shower> pshower_dau(showerListHandle,j_s);
       const recob::Shower& shower_dau = *pshower_dau;
@@ -1910,48 +1889,41 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
       if (shower_dau_distance<40) {
 	if(ndaughters_sh>20) break;
-	fillTrueMatching(hits_from_track, particles_per_hit, ntracks, ndaughters_sh, false, false);
-	mergeChecker(hits_from_track, particles_per_hit, ntracks, ndaughters_sh, false, false);
+        if (isMC) {
+          art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
+          std::vector<art::Ptr<recob::Hit>> hits_from_shower = hits_from_rebuilttracks.at(pshower_dau.key());
+	  fillTrueMatching(hits_from_shower, particles_per_hit, ntracks, ndaughters_sh, false, false);
+	  mergeChecker(hits_from_shower, particles_per_hit, ntracks, ndaughters_sh, false, false);
+	}
 	ndaughters_sh++;
       }
     }
 
     ntracks++;
-    cout << "ntracks is added " << ntracks << endl;
 
   } // loop over K  reco trks	
 
   reco_ntracks = ntracks;
-
-
+  
   if(flg_reco_k == true){
     cout << "Event has reconstrcted K+ track" << endl;
     //if(true_kaon_end_process == 0){
     //cout << "K+ -> Mu+ decay" << endl;
-      if(flg_reco_mu == true) cout << "Event has reconstrcted mu+ track" << endl;
-      else cout << "Event DOES NOT have reconstrcted mu+ track" << endl;
-      //}
+    if(flg_reco_mu == true) cout << "Event has reconstrcted mu+ track" << endl;
+    else cout << "Event DOES NOT have reconstrcted mu+ track" << endl;
+    //}
     //if(true_kaon_end_process == 1){
-      //cout << "K+ -> Pi+ decay" << endl;
-      if(flg_reco_pi == true) cout << "Event has reconstrcted pi+ track" << endl; 
-      else cout << "Event DOES NOT have reconstrcted pi+ track" << endl;
-      //}
+    //cout << "K+ -> Pi+ decay" << endl;
+    if(flg_reco_pi == true) cout << "Event has reconstrcted pi+ track" << endl; 
+    else cout << "Event DOES NOT have reconstrcted pi+ track" << endl;
+    //}
   }
   else cout << "Event DO NOT have reconstrcted K+ track" << endl;
-
+  
   flg_reco_k  = false;
   flg_reco_mu  = false;
   flg_reco_pi  = false;
-
-
-
-
-    } // minimum distance vectors are filled
-    //} // kaon and muon ID vectors are filled
-
-  }
-
-  //endCanvas();
+  
 
   fEventTree->Fill();
 
@@ -2211,12 +2183,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
      reco_track_end_z[k]=-9;
      
      reco_track_distance[k]=-9;
-     reco_track_nhits0[k]=-9;
-     reco_track_nhits1[k]=-9;
-     reco_track_nhits2[k]=-9;
-     reco_track_kin0[k]=-9;
-     reco_track_kin1[k]=-9;
-     reco_track_kin2[k]=-9;
      
      reco_track_length[k]=-9;
      reco_track_theta[k]=-9;
@@ -2253,9 +2219,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
      reco_track_Bragg_fwd_pi_pl2[k] = -9; 
      reco_track_Bragg_fwd_mu_pl2[k] = -9; 
      
-     reco_track_MIP_pl0[k] = -9; 
-     reco_track_MIP_pl1[k] = -9; 
-     reco_track_MIP_pl2[k] = -9; 
      
      reco_track_chi2ka_3pl[k]=-99;
      reco_track_chi2pr_3pl[k]=-99;
@@ -2279,7 +2242,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
      reco_track_true_end_inCCInclusiveTPC[k]=false;
      reco_track_true_length[k]=-9;
      reco_track_ndaughters[k]=0;
-     reco_track_ndaughters_old[k]=0;
+     reco_track_ndaughters_rebuild[k]=0;
      reco_shower_ndaughters[k]=0;
      
      for(int l=0; l<kMaxMerge; l++){ 
@@ -2300,7 +2263,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
        reco_track_daughter_end_z[k][m]=-9;
        
        reco_track_daughter_distance_sh[k][m]=-9;
-       reco_track_daughter_vtx_distance_sh[k][m]=-9;
        reco_angle_track_daughter_sh[k][m]=-9;
        reco_angle_daughter_track_daughter_sh[k][m]=-9;
        
@@ -2349,63 +2311,72 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
      
      for(int m=0; m<kMaxTracks; m++){
 
-       reco_track_daughter_old_distance[k][m]=-9;
-       reco_track_daughter_old_length[k][m]=-99;
-       reco_track_daughter_old_theta[k][m]=-99;
-       reco_track_daughter_old_phi[k][m]=-99;
-       reco_track_daughter_old_chi2ka_pl0[k][m]=-9;
-       reco_track_daughter_old_chi2pr_pl0[k][m]=-9;
-       reco_track_daughter_old_chi2pi_pl0[k][m]=-9;
-       reco_track_daughter_old_chi2mu_pl0[k][m]=-9;
-       reco_track_daughter_old_chi2ka_pl1[k][m]=-9;
-       reco_track_daughter_old_chi2pr_pl1[k][m]=-9;
-       reco_track_daughter_old_chi2pi_pl1[k][m]=-9;
-       reco_track_daughter_old_chi2mu_pl1[k][m]=-9;
-       reco_track_daughter_old_chi2ka_pl2[k][m]=-9;
-       reco_track_daughter_old_chi2pr_pl2[k][m]=-9;
-       reco_track_daughter_old_chi2pi_pl2[k][m]=-9;
-       reco_track_daughter_old_chi2mu_pl2[k][m]=-9;
-       reco_track_daughter_old_chi2ka_3pl[k][m]=-99;
-       reco_track_daughter_old_chi2pr_3pl[k][m]=-99;
-       reco_track_daughter_old_chi2pi_3pl[k][m]=-99;
-       reco_track_daughter_old_chi2mu_3pl[k][m]=-99;
-       reco_track_daughter_old_likepr_3pl[k][m]=-99;
-       reco_track_daughter_old_llrpid_3pl[k][m]=-9;
-       reco_track_daughter_old_llrpid_k_3pl[k][m]=-9;
-       reco_track_daughter_old_vtx_inTPC[k][m]=false;
-       reco_track_daughter_old_vtx_in5cmTPC[k][m]=false;
-       reco_track_daughter_old_vtx_inCCInclusiveTPC[k][m]=false;
-       reco_track_daughter_old_end_inTPC[k][m]=false;
-       reco_track_daughter_old_end_in5cmTPC[k][m]=false;
-       reco_track_daughter_old_end_inCCInclusiveTPC[k][m]=false;
-       reco_track_daughter_old_true_pdg[k][m]=-999;
+       reco_track_daughter_start_x_rebuild[k][m]=-9;
+       reco_track_daughter_start_y_rebuild[k][m]=-9;
+       reco_track_daughter_start_z_rebuild[k][m]=-9;
+       reco_track_daughter_end_x_rebuild[k][m]=-9;
+       reco_track_daughter_end_y_rebuild[k][m]=-9;
+       reco_track_daughter_end_z_rebuild[k][m]=-9;       
 
-       reco_track_daughter_old_Bragg_fwd_ka_pl0[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_pr_pl0[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_pi_pl0[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_mu_pl0[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_ka_pl1[k][m] = -999;  
-       reco_track_daughter_old_Bragg_fwd_pr_pl1[k][m] = -999;  
-       reco_track_daughter_old_Bragg_fwd_pi_pl1[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_mu_pl1[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_ka_pl2[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_pr_pl2[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_pi_pl2[k][m] = -999; 
-       reco_track_daughter_old_Bragg_fwd_mu_pl2[k][m] = -999; 
+       reco_track_daughter_distance_rebuild[k][m]=-9;
+       reco_track_daughter_vtx_distance_rebuild[k][m]=-9;
+       reco_track_daughter_length_rebuild[k][m]=-99;
+       reco_track_daughter_theta_rebuild[k][m]=-99;
+       reco_track_daughter_phi_rebuild[k][m]=-99;
+       reco_track_daughter_chi2ka_pl0_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pr_pl0_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pi_pl0_rebuild[k][m]=-9;
+       reco_track_daughter_chi2mu_pl0_rebuild[k][m]=-9;
+       reco_track_daughter_chi2ka_pl1_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pr_pl1_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pi_pl1_rebuild[k][m]=-9;
+       reco_track_daughter_chi2mu_pl1_rebuild[k][m]=-9;
+       reco_track_daughter_chi2ka_pl2_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pr_pl2_rebuild[k][m]=-9;
+       reco_track_daughter_chi2pi_pl2_rebuild[k][m]=-9;
+       reco_track_daughter_chi2mu_pl2_rebuild[k][m]=-9;
+       reco_track_daughter_chi2ka_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_chi2pr_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_chi2pi_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_chi2mu_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_likepr_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_llrpid_3pl_rebuild[k][m]=-9;
+       reco_track_daughter_llrpid_k_3pl_rebuild[k][m]=-9;
+       reco_track_daughter_vtx_inTPC_rebuild[k][m]=false;
+       reco_track_daughter_vtx_in5cmTPC_rebuild[k][m]=false;
+       reco_track_daughter_vtx_inCCInclusiveTPC_rebuild[k][m]=false;
+       reco_track_daughter_end_inTPC_rebuild[k][m]=false;
+       reco_track_daughter_end_in5cmTPC_rebuild[k][m]=false;
+       reco_track_daughter_end_inCCInclusiveTPC_rebuild[k][m]=false;
+       reco_track_daughter_true_pdg_rebuild[k][m]=-999;
+
+       reco_track_daughter_Bragg_fwd_ka_pl0_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_pr_pl0_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_pi_pl0_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_mu_pl0_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_ka_pl1_rebuild[k][m] = -999;  
+       reco_track_daughter_Bragg_fwd_pr_pl1_rebuild[k][m] = -999;  
+       reco_track_daughter_Bragg_fwd_pi_pl1_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_mu_pl1_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_ka_pl2_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_pr_pl2_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_pi_pl2_rebuild[k][m] = -999; 
+       reco_track_daughter_Bragg_fwd_mu_pl2_rebuild[k][m] = -999; 
 
 
        reco_track_daughter_distance[k][m]=-9;
        reco_track_daughter_vtx_distance[k][m]=-9;
        reco_angle_track_daughter[k][m]=-9;
-       reco_track_daughter_nhits0[k][m]=-9;
-       reco_track_daughter_nhits1[k][m]=-9;
-       reco_track_daughter_nhits2[k][m]=-9;
        
        for(int l=0; l<kMaxMerge; l++){ 
 	 reco_track_daughter_match_e[k][m][l] = -999;
 	 reco_track_daughter_match_hit[k][m][l] = -999;
 	 reco_track_daughter_match_epdg[k][m][l] = -999;
 	 reco_track_daughter_match_hitpdg[k][m][l] = -999;
+	 reco_track_daughter_match_e_rebuild[k][m][l] = -999;
+	 reco_track_daughter_match_hit_rebuild[k][m][l] = -999;
+	 reco_track_daughter_match_epdg_rebuild[k][m][l] = -999;
+	 reco_track_daughter_match_hitpdg_rebuild[k][m][l] = -999;
        }
 
        reco_track_daughter_length[k][m]=-99;
@@ -2457,10 +2428,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
        reco_track_daughter_Bragg_fwd_pr_pl2[k][m] = -999; 
        reco_track_daughter_Bragg_fwd_pi_pl2[k][m] = -999; 
        reco_track_daughter_Bragg_fwd_mu_pl2[k][m] = -999; 
-       
-       reco_track_daughter_MIP_pl0[k][m] = -999; 
-       reco_track_daughter_MIP_pl1[k][m] = -999; 
-       reco_track_daughter_MIP_pl2[k][m] = -999; 
        
        
      }
@@ -2548,34 +2515,12 @@ double CCKaonAnalyzer::length(const simb::MCParticle& p, TLorentzVector& start, 
 void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_i, bool wTrackRebuilder)
 {
 
-  int hits_p0=0;
-  int hits_p1=0;
-  int hits_p2=0;
-  float kin_p0=0;
-  float kin_p1=0;
-  float kin_p2=0;
-
   double llr_pid_total = 0;
   double llr_pid_total_k = 0;
 
   for (auto const &calo : calos) {
 
     int planenum = calo->PlaneID().Plane;
-
-    if(planenum==0) {
-            hits_p0=calo->dEdx().size();
-            kin_p0=calo->KineticEnergy();
-    }
-
-    if(planenum==1) {
-            hits_p1=calo->dEdx().size();
-            kin_p1=calo->KineticEnergy();
-    }
-
-    if(planenum==2) {
-            hits_p2=calo->dEdx().size();
-            kin_p2=calo->KineticEnergy();
-    }
 
     auto const &plane = calo->PlaneID().Plane;
     auto const &dedx_values = calo->dEdx();
@@ -2612,8 +2557,8 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
     if (daughter_i<0) {
     }
     else {
-      reco_track_daughter_llrpid_3pl_rebuild[track_i][daughter_i] = llr_pid_score_old;
-      reco_track_daughter_llrpid_k_3pl_rebuild[track_i][daughter_i] = llr_pid_score_k_old;      
+      reco_track_daughter_llrpid_3pl_rebuild[track_i][daughter_i] = llr_pid_score;
+      reco_track_daughter_llrpid_k_3pl_rebuild[track_i][daughter_i] = llr_pid_score_k;
     }
 
   }else{
@@ -2744,10 +2689,6 @@ void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trac
       reco_track_daughter_Bragg_fwd_pi_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_pi[2];
       reco_track_daughter_Bragg_fwd_mu_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_mu[2];
       
-      reco_track_daughter_MIP_pl0_rebuild[track_i][daughter_i] = No_Bragg[0];
-      reco_track_daughter_MIP_pl1_rebuild[track_i][daughter_i] = No_Bragg[1];
-      reco_track_daughter_MIP_pl2_rebuild[track_i][daughter_i] = No_Bragg[2];
-
     }
   }else{
     
@@ -2777,10 +2718,6 @@ void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trac
       reco_track_Bragg_fwd_pr_pl2[track_i] = Bragg_fwd_pr[2];
       reco_track_Bragg_fwd_pi_pl2[track_i] = Bragg_fwd_pi[2];
       reco_track_Bragg_fwd_mu_pl2[track_i] = Bragg_fwd_mu[2];
-      
-      reco_track_MIP_pl0[track_i] = No_Bragg[0];
-      reco_track_MIP_pl1[track_i] = No_Bragg[1];
-      reco_track_MIP_pl2[track_i] = No_Bragg[2];
       
       reco_track_chi2ka_3pl[track_i] = chi2ka_3pl;
       reco_track_chi2pr_3pl[track_i] = chi2pr_3pl;
@@ -2820,9 +2757,6 @@ void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trac
       reco_track_daughter_Bragg_fwd_pi_pl2[track_i][daughter_i] = Bragg_fwd_pi[2];
       reco_track_daughter_Bragg_fwd_mu_pl2[track_i][daughter_i] = Bragg_fwd_mu[2];
       
-      reco_track_daughter_MIP_pl0[track_i][daughter_i] = No_Bragg[0];
-      reco_track_daughter_MIP_pl1[track_i][daughter_i] = No_Bragg[1];
-      reco_track_daughter_MIP_pl2[track_i][daughter_i] = No_Bragg[2];     
     }
     
   }
@@ -2835,7 +2769,7 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
                                       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
                                       int track_i,
                                       int daughter_i,
-				      bool isTrack;
+				      bool isTrack,
 				      bool wTrackRebuilder)
 {
 
@@ -2869,19 +2803,21 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
     unsigned int pstarti, pendi;
     
     if(isTrack == true){
+
       if(wTrackRebuilder == true){
-	if (daughter_i<0){}
-	else{
+	if (daughter_i<0) {
+	} else {
 	  reco_track_daughter_true_pdg_rebuild[track_i][daughter_i] = matched_mcparticle->PdgCode();
 	  reco_track_daughter_true_origin_rebuild[track_i][daughter_i] = 1;//int(mc_truth->Origin());
 	  reco_track_daughter_true_primary_rebuild[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
 	  reco_track_daughter_true_end_inTPC_rebuild[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
-	  reco_track_daughter_true_end_in5cmTP_rebuildC[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_in5cmTPC_rebuild[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_daughter_true_end_inCCInclusiveTPC_rebuild[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_daughter_true_length_rebuild[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+	  
 	}
-      }
-      else{
+      } else {
+	
 	if (daughter_i<0) {
 	  reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
 	  reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
@@ -2890,8 +2826,7 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
 	  reco_track_true_end_in5cmTPC[track_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_true_end_inCCInclusiveTPC[track_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_true_length[track_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-	}
-	else {
+	} else {
 	  reco_track_daughter_true_pdg[track_i][daughter_i] = matched_mcparticle->PdgCode();
 	  reco_track_daughter_true_origin[track_i][daughter_i] = 1;//int(mc_truth->Origin());
 	  reco_track_daughter_true_primary[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
@@ -2899,28 +2834,28 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
 	  reco_track_daughter_true_end_in5cmTPC[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_daughter_true_end_inCCInclusiveTPC[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
 	  reco_track_daughter_true_length[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-	}      
-      }
-      else{
-	if(track_i>=0 && daughter_i>=0){	
-	  reco_track_daughter_true_pdg_sh[track_i][daughter_i] = matched_mcparticle->PdgCode();
-	  reco_track_daughter_true_origin_sh[track_i][daughter_i] = 1;//int(mc_truth->Origin());
-	  reco_track_daughter_true_primary_sh[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
-	  reco_track_daughter_true_end_inTPC_sh[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
-	  reco_track_daughter_true_end_in5cmTPC_sh[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
-	  reco_track_daughter_true_end_inCCInclusiveTPC_sh[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
-	  reco_track_daughter_true_length_sh[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
 	}
       }
+    } else {
+      if(track_i>=0 && daughter_i>=0){	
+	reco_track_daughter_true_pdg_sh[track_i][daughter_i] = matched_mcparticle->PdgCode();
+	reco_track_daughter_true_origin_sh[track_i][daughter_i] = 1;//int(mc_truth->Origin());
+	reco_track_daughter_true_primary_sh[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
+	reco_track_daughter_true_end_inTPC_sh[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
+	reco_track_daughter_true_end_in5cmTPC_sh[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	reco_track_daughter_true_end_inCCInclusiveTPC_sh[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
+	reco_track_daughter_true_length_sh[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+      }
     }
-  }else{
+    
+  } else {
     cout << "no matched_mcparticle found in fillTrue" << endl;
   }
   
 }
 
 
-void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
+void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
 				  art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
 				  int track_i,
 				  int daughter_i,
@@ -2942,14 +2877,14 @@ void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_t
 
 
   // Process each hit in the given collection
-  for (auto const& hit : hits) {
+  for (auto const& hit : hits_from_recoobj) {
     particle_vec.clear();
     match_vec.clear();
     particles_per_hit.get(hit.key(), particle_vec, match_vec);
 
     // Accumulate information for each particle associated with the hit
     for (size_t i_p = 0; i_p < particle_vec.size(); ++i_p) {
-      int trackID = particle_vec[i_p]->TrackID();
+      int trackID = particle_vec[i_p]->TrackId();
       trkide[trackID] += match_vec[i_p]->energy;
       trkidhit[trackID]++;
       trkidpdg[trackID] = particle_vec[i_p]->PdgCode();
@@ -2999,23 +2934,30 @@ void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_t
 
   auto assignEnergy = [&](double energy, int pdgCode, int index) {
     if (isTrack) {
-      if (daughter_i < 0) {
-	reco_track_match_e[track_i][index] = energy;
-	reco_track_match_epdg[track_i][index] = pdgCode;
+      if (wTrackRebuilder) {
+	if (daughter_i < 0) {
+	} else {
+	  reco_track_daughter_match_e_rebuild[track_i][daughter_i][index] = energy;
+	  reco_track_daughter_match_epdg_rebuild[track_i][daughter_i][index] = pdgCode;
+	}
       } else {
-	reco_track_daughter_match_e[track_i][daughter_i][index] = energy;
-	reco_track_daughter_match_epdg[track_i][daughter_i][index] = pdgCode;
+	if (daughter_i < 0) {
+	  reco_track_match_e[track_i][index] = energy;
+	  reco_track_match_epdg[track_i][index] = pdgCode;
+	} else {
+	  reco_track_daughter_match_e[track_i][daughter_i][index] = energy;
+	  reco_track_daughter_match_epdg[track_i][daughter_i][index] = pdgCode;
+	}
       }
     } else {
       reco_track_daughter_shower_match_e[track_i][daughter_i][index] = energy;
       reco_track_daughter_shower_match_epdg[track_i][daughter_i][index] = pdgCode;
     }
   };
-
+  
   auto assignHits = [&](double hits, int pdgCode, int index) {
     if (isTrack) {
       if (wTrackRebuilder) {
-
 	if (daughter_i < 0) {
 	} else {
 	  reco_track_daughter_match_hit_rebuild[track_i][daughter_i][index] = hits;
@@ -3030,7 +2972,6 @@ void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_t
 	  reco_track_daughter_match_hitpdg[track_i][daughter_i][index] = pdgCode;
 	}
       }
-
     } else {
       reco_track_daughter_shower_match_hit[track_i][daughter_i][index] = hits;
       reco_track_daughter_shower_match_hitpdg[track_i][daughter_i][index] = pdgCode;

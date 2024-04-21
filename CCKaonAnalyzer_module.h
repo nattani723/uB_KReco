@@ -107,9 +107,6 @@
 #include <map>
 #include <sys/stat.h>
 
-#include "bad_channel_matching.h"
-#include "sssVeto_BDT.class.h"
-#include "DBSCAN.h"
 //------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -153,9 +150,8 @@
 
 #include "PID/LLR_PID.h"
 #include "PID/LLRPID_proton_muon_lookup.h"
-
-#include "PID_K/LLR_PID_K.h"
-#include "PID_K/LLRPID_kaon_proton_lookup.h"
+#include "PID/LLR_PID_K.h"
+#include "PID/LLRPID_kaon_proton_lookup.h"
 
 //#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larreco/RecoAlg/TrajectoryMCSFitter.h"
@@ -293,20 +289,20 @@ namespace Kaon_Analyzer
      void analyze(const art::Event& evt); 
      void reset(); 
 
-     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder); 
-     void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder);   
+     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false); 
+     void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false);   
      void fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
                            art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
                            int track_i=-1,
                            int daughter_i=-1,
-			   bool isTrack,
-			   bool wTrackRebuilder);
+			   bool isTrack=false,
+			   bool wTrackRebuilder=false);
      void mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
 		       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
 		       int track_i,
 		       int daughter_i,
-		       bool isTrack,
-		       bool wTrackRebuilder)
+		       bool isTrack=false,
+		       bool wTrackRebuilder=false);
        
      double length(const simb::MCParticle& part, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi); 
 
@@ -600,11 +596,15 @@ namespace Kaon_Analyzer
     Float_t reco_track_daughter_end_y[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_end_z[kMaxTracks][kMaxTracks];
 
+    Float_t reco_track_daughter_start_x_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_start_y_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_start_z_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_end_x_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_end_y_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_end_z_rebuild[kMaxTracks][kMaxTracks];
+
 
     Float_t reco_track_distance[kMaxTracks];
-    Int_t   reco_track_nhits0[kMaxTracks];
-    Int_t   reco_track_nhits1[kMaxTracks];
-    Int_t   reco_track_nhits2[kMaxTracks];
 
     Float_t   reco_track_kin0[kMaxTracks];
     Float_t   reco_track_kin1[kMaxTracks];
@@ -701,6 +701,11 @@ namespace Kaon_Analyzer
     Int_t reco_track_daughter_match_epdg[kMaxTracks][kMaxTracks][kMaxMerge];
     Int_t reco_track_daughter_match_hitpdg[kMaxTracks][kMaxTracks][kMaxMerge];
 
+    Float_t reco_track_daughter_match_e_rebuild[kMaxTracks][kMaxTracks][kMaxMerge];
+    Float_t reco_track_daughter_match_hit_rebuild[kMaxTracks][kMaxTracks][kMaxMerge];
+    Int_t reco_track_daughter_match_epdg_rebuild[kMaxTracks][kMaxTracks][kMaxMerge];
+    Int_t reco_track_daughter_match_hitpdg_rebuild[kMaxTracks][kMaxTracks][kMaxMerge];
+
     Float_t reco_track_daughter_shower_match_e[kMaxTracks][kMaxShowers][kMaxMerge];
     Float_t reco_track_daughter_shower_match_hit[kMaxTracks][kMaxShowers][kMaxMerge];
     Int_t reco_track_daughter_shower_match_epdg[kMaxTracks][kMaxShowers][kMaxMerge];
@@ -716,56 +721,64 @@ namespace Kaon_Analyzer
     Int_t   reco_track_daughter_nhits2[kMaxTracks][kMaxTracks];
 
 
-    Int_t   reco_track_ndaughters_old[kMaxTracks];
-    Float_t reco_track_daughter_old_distance[kMaxTracks][kMaxTracks];
-    Int_t   reco_track_daughter_old_true_pdg[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_length[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_theta[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_phi[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2ka_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pr_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pi_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2mu_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2ka_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pr_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pi_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2mu_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2ka_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pr_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pi_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2mu_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2ka_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pr_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2pi_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_chi2mu_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_likepr_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_llrpid_3pl[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_llrpid_k_3pl[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_vtx_inTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_vtx_in5cmTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_vtx_inCCInclusiveTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_end_inTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_end_in5cmTPC[kMaxTracks][kMaxTracks];
-    Bool_t  reco_track_daughter_old_end_inCCInclusiveTPC[kMaxTracks][kMaxTracks];
+    Int_t   reco_track_ndaughters_rebuild[kMaxTracks];
+    Float_t reco_track_daughter_distance_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_vtx_distance_rebuild[kMaxTracks][kMaxShowers]; 
+    Int_t   reco_track_daughter_true_pdg_rebuild[kMaxTracks][kMaxTracks];
+    Int_t   reco_track_daughter_true_origin_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_true_primary_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_true_end_inTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_true_end_in5cmTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_true_end_inCCInclusiveTPC_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_true_length_rebuild[kMaxTracks][kMaxTracks];
+    Int_t   reco_track_daughter_true_mother_rebuild[kMaxTracks][kMaxTracks];
 
-    Float_t reco_track_daughter_old_Bragg_fwd_ka_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pr_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pi_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_mu_pl0[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_ka_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pr_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pi_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_mu_pl1[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_ka_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pr_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_pi_pl2[kMaxTracks][kMaxTracks];
-    Float_t reco_track_daughter_old_Bragg_fwd_mu_pl2[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_length_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_theta_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_phi_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2ka_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pr_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pi_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2mu_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2ka_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pr_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pi_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2mu_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2ka_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pr_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pi_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2mu_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2ka_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pr_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2pi_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_chi2mu_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_likepr_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_llrpid_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_llrpid_k_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_vtx_inTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_vtx_in5cmTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_vtx_inCCInclusiveTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_end_inTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_end_in5cmTPC_rebuild[kMaxTracks][kMaxTracks];
+    Bool_t  reco_track_daughter_end_inCCInclusiveTPC_rebuild[kMaxTracks][kMaxTracks];
+
+    Float_t reco_track_daughter_Bragg_fwd_ka_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pr_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pi_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_mu_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_ka_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pr_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pi_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_mu_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_ka_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pr_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_pi_pl2_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_Bragg_fwd_mu_pl2_rebuild[kMaxTracks][kMaxTracks];
 
 
 
      Int_t   reco_shower_ndaughters[kMaxTracks]; 
      Float_t reco_track_daughter_distance_sh[kMaxTracks][kMaxShowers]; 
-     Float_t reco_track_daughter_vtx_distance_sh[kMaxTracks][kMaxShowers]; 
      Float_t reco_angle_track_daughter_sh[kMaxTracks][kMaxShowers]; 
      Float_t reco_angle_daughter_track_daughter_sh[kMaxTracks][kMaxShowers]; 
      Float_t reco_track_daughter_length_sh[kMaxTracks][kMaxShowers]; 
