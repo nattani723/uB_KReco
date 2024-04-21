@@ -148,10 +148,10 @@
 
 #include "larpandora/LArPandoraInterface/LArPandoraHelper.h"
 
-#include "PID/LLR_PID.h"
-#include "PID/LLRPID_proton_muon_lookup.h"
-#include "PID/LLR_PID_K.h"
-#include "PID/LLRPID_kaon_proton_lookup.h"
+#include "headers/LLR_PID.h"
+#include "headers/LLRPID_proton_muon_lookup.h"
+#include "headers/LLR_PID_K.h"
+#include "headers/LLRPID_kaon_proton_lookup.h"
 
 //#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larreco/RecoAlg/TrajectoryMCSFitter.h"
