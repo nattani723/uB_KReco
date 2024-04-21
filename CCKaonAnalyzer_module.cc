@@ -1598,7 +1598,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
   int RebuiltNTracks=rebuilttracklist.size();
   int ntracks = 0;
 
-  // int NShowers=showerlist.size();
+  int NShowers=showerlist.size();
 
 
   //selection cuts
@@ -1702,8 +1702,8 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
       //assocMCPart = std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> (new art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>(hitListHandle, evt, fHitTruthAssns));
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
-
+      fillTrueMatching(hits_from_track, particles_per_hit, ntracks, -1, true, false);
+      mergeChecker(hits_from_track, particles_per_hit, ntracks, -1, true, false);
 
     }//isMC
 
@@ -1773,8 +1773,8 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
           std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack_dau_old.key());
 	  art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
-	  fillTrueMatching_old(hits_from_track, particles_per_hit, ntracks, ndaughters_old);
-
+	  fillTrueMatching(hits_from_track, particles_per_hit, ntracks, ndaughters_old, true, false);
+	  mergeChecker(hits_from_track, particles_per_hit, ntracks, ndaughters_old, true, false); 
 	}
       
         ndaughters_old++;
@@ -1783,16 +1783,12 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     
       reco_track_ndaughters_old[ntracks] = ndaughters_old;
  
-
     }
-
-
 
 
     // check if there is a track at the end
     int ndaughters = 0;
     cout << "RebuiltNTracks: " << RebuiltNTracks << endl;
-    //for (int j=0; j<NTracks; j++) {
     for (int j=0; j<RebuiltNTracks; j++) {
     
       art::Ptr<recob::Track> ptrack_dau(rebuilttrackListHandle,j);
@@ -1879,11 +1875,10 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
           std::vector<art::Ptr<recob::Hit>> hits_from_rebuilttrack = hits_from_rebuilttracks.at(ptrack_dau.key());
 	  art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
-	  fillTrueMatching(hits_from_rebuilttrack, particles_per_hit, ntracks, ndaughters);
-	  
+	  fillTrueMatching(hits_from_rebuilttrack, particles_per_hit, ntracks, ndaughters, true, true);
+	  mergeChecker(hits_from_rebuilttrack, particles_per_hit, ntracks, ndaughters, true, true);
 	}//isMC
 
-      
         ndaughters++;
 
       } // remove condition on gap between K+ end and daughter start
@@ -1893,6 +1888,34 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     }//NTrack loop
 
       
+    for (int j_s=0; j_s<NShowers; j_s++) {
+      art::Ptr<recob::Shower> pshower_dau(showerListHandle,j_s);
+      const recob::Shower& shower_dau = *pshower_dau;
+      
+      // skip all primary showers
+
+      bool skip2 = false;
+      for (int k_sh=0; k_sh<reco_nu_ndaughters; k_sh++) {
+	if (int(pshower_dau.key())==reco_nu_daughters_id[k_sh]) {
+	  skip2=true;
+	  break;
+	}
+      }
+      if (skip2) continue;
+      TVector3 pos2_sh(shower_dau.ShowerStart().X(),shower_dau.ShowerStart().Y(),shower_dau.ShowerStart().Z());
+
+      double shower_dau_distance=TMath::Sqrt((end.X()-pos2_sh.X())*(end.X()-pos2_sh.X()) +
+					     (end.Y()-pos2_sh.Y())*(end.Y()-pos2_sh.Y()) +
+					     (end.Z()-pos2_sh.Z())*(end.Z()-pos2_sh.Z()));
+
+      if (shower_dau_distance<40) {
+	if(ndaughters_sh>20) break;
+	fillTrueMatching(hits_from_track, particles_per_hit, ntracks, ndaughters_sh, false, false);
+	mergeChecker(hits_from_track, particles_per_hit, ntracks, ndaughters_sh, false, false);
+	ndaughters_sh++;
+      }
+    }
+
     ntracks++;
     cout << "ntracks is added " << ntracks << endl;
 
@@ -2808,10 +2831,12 @@ void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trac
 
 
 
-void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
+void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
                                       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
                                       int track_i,
-                                      int daughter_i)
+                                      int daughter_i,
+				      bool isTrack;
+				      bool wTrackRebuilder)
 {
 
   simb::MCParticle const* matched_mcparticle = NULL;
@@ -2820,12 +2845,12 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
   std::vector<simb::MCParticle const*> particle_vec;
   std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
   
-  for(size_t i_h=0; i_h<hits_from_track.size(); i_h++) {
+  for(size_t i_h=0; i_h<hits_from_recoobj.size(); i_h++) {
     particle_vec.clear(); match_vec.clear();
-    particles_per_hit.get(hits_from_track[i_h].key(), particle_vec, match_vec);
-
+    particles_per_hit.get(hits_from_recoobj[i_h].key(), particle_vec, match_vec);
+    
     //cout << "track's particle_vec.size(): " << particle_vec.size() << endl;
-
+    
     for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
       trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
       //trkide[ particle_vec[i_p]->TrackId() ] ++;
@@ -2842,425 +2867,187 @@ void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_fr
     //const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",matched_mcparticle->TrackId());
     TLorentzVector mcstart, mcend;
     unsigned int pstarti, pendi;
-
-    if (daughter_i<0) {
-      //cout << "this case daughter_i is: " << daughter_i << endl;
-      reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
-      reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
-      reco_track_true_primary[track_i] = matched_mcparticle->Process()=="primary";
-      reco_track_true_end_inTPC[track_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_true_end_in5cmTPC[track_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_true_end_inCCInclusiveTPC[track_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_true_length[track_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-    }
-    else {
-      reco_track_daughter_true_pdg[track_i][daughter_i] = matched_mcparticle->PdgCode();
-      reco_track_daughter_true_origin[track_i][daughter_i] = 1;//int(mc_truth->Origin());
-      reco_track_daughter_true_primary[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
-      reco_track_daughter_true_end_inTPC[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_end_in5cmTPC[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_end_inCCInclusiveTPC[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_length[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-      //for (auto const& pPart : ptList) {
-      //  if (pPart->TrackId()==matched_mcparticle2->Mother()) {
-      //    reco_track_daughter_true_mother[ntracks][ndaughters] = pPart->PdgCode();
-      //    break;
-      //  }
-      //}
-    }
-  }else{
-      cout << "no matched_mcparticle found in fillTrue" << endl;
-  }
-
-}
-
-
-void CCKaonAnalyzer::fillTrueMatching_old(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
-					  art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-					  int track_i,
-					  int daughter_i)
-{
-
-  //std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-  //art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
-
-  //cout << "hits_from_track.size(): " << hits_from_track.size() << endl;
-
-  simb::MCParticle const* matched_mcparticle = NULL;
-  std::unordered_map<int,double> trkide;
-  double maxe=-1, tote=0;
-  std::vector<simb::MCParticle const*> particle_vec;
-  std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-  
-  for(size_t i_h=0; i_h<hits_from_track.size(); i_h++) {
-    particle_vec.clear(); match_vec.clear();
-    particles_per_hit.get(hits_from_track[i_h].key(), particle_vec, match_vec);
-
-    //cout << "track's particle_vec.size(): " << particle_vec.size() << endl;
-
-    for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-      trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-      //trkide[ particle_vec[i_p]->TrackId() ] ++;
-      tote += match_vec[i_p]->energy;
-      if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
-        maxe = trkide[ particle_vec[i_p]->TrackId() ];
-        matched_mcparticle = particle_vec[i_p];
+    
+    if(isTrack == true){
+      if(wTrackRebuilder == true){
+	if (daughter_i<0){}
+	else{
+	  reco_track_daughter_true_pdg_rebuild[track_i][daughter_i] = matched_mcparticle->PdgCode();
+	  reco_track_daughter_true_origin_rebuild[track_i][daughter_i] = 1;//int(mc_truth->Origin());
+	  reco_track_daughter_true_primary_rebuild[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
+	  reco_track_daughter_true_end_inTPC_rebuild[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_in5cmTP_rebuildC[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_inCCInclusiveTPC_rebuild[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_length_rebuild[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+	}
+      }
+      else{
+	if (daughter_i<0) {
+	  reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
+	  reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
+	  reco_track_true_primary[track_i] = matched_mcparticle->Process()=="primary";
+	  reco_track_true_end_inTPC[track_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_true_end_in5cmTPC[track_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_true_end_inCCInclusiveTPC[track_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_true_length[track_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+	}
+	else {
+	  reco_track_daughter_true_pdg[track_i][daughter_i] = matched_mcparticle->PdgCode();
+	  reco_track_daughter_true_origin[track_i][daughter_i] = 1;//int(mc_truth->Origin());
+	  reco_track_daughter_true_primary[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
+	  reco_track_daughter_true_end_inTPC[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_in5cmTPC[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_inCCInclusiveTPC[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_length[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+	}      
+      }
+      else{
+	if(track_i>=0 && daughter_i>=0){	
+	  reco_track_daughter_true_pdg_sh[track_i][daughter_i] = matched_mcparticle->PdgCode();
+	  reco_track_daughter_true_origin_sh[track_i][daughter_i] = 1;//int(mc_truth->Origin());
+	  reco_track_daughter_true_primary_sh[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
+	  reco_track_daughter_true_end_inTPC_sh[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_in5cmTPC_sh[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_end_inCCInclusiveTPC_sh[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
+	  reco_track_daughter_true_length_sh[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
+	}
       }
     }
-  }
- 
-
-  if(matched_mcparticle){
-    //const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",matched_mcparticle->TrackId());
-    //TLorentzVector mcstart, mcend;
-    //unsigned int pstarti, pendi;
-
-    if (daughter_i<0) {
-    }
-    else {
-      reco_track_daughter_old_true_pdg[track_i][daughter_i] = matched_mcparticle->PdgCode();
-    }
   }else{
-      cout << "no matched_mcparticle found in fillTrue" << endl;
+    cout << "no matched_mcparticle found in fillTrue" << endl;
   }
-
+  
 }
 
 
-void CCKaonAnalyzer::fillTrackMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
-                                      art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-                                      int track_i,
-                                      int daughter_i)
+void CCKaonAnalyzer::mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
+				  art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
+				  int track_i,
+				  int daughter_i,
+				  bool isTrack,
+				  bool wTrackRebuilder)
 {
-  std::map<int,double> trkide;
-  std::map<int,double> trkidhit;
-  std::map<int,int> trkidpdg;    
-  std::map<int,int> trkidmrgid;
-  std::map<int,int> trkidmother;
 
-  map<int, int>::iterator it_trkidpdg;
-  map<int, int>::iterator it_trkidmrgid;
-  map<int, int>::iterator it_trkidmrgid2;
-  map<int, double>::iterator it_trkide;
-  map<int, double>::iterator it_trkidhit;
+  std::map<int, double> trkide;
+  std::map<int, double> trkidhit;
+  std::map<int, int> trkidpdg;
+  std::map<int, int> trkidmrgid;
+  std::map<int, int> trkidmother;
 
   std::map<double, int, std::greater<int>> epdg;
   std::map<double, int, std::greater<int>> hitpdg;
 
   std::vector<simb::MCParticle const*> particle_vec;
   std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-  
-  for(size_t i_h=0; i_h<hits_from_track.size(); i_h++) {
-    particle_vec.clear(); match_vec.clear();
 
-    particles_per_hit.get(hits_from_track[i_h].key(), particle_vec, match_vec);
 
-    for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-      trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-      trkidhit[ particle_vec[i_p]->TrackId() ]++;
-      trkidpdg[ particle_vec[i_p]->TrackId() ] = particle_vec[i_p]->PdgCode();
-      trkidmrgid[ particle_vec[i_p]->TrackId() ] = -9;
-      trkidmother[ particle_vec[i_p]->TrackId() ] = particle_vec[i_p]->Mother();
+  // Process each hit in the given collection
+  for (auto const& hit : hits) {
+    particle_vec.clear();
+    match_vec.clear();
+    particles_per_hit.get(hit.key(), particle_vec, match_vec);
+
+    // Accumulate information for each particle associated with the hit
+    for (size_t i_p = 0; i_p < particle_vec.size(); ++i_p) {
+      int trackID = particle_vec[i_p]->TrackID();
+      trkide[trackID] += match_vec[i_p]->energy;
+      trkidhit[trackID]++;
+      trkidpdg[trackID] = particle_vec[i_p]->PdgCode();
+      trkidmrgid[trackID] = -9;
+      trkidmother[trackID] = particle_vec[i_p]->Mother();
     }
   }
 
+  // Generate merged IDs for related tracks
+  int currentMergedID = 1;
+  for (auto& pdg_entry : trkidpdg) {
+    if (trkidmrgid[pdg_entry.first] != -9) continue;
+    trkidmrgid[pdg_entry.first] = currentMergedID;
+    int currentMotherTrackID = trkidmother[pdg_entry.first];
 
-  //get merged id for two generations
-
-  int currentMergedId = 1; 
-
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-        
-    if(trkidmrgid[it_trkidpdg->first] != -9) continue;  //not filled yet
-    trkidmrgid[it_trkidpdg->first] = currentMergedId; //fill current id
-    int currentMotherTrackId = trkidmother[it_trkidpdg->first];
-    
-    while (currentMotherTrackId > 0) {//have mother
-
-      if(trkidpdg.find(currentMotherTrackId)==trkidpdg.end()) break;
-      if(trkidpdg[currentMotherTrackId]!=it_trkidpdg->second) break;
-      
-	trkidmrgid[currentMotherTrackId] = currentMergedId;
-	currentMotherTrackId = trkidmother[currentMotherTrackId];
-      }
-    ++currentMergedId; 
-  }                                                                                             
- 
-  
-  for (it_trkidmrgid = trkidmrgid.begin(); it_trkidmrgid != trkidmrgid.end(); it_trkidmrgid++){
-    for (it_trkidmrgid2 = trkidmrgid.begin(); it_trkidmrgid2 != trkidmrgid.end(); it_trkidmrgid2++){
-      
-      if(it_trkidmrgid->first == it_trkidmrgid2->first) continue; //skip if they have the same trackID
-      
-      if(it_trkidmrgid->second == it_trkidmrgid2->second){ //check if they have same MergedId 
-	//trkide.find( it_trkidmrgid->first );
-	trkide[ it_trkidmrgid->first ] += trkide[ it_trkidmrgid2->first ];
-	trkidhit[ it_trkidmrgid->first ] += trkidhit[ it_trkidmrgid2->first ];
-	
-	trkidmrgid[ it_trkidmrgid2->first ] = -1; //removed if it's been merged 
-	trkide[ it_trkidmrgid2->first ] = -1;
-	trkidhit[ it_trkidmrgid2->first ] = -1;
-      }      
-    }	
-  }
-  
-
-  it_trkide = trkide.begin();
-  it_trkidhit = trkidhit.begin();
-  it_trkidmrgid = trkidmrgid.begin();
-
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-
-    if(it_trkidmrgid->second ==-1) continue;
-    epdg[ it_trkide->second ] = it_trkidpdg->second;
-    hitpdg[ it_trkidhit->second ] = it_trkidpdg->second;
-
-    it_trkide++;//? how to initialise
-    it_trkidhit++;
-    it_trkidmrgid++;
-  }
-
-
-  Int_t merge_i = 0;  
- 
-  /* 
-cout << "TRKID AND MRGID" << endl;
-
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-    if(trkidpdg.find( trkidmother[ it_trkidpdg->first] ) == trkidpdg.end()) continue;
-    cout << "trkid: " << it_trkidpdg->first << ", mrgid: " << trkidmrgid[ it_trkidpdg->first] << ", PDG: " << it_trkidpdg->second << endl;
-    cout << "trkid: " << it_trkidpdg->first << ", mother: " << trkidmother[ it_trkidpdg->first] << ", PDG: " << trkidpdg[ trkidmother[ it_trkidpdg->first] ] << endl;
-  }
-
-  cout << "ENERGY AND ITS PDG" << endl;
-  */
-
-  for (auto const& x : epdg){
-
-    if(daughter_i<0){
-      reco_track_match_e[track_i][merge_i] = x.first;
-      //cout << "after fill reco_track_match_e[track_i][merge_i]: " << reco_track_match_e[track_i][merge_i] << endl;
-      reco_track_match_epdg[track_i][merge_i] = x.second;
-
-    }else{
-      reco_track_daughter_match_e[track_i][daughter_i][merge_i] = x.first;
-      reco_track_daughter_match_epdg[track_i][daughter_i][merge_i] = x.second;
-    }
-    merge_i++;   
-  }
-  
-  merge_i=0;
-  //cout << "HITS AND ITS PDG" << endl;
-  for (auto const& y : hitpdg){
-    if(daughter_i<0){ 
-      reco_track_match_hit[track_i][merge_i] = y.first;     
-      reco_track_match_hitpdg[track_i][merge_i] = y.second;
-    }else{
-      reco_track_daughter_match_e[track_i][daughter_i][merge_i] = y.first;
-      reco_track_daughter_match_epdg[track_i][daughter_i][merge_i] = y.second;
-    }
-    merge_i++;
-  }
-  
-}
-
-
-
-
-void CCKaonAnalyzer::fillTrueMatching_sh(std::vector<art::Ptr<recob::Hit>>& hits_from_shower,
-                                         art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-                                         int track_i,
-                                         int daughter_i)
-{
-
-  simb::MCParticle const* matched_mcparticle = NULL;
-  std::unordered_map<int,double> shwride;
-  double maxe=-1, tote=0;
-  std::vector<simb::MCParticle const*> particle_vec;
-  std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-  
-  for(size_t i_h=0; i_h<hits_from_shower.size(); i_h++) {
-    particle_vec.clear(); match_vec.clear();
-    particles_per_hit.get(hits_from_shower[i_h].key(), particle_vec, match_vec);
-
-    //cout << "shower's particle_vec.size(): " << particle_vec.size() << endl;
-
-    for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-      shwride[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-      tote += match_vec[i_p]->energy;
-
-      //cout << "particle_vec[i_p]->TrackId(): " << particle_vec[i_p]->TrackId() << endl;
-      //cout << "match_vec[i_p]->energy: " << match_vec[i_p]->energy << endl;
-      //cout << "shwride[ particle_vec[i_p]->TrackId() ]: " << shwride[ particle_vec[i_p]->TrackId() ] << endl;
-      if( shwride[ particle_vec[i_p]->TrackId() ] > maxe ){
-        maxe = shwride[ particle_vec[i_p]->TrackId() ];
-        matched_mcparticle = particle_vec[i_p];
+    //while (currentMotherTrackId > 0 && trkidpdg.find(currentMotherTrackId) != trkidpdg.end() && trkidpdg[currentMotherTrackId] == pdg_entry.second) {
+    while (currentMotherTrackID > 0) {
+      if( trkidpdg.find(currentMotherTrackID) != trkidpdg.end() &&
+	  trkidpdg[currentMotherTrackID] == pdg_entry.second ){
+	trkidmrgid[currentMotherTrackID] = currentMergedID;
+	currentMotherTrackID = trkidmother[currentMotherTrackID];
       }
     }
+    ++currentMergedID;
   }
-  //cout << "MAXE: " << maxe << endl;
-
-
-  if(matched_mcparticle){
-    //const art::Ptr<simb::MCTruth> mc_truth=TrackIDToMCTruth(evt,"largeant",matched_mcparticle->TrackId());
-    TLorentzVector mcstart, mcend;
-    unsigned int pstarti, pendi;
-
-    //cout << "found matched_mcparticle" << endl;
-    //cout << "and its pdg: " << matched_mcparticle->PdgCode() << endl;
-
-    if(track_i>=0 && daughter_i>=0){
-
-      //cout << "filling reco_track_daughter_true_pdg_sh[track_i][daughter_i] with track_i: " << track_i << ", daughter_i: " << daughter_i << ", pdg" << matched_mcparticle->PdgCode() << endl;
-      //cout << "before filling reco_track_daughter_true_pdg_sh[track_i][daughter_i]: " << reco_track_daughter_true_pdg_sh[track_i][daughter_i] << endl;
-      //cout << "after filling reco_track_daughter_true_pdg_sh[track_i][daughter_i]: " << reco_track_daughter_true_pdg_sh[track_i][daughter_i] << endl;
-
-      reco_track_daughter_true_pdg_sh[track_i][daughter_i] = matched_mcparticle->PdgCode();
-
-      reco_track_daughter_true_origin_sh[track_i][daughter_i] = 1;//int(mc_truth->Origin());
-      reco_track_daughter_true_primary_sh[track_i][daughter_i] = matched_mcparticle->Process()=="primary";
-      reco_track_daughter_true_end_inTPC_sh[track_i][daughter_i] = isInsideVolume("TPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_end_in5cmTPC_sh[track_i][daughter_i] = isInsideVolume("5cmTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_end_inCCInclusiveTPC_sh[track_i][daughter_i] = isInsideVolume("CCInclusiveTPC", matched_mcparticle->EndPosition().Vect());
-      reco_track_daughter_true_length_sh[track_i][daughter_i] = length(*matched_mcparticle, mcstart, mcend, pstarti, pendi);
-      //}
-    }
-  }
-}
-
-
-void CCKaonAnalyzer::fillShowerMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_shower,
-                                      art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
-                                      int track_i,
-                                      int daughter_i)
-{
-  std::map<int,double> trkide;
-  std::map<int,double> trkidhit;
-  std::map<int,int> trkidpdg;
-  std::map<int,int> trkidmrgid;
-  std::map<int,int> trkidmother;
-
-  map<int, int>::iterator it_trkidpdg;
-  map<int, int>::iterator it_trkidmrgid;
-  map<int, int>::iterator it_trkidmrgid2;
-  map<int, double>::iterator it_trkide;
-  map<int, double>::iterator it_trkidhit;
-
-  std::map<double, int, std::greater<int>> epdg;
-  std::map<double, int, std::greater<int>> hitpdg;
-
-  std::vector<simb::MCParticle const*> particle_vec;
-  std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
   
-  for(size_t i_h=0; i_h<hits_from_shower.size(); i_h++) {
-    particle_vec.clear(); match_vec.clear();
-
-    particles_per_hit.get(hits_from_shower[i_h].key(), particle_vec, match_vec);
-
-    for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-      trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-      trkidhit[ particle_vec[i_p]->TrackId() ]++;
-      trkidpdg[ particle_vec[i_p]->TrackId() ] = particle_vec[i_p]->PdgCode();
-      trkidmrgid[ particle_vec[i_p]->TrackId() ] = -9;
-      trkidmother[ particle_vec[i_p]->TrackId() ] = particle_vec[i_p]->Mother();
+  // Merge tracks with the same merged ID
+  for (auto& mrgid1 : trkidmrgid) {
+    for (auto& mrgid2 : trkidmrgid) {
+      if (mrgid1.first == mrgid2.first || mrgid1.second != mrgid2.second) continue;
+      trkide[mrgid1.first] += trkide[mrgid2.first];
+      trkidhit[mrgid1.first] += trkidhit[mrgid2.first];
+      trkidmrgid[mrgid2.first] = -1;  // Mark as merged
+      //trkide[mrgid2.first] = -1;
+      //trkidhit[mrgid2.first] = -1;
     }
   }
- 
-  //get merged id for two generations
 
-  int currentMergedId = 1; 
+  // Prepare data for output
+  for (auto const& ide : trkide) {
+    if (trkidmrgid[ide.first] == -1) continue;
+    epdg[ide.second] = trkidpdg[ide.first];
+    hitpdg[trkidhit[ide.first]] = trkidpdg[ide.first];
+  }
 
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-        
-    if(trkidmrgid[it_trkidpdg->first] != -9) continue;  //not filled yet
-    trkidmrgid[it_trkidpdg->first] = currentMergedId; //fill current id
-    int currentMotherTrackId = trkidmother[it_trkidpdg->first];
-    
-    while (currentMotherTrackId > 0) {//have mother
+  // Output data
 
-      if(trkidpdg.find(currentMotherTrackId)==trkidpdg.end()) break;
-      if(trkidpdg[currentMotherTrackId]!=it_trkidpdg->second) break;
-      
-	trkidmrgid[currentMotherTrackId] = currentMergedId;
-	currentMotherTrackId = trkidmother[currentMotherTrackId];
+  auto assignEnergy = [&](double energy, int pdgCode, int index) {
+    if (isTrack) {
+      if (daughter_i < 0) {
+	reco_track_match_e[track_i][index] = energy;
+	reco_track_match_epdg[track_i][index] = pdgCode;
+      } else {
+	reco_track_daughter_match_e[track_i][daughter_i][index] = energy;
+	reco_track_daughter_match_epdg[track_i][daughter_i][index] = pdgCode;
       }
-    ++currentMergedId; 
-  }                                                                                             
- 
-  
-  for (it_trkidmrgid = trkidmrgid.begin(); it_trkidmrgid != trkidmrgid.end(); it_trkidmrgid++){
-    for (it_trkidmrgid2 = trkidmrgid.begin(); it_trkidmrgid2 != trkidmrgid.end(); it_trkidmrgid2++){
-      
-      if(it_trkidmrgid->first == it_trkidmrgid2->first) continue; //skip if they have the same trackID
-      
-      if(it_trkidmrgid->second == it_trkidmrgid2->second){ //check if they have same MergedId 
-	trkide[ it_trkidmrgid->first ] += trkide[ it_trkidmrgid2->first ];
-	trkidhit[ it_trkidmrgid->first ] += trkidhit[ it_trkidmrgid2->first ];
-	
-	trkidmrgid[ it_trkidmrgid2->first ] = -1; //removed if it's been merged 
-	trkide[ it_trkidmrgid2->first ] = -1;
-	trkidhit[ it_trkidmrgid2->first ] = -1;
-      }      
-    }	
-  }
-  
-
-  it_trkide = trkide.begin();
-  it_trkidhit = trkidhit.begin();
-  it_trkidmrgid = trkidmrgid.begin();
-
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-
-    if(it_trkidmrgid->second ==-1) continue;
-    epdg[ it_trkide->second ] = it_trkidpdg->second;
-    hitpdg[ it_trkidhit->second ] = it_trkidpdg->second;
-
-    it_trkide++;
-    it_trkidhit++;
-    it_trkidmrgid++;
-  }
-
-  Int_t merge_i = 0; 
-
-  /*
-  cout << "TRKID AND MRGID" << endl;
-
-  for (it_trkidpdg = trkidpdg.begin(); it_trkidpdg != trkidpdg.end(); it_trkidpdg++){
-    cout << "shwid: " << it_trkidpdg->first << ", mrgid: " << trkidmrgid[ it_trkidpdg->first] << ", PDG: " << it_trkidpdg->second << endl;
-    if(trkidpdg.find( trkidmother[ it_trkidpdg->first] ) == trkidpdg.end()) continue;
-    cout << "shwid: " << it_trkidpdg->first << ", mother: " << trkidmother[ it_trkidpdg->first] << ", PDG: " << trkidpdg[ trkidmother[ it_trkidpdg->first] ] << endl;
-  }
-
-  cout << "ENERGY AND ITS PDG" << endl;
-  */
-
-  for (auto const& x : epdg){
-
-    if(track_i>=0 && daughter_i>=0){
-      //cout << "track_i: " << track_i << ", daughter_i: " << daughter_i << ", merge_i: " << merge_i << endl;
-      //cout << "before fill reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i]: " << reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i] << endl;
-      reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i] = x.first;
-      //cout << "after fill reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i]: " << reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i] << endl;
-
-      reco_track_daughter_shower_match_epdg[track_i][daughter_i][merge_i] = x.second;
+    } else {
+      reco_track_daughter_shower_match_e[track_i][daughter_i][index] = energy;
+      reco_track_daughter_shower_match_epdg[track_i][daughter_i][index] = pdgCode;
     }
-    merge_i++;   
-  }
-  
-  merge_i=0;
+  };
 
-  //cout << "HITS AND ITS PDG" << endl;
+  auto assignHits = [&](double hits, int pdgCode, int index) {
+    if (isTrack) {
+      if (wTrackRebuilder) {
 
-  for (auto const& y : hitpdg){
-    if(track_i>=0 && daughter_i>=0){ 
-      reco_track_daughter_shower_match_e[track_i][daughter_i][merge_i] = y.first;
-      reco_track_daughter_shower_match_epdg[track_i][daughter_i][merge_i] = y.second;
+	if (daughter_i < 0) {
+	} else {
+	  reco_track_daughter_match_hit_rebuild[track_i][daughter_i][index] = hits;
+	  reco_track_daughter_match_hitpdg_rebuild[track_i][daughter_i][index] = pdgCode; 
+	}
+      } else {
+	if (daughter_i < 0) {
+	  reco_track_match_hit[track_i][index] = hits;
+	  reco_track_match_hitpdg[track_i][index] = pdgCode;
+	} else {
+	  reco_track_daughter_match_hit[track_i][daughter_i][index] = hits;
+	  reco_track_daughter_match_hitpdg[track_i][daughter_i][index] = pdgCode;
+	}
+      }
+
+    } else {
+      reco_track_daughter_shower_match_hit[track_i][daughter_i][index] = hits;
+      reco_track_daughter_shower_match_hitpdg[track_i][daughter_i][index] = pdgCode;
     }
-    merge_i++;
+  };
+
+  int merge_i = 0;
+  for (auto const& x : epdg) {
+    assignEnergy(x.first, x.second, merge_i++);
   }
-  
+
+  merge_i = 0; // Reset index for next loop
+  for (auto const& y : hitpdg) {
+    assignHits(y.first, y.second, merge_i++);
+  }
+
 }
-
 
 
 

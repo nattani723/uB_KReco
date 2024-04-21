@@ -295,6 +295,19 @@ namespace Kaon_Analyzer
 
      void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder); 
      void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder);   
+     void fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
+                           art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
+                           int track_i=-1,
+                           int daughter_i=-1,
+			   bool isTrack,
+			   bool wTrackRebuilder);
+     void mergeChecker(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
+		       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
+		       int track_i,
+		       int daughter_i,
+		       bool isTrack,
+		       bool wTrackRebuilder)
+       
      double length(const simb::MCParticle& part, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi); 
 
      bool isInsideVolume(string volume, double x, double y, double z); 
