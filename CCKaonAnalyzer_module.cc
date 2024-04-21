@@ -1685,14 +1685,16 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
                                (reco_nu_vtx_z-end.Z())*(reco_nu_vtx_z-end.Z()));
     reco_track_dir[ntracks] = (st_vtx<end_dis);
 
-    fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
+    //fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
+    fillCalorimetry(fmcal.at(ptrack.key()),ntracks,-1,false);//no daughter track id
   
     // check PID
     if (trackPIDAssn.isValid()){
       double delta_z = end.Z()-pos.Z();
       double delta_y = end.Y()-pos.Y();
       double angle_y = TMath::ATan2(delta_z, delta_y);
-      fillPID(trackPIDAssn.at(ptrack.key()), angle_y, ntracks);
+      //fillPID(trackPIDAssn.at(ptrack.key()), angle_y, ntracks);
+      fillPID(trackPIDAssn.at(ptrack.key()), angle_y, ntracks, -1, false);
     }
 
     // find true matched particle
@@ -1755,14 +1757,16 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
         reco_track_daughter_old_theta[ntracks][ndaughters_old] = track_dau_old.Theta();
         reco_track_daughter_old_phi[ntracks][ndaughters_old] = track_dau_old.Phi();
 
-        fillCalorimetry_old(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old);
+        //fillCalorimetry_old(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old);
+        fillCalorimetry(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old,false);
 
         // check PID
         if (rebuilttrackPIDAssn.isValid()) {
           double delta_z = end2_old.Z()-pos2_old.Z();
           double delta_y = end2_old.Y()-pos2_old.Y();
           double angle_y = TMath::ATan2(delta_z, delta_y);
-          fillPID_old(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old);
+          //fillPID_old(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old);
+          fillPID(trackPIDAssn.at(ptrack_dau_old.key()), angle_y, ntracks, ndaughters_old, false);
         }      
 
 	if(isMC){
@@ -1858,14 +1862,16 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 	cout << "ptrack_dau.key(): " << ptrack_dau.key() << endl;
 	cout << "call fillcalorimetry for a daughter track in event " << event << ", track_dau.ID() " << track_dau.ID() << endl;
 	cout << "track length is " << track_dau.Length() << endl;
-        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters);
+        //fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters);
+        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters,true);
 
         // check PID
         if (rebuilttrackPIDAssn.isValid()) {
           double delta_z = end2.Z()-pos2.Z();
           double delta_y = end2.Y()-pos2.Y();
           double angle_y = TMath::ATan2(delta_z, delta_y);
-          fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters);
+          //fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters);
+          fillPID(rebuilttrackPIDAssn.at(ptrack_dau.key()), angle_y, ntracks, ndaughters, true);
         }      
 
         // find true matched particle
@@ -2516,9 +2522,7 @@ double CCKaonAnalyzer::length(const simb::MCParticle& p, TLorentzVector& start, 
   return result;
 }
 
-//void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, const recob::Track trk, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> &assocMCPart, int track_i, int daughter_i)
-//{
-void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_i)
+void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_i, bool wTrackRebuilder)
 {
 
   int hits_p0=0;
@@ -2527,27 +2531,14 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
   float kin_p0=0;
   float kin_p1=0;
   float kin_p2=0;
-    //vector<vector<Float_t>> dvv;
-  //vector<vector<Float_t>> rvv;
-  //double fADCtoE[]={232,249,243.7};
-
-
 
   double llr_pid_total = 0;
   double llr_pid_total_k = 0;
 
-  //for(unsigned int ical=0; ical<calos.size(); ++ical){
   for (auto const &calo : calos) {
 
-    //if(!calo) continue;
-    //if(!calo->PlaneID().isValid) continue;
     int planenum = calo->PlaneID().Plane;
 
-    cout << "planenum: " << calo->PlaneID().Plane << endl;
-    cout << "hits: " << calo->dEdx().size() << endl;
-    cout << "kin: " << calo->KineticEnergy() << endl;
-
-    //if(planenum<0||planenum>2) continue; 
     if(planenum==0) {
             hits_p0=calo->dEdx().size();
             kin_p0=calo->KineticEnergy();
@@ -2563,10 +2554,8 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
             kin_p2=calo->KineticEnergy();
     }
 
-    //auto calo = calos[ical];
     auto const &plane = calo->PlaneID().Plane;
     auto const &dedx_values = calo->dEdx();
-    //auto const &dqdx_values = calo->dQdx();
 
     if(planenum==0) dv0 = calo->dEdx();
     if(planenum==0) rv0 = calo->ResidualRange();
@@ -2579,38 +2568,13 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
 
     auto const &rr = calo->ResidualRange();
     auto const &pitch = calo->TrkPitchVec();
-    //auto const &xyz_v = calo->XYZ();
 
     std::vector<std::vector<float>> par_values;
     par_values.push_back(rr);
     par_values.push_back(pitch);
-/*
-    std::vector<float> dqdx_values_corrected;//, dedx_values_corrected;
 
-    if (!isMC){
-        dqdx_values_corrected = dqdx_values;
-    }
-    else{
-        dqdx_values_corrected = llr_pid_calculator.correct_many_hits_one_plane(calo, trk, assocMCPart, true, 0.1, false);
-    }
-    //dqdx_values_corrected = llr_pid_calculator.correct_many_hits_one_plane(calo, value, assocMCPart, true, 0.1, false);
-
-    for (size_t i = 0; i < dqdx_values_corrected.size(); i++){
-    float aux_dedx;
-    aux_dedx = ModBoxCorrection(dqdx_values_corrected[i]*fADCtoE[plane], xyz_v[i].X(), xyz_v[i].Y(), xyz_v[i].Z());
-    dedx_values_corrected.push_back(aux_dedx);
-    calo_energy += aux_dedx * pitch[i];
-    }
-
-    if(planenum==2){ 
-            for(auto& n:dqdx_values){cout << "dQdx before: " << n <<endl;}
-            for(auto& n:dqdx_values_corrected){cout << "dQdx after: " << n <<endl;}
-    }
-*/
     if (calo->ResidualRange().size() == 0) continue;
 
-    //llr_pid_total += llr_pid_calculator.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
-    //llr_pid_total_k += llr_pid_calculator_k.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
     llr_pid_total += llr_pid_calculator.LLR_many_hits_one_plane(dedx_values, par_values, plane);
     llr_pid_total_k += llr_pid_calculator_k.LLR_many_hits_one_plane(dedx_values, par_values, plane);
 
@@ -2620,359 +2584,32 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
   double llr_pid_score_k = atan(llr_pid_total_k / 100.) * 2 / 3.14159266;
 
 
+  if(wTrackRebuilder == true){
 
-  if (daughter_i<0) {
-    reco_track_nhits0[track_i] = hits_p0;
-    reco_track_nhits1[track_i] = hits_p1;
-    reco_track_nhits2[track_i] = hits_p2;
-    reco_track_kin0[track_i] = kin_p0;
-    reco_track_kin1[track_i] = kin_p1;
-    reco_track_kin2[track_i] = kin_p2;
-    reco_track_llrpid_3pl[track_i] = llr_pid_score;
-    reco_track_total_llrpid_3pl[track_i] = llr_pid_total;
-    reco_track_llrpid_k_3pl[track_i] = llr_pid_score_k;
+    if (daughter_i<0) {
+    }
+    else {
+      reco_track_daughter_llrpid_3pl_rebuild[track_i][daughter_i] = llr_pid_score_old;
+      reco_track_daughter_llrpid_k_3pl_rebuild[track_i][daughter_i] = llr_pid_score_k_old;      
+    }
 
-    cout << "llr_pid_score is " << reco_track_llrpid_3pl[track_i] << endl;
+  }else{
 
-    //reco_track_dEdx.push_back(dv);
-    //unsigned int ti = track_i;
-    ////reco_track_ResRan.resize(kMaxTracks, std::vector<Float_t>(hits_p2));
-    ////reco_track_ResRan[track_i] = rv;
-    //reco_track_ResRan.push_back(rv);
-    
-    //if(dv.size()!=0){
-    ////reco_track_dEdx.resize(kMaxTracks, std::vector<Float_t>(hits_p2));
-    ////reco_track_dEdx[track_i] = dv;
-    //reco_track_ResRan[track_i] = rv;
-    //} else{    
-    //reco_track_dEdx_arr = dvv;
-    //cout << "dEdx has nothing: " << reco_track_dEdx_arr.at(track_i).at(0);
-    //}
-    /*
-    for(unsigned int d=0; d<dv0.size(); d++){       
-       reco_track_dEdx_pl0[track_i][d] = dv0[d];
-       reco_track_ResRan_pl0[track_i][d] = rv0[d];
+    if (daughter_i<0) {
+      reco_track_llrpid_3pl[track_i] = llr_pid_score;
+      reco_track_total_llrpid_3pl[track_i] = llr_pid_total;
+      reco_track_llrpid_k_3pl[track_i] = llr_pid_score_k;
+    }else{
+      reco_track_daughter_llrpid_3pl[track_i][daughter_i] = llr_pid_score;
+      reco_track_daughter_llrpid_k_3pl[track_i][daughter_i] = llr_pid_score_k;
     }
-    for(unsigned int d=0; d<dv1.size(); d++){       
-       reco_track_dEdx_pl1[track_i][d] = dv1[d];
-       reco_track_ResRan_pl1[track_i][d] = rv1[d];
-    }
-    for(unsigned int d=0; d<dv2.size(); d++){       
-       reco_track_dEdx_pl2[track_i][d] = dv2[d];
-       reco_track_ResRan_pl2[track_i][d] = rv2[d];
-    }
-*/
 
   }
-  else {
-    reco_track_daughter_nhits0[track_i][daughter_i] = hits_p0;
-    reco_track_daughter_nhits1[track_i][daughter_i] = hits_p1;
-    reco_track_daughter_nhits2[track_i][daughter_i] = hits_p2;
-    reco_track_daughter_llrpid_3pl[track_i][daughter_i] = llr_pid_score;
-    reco_track_daughter_llrpid_k_3pl[track_i][daughter_i] = llr_pid_score_k;
   
-    cout << "llr_pid_score is " << reco_track_daughter_llrpid_3pl[track_i][daughter_i] << endl;
-
-    //reco_track_daughter_dEdx = vector<vector<vector<Float_t>>>(kMaxTracks,vector<vector<Float_t>>(kMaxTracks,vector<Float_t>(hits_p2,-9999)));
-
-    //dvv.resize(kMaxTracks,vector<Float_t>(hits_p2));
-    //reco_track_daughter_dEdx.resize(kMaxTracks, dvv);
-    //reco_track_daughter_dEdx[track_i][daughter_i] = dv;
-
-    //rvv.resize(kMaxTracks,vector<Float_t>(hits_p2));
-    //reco_track_daughter_ResRan.resize(kMaxTracks, rvv);
-    //reco_track_daughter_ResRan[track_i][daughter_i] = rv;
-/*
-    for(unsigned int d=0; d<dv0.size(); d++){       
-       reco_track_daughter_dEdx_pl0[track_i][daughter_i][d] = dv0[d];
-       reco_track_daughter_ResRan_pl0[track_i][daughter_i][d] = rv0[d];
-    }
-    for(unsigned int d=0; d<dv1.size(); d++){       
-       reco_track_daughter_dEdx_pl1[track_i][daughter_i][d] = dv1[d];
-       reco_track_daughter_ResRan_pl1[track_i][daughter_i][d] = rv1[d];
-    }
-    for(unsigned int d=0; d<dv2.size(); d++){       
-       reco_track_daughter_dEdx_pl2[track_i][daughter_i][d] = dv2[d];
-       reco_track_daughter_ResRan_pl2[track_i][daughter_i][d] = rv2[d];
-    }
-*/
-
-  }
-
 }
 
 
-void CCKaonAnalyzer::fillCalorimetry_old(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_old_i)
-{
-  /*
-  int hits_p0=0;
-  int hits_p1=0;
-  int hits_p2=0;
-  float kin_p0=0;
-  float kin_p1=0;
-  float kin_p2=0;
-  */
-  double llr_pid_total_old = 0;
-  double llr_pid_total_k_old = 0;
-
-  //for(unsigned int ical=0; ical<calos.size(); ++ical){
-  for (auto const &calo : calos) {
-
-    int planenum = calo->PlaneID().Plane;
-
-    cout << "planenum: " << calo->PlaneID().Plane << endl;
-    cout << "hits: " << calo->dEdx().size() << endl;
-    cout << "kin: " << calo->KineticEnergy() << endl;
-
-    //if(planenum<0||planenum>2) continue; 
-    /*
-    if(planenum==0) {
-            hits_p0=calo->dEdx().size();
-            kin_p0=calo->KineticEnergy();
-    }
-
-    if(planenum==1) {
-            hits_p1=calo->dEdx().size();
-            kin_p1=calo->KineticEnergy();
-    }
-
-    if(planenum==2) {
-            hits_p2=calo->dEdx().size();
-            kin_p2=calo->KineticEnergy();
-    }
-    */
-    auto const &plane = calo->PlaneID().Plane;
-    auto const &dedx_values = calo->dEdx();
-
-    if(planenum==0) dv0 = calo->dEdx();
-    if(planenum==0) rv0 = calo->ResidualRange();
-
-    if(planenum==1) dv1 = calo->dEdx();
-    if(planenum==1) rv1 = calo->ResidualRange();
-
-    if(planenum==2) dv2 = calo->dEdx();
-    if(planenum==2) rv2 = calo->ResidualRange();
-
-    auto const &rr = calo->ResidualRange();
-    auto const &pitch = calo->TrkPitchVec();
-
-    std::vector<std::vector<float>> par_values;
-    par_values.push_back(rr);
-    par_values.push_back(pitch);
-    if (calo->ResidualRange().size() == 0) continue;
-
-    //llr_pid_total += llr_pid_calculator.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
-    //llr_pid_total_k += llr_pid_calculator_k.LLR_many_hits_one_plane(dedx_values_corrected, par_values, plane);
-    llr_pid_total_old += llr_pid_calculator.LLR_many_hits_one_plane(dedx_values, par_values, plane);
-    llr_pid_total_k_old += llr_pid_calculator_k.LLR_many_hits_one_plane(dedx_values, par_values, plane);
-
-  }
-
-  double llr_pid_score_old = atan(llr_pid_total_old / 100.) * 2 / 3.14159266;
-  double llr_pid_score_k_old = atan(llr_pid_total_k_old / 100.) * 2 / 3.14159266;
-
-  if (daughter_old_i<0) {
-  }
-  else {
-    reco_track_daughter_old_llrpid_3pl[track_i][daughter_old_i] = llr_pid_score_old;
-    reco_track_daughter_old_llrpid_k_3pl[track_i][daughter_old_i] = llr_pid_score_k_old;
-
-  }
-
-}
-
-void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i, int daughter_i)
-{
-
-  // check PID
-  if (trackPID.size()==0) return;
-
-  double chi2ka[3] = {-9.999,-9.999,-9.999};
-  double chi2pr[3] = {-9.999,-9.999,-9.999};
-  double chi2pi[3] = {-9.999,-9.999,-9.999};
-  double chi2mu[3] = {-9.999,-9.999,-9.999};
-  Float_t Bragg_fwd_ka[3] = {-1,-1,-1};
-  Float_t Bragg_fwd_pr[3] = {-1,-1,-1};
-  Float_t Bragg_fwd_pi[3] = {-1,-1,-1};
-  Float_t Bragg_fwd_mu[3] = {-1,-1,-1};
-  Float_t No_Bragg[3] = {-1,-1,-1};
-  double likepr_3pl = -1;
-
-  std::vector<anab::sParticleIDAlgScores> AlgScoresVec = trackPID.at(0)->ParticleIDAlgScores();
-  for (size_t i_algscore=0; i_algscore<AlgScoresVec.size(); i_algscore++){
-
-
-    anab::sParticleIDAlgScores AlgScore = AlgScoresVec.at(i_algscore);
-    if (AlgScore.fAlgName == "Chi2") {
-      if (anab::kVariableType(AlgScore.fVariableType) == anab::kGOF) {
-        for (int pl=0; pl<3; pl++) {
-          if (UBPID::uB_getSinglePlane(AlgScore.fPlaneMask)==pl) {
-            if (AlgScore.fAssumedPdg==321)  chi2ka[pl]=AlgScore.fValue;
-            if (AlgScore.fAssumedPdg==2212) chi2pr[pl]=AlgScore.fValue;
-            if (AlgScore.fAssumedPdg==211)  chi2pi[pl]=AlgScore.fValue;
-            if (AlgScore.fAssumedPdg==13)   chi2mu[pl]=AlgScore.fValue;
-          }
-        }
-      }
-    }
-    if (AlgScore.fAlgName == "ThreePlaneProtonPID") {
-      if (anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood) {
-        if (AlgScore.fPlaneMask==UBPID::uB_SinglePlaneGetBitset(2)) {
-          if (anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward) {
-            if (AlgScore.fAssumedPdg==2212) {
-              likepr_3pl = AlgScore.fValue;
-            }
-          }
-        }
-      }
-    }
-
-
-    if (AlgScore.fAlgName == "BraggPeakLLH") {
-      if (anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood) {
-          //if (anab::kTrackDir(AlgScore.fTrackDir) == anab::kForward) {
-           
-              
-            for(int pl=0; pl<3; pl++){
-
-            if (UBPID::uB_getSinglePlane(AlgScore.fPlaneMask)==pl) {
-            if (TMath::Abs(AlgScore.fAssumedPdg)==2212) Bragg_fwd_pr[pl] = AlgScore.fValue;
-            if (TMath::Abs(AlgScore.fAssumedPdg)==321) Bragg_fwd_ka[pl] = AlgScore.fValue;
-            if (TMath::Abs(AlgScore.fAssumedPdg)==13) Bragg_fwd_mu[pl] = AlgScore.fValue;
-            if (TMath::Abs(AlgScore.fAssumedPdg)==211) Bragg_fwd_pi[pl] = AlgScore.fValue;
-            if (TMath::Abs(AlgScore.fAssumedPdg)==0) No_Bragg[pl] = AlgScore.fValue;
-            }
-
-            }
-          //}
-      }
-    }
-
-  }
-
-  //double delta_z = end.Z()-pos.Z();
-  //double delta_y = end.Y()-pos.Y();
-  //double theta0 = TMath::ATan2(delta_z,delta_y) - TMath::Pi()/3;
-  //double theta1 = TMath::ATan2(delta_z,delta_y) + TMath::Pi()/3.;
-  //double theta2 = TMath::ATan2(delta_z,delta_y);
-  double theta0 = angle_y - TMath::Pi()/3;
-  double theta1 = angle_y + TMath::Pi()/3.;
-  double theta2 = angle_y;
-  double wpl0 = TMath::Power(TMath::Sin(theta0),2) >= 0.05 ? 1 : 0;
-  double wpl1 = TMath::Power(TMath::Sin(theta1),2) >= 0.05 ? 1 : 0;
-  double wpl2 = TMath::Power(TMath::Sin(theta2),2) >= 0.05 ? 1 : 0;
-  double chi2ka_3pl = (wpl0*chi2ka[0] + wpl1*chi2ka[1] + wpl2*chi2ka[2])/(wpl0 + wpl1 + wpl2);
-  double chi2pr_3pl = (wpl0*chi2pr[0] + wpl1*chi2pr[1] + wpl2*chi2pr[2])/(wpl0 + wpl1 + wpl2);
-  double chi2pi_3pl = (wpl0*chi2pi[0] + wpl1*chi2pi[1] + wpl2*chi2pi[2])/(wpl0 + wpl1 + wpl2);
-  double chi2mu_3pl = (wpl0*chi2mu[0] + wpl1*chi2mu[1] + wpl2*chi2mu[2])/(wpl0 + wpl1 + wpl2);
-
-  if (daughter_i<0) {
-    reco_track_chi2ka_pl0[track_i] = chi2ka[0];
-    reco_track_chi2pr_pl0[track_i] = chi2pr[0];
-    reco_track_chi2pi_pl0[track_i] = chi2pi[0];
-    reco_track_chi2mu_pl0[track_i] = chi2mu[0];
-    reco_track_chi2ka_pl1[track_i] = chi2ka[1];
-    reco_track_chi2pr_pl1[track_i] = chi2pr[1];
-    reco_track_chi2pi_pl1[track_i] = chi2pi[1];
-    reco_track_chi2mu_pl1[track_i] = chi2mu[1];
-    reco_track_chi2ka_pl2[track_i] = chi2ka[2];
-    reco_track_chi2pr_pl2[track_i] = chi2pr[2];
-    reco_track_chi2pi_pl2[track_i] = chi2pi[2];
-    reco_track_chi2mu_pl2[track_i] = chi2mu[2];
-
-
-    reco_track_Bragg_fwd_ka_pl0[track_i] = Bragg_fwd_ka[0];
-    reco_track_Bragg_fwd_pr_pl0[track_i] = Bragg_fwd_pr[0];
-    reco_track_Bragg_fwd_pi_pl0[track_i] = Bragg_fwd_pi[0];
-    reco_track_Bragg_fwd_mu_pl0[track_i] = Bragg_fwd_mu[0];
-    reco_track_Bragg_fwd_ka_pl1[track_i] = Bragg_fwd_ka[1];
-    reco_track_Bragg_fwd_pr_pl1[track_i] = Bragg_fwd_pr[1];
-    reco_track_Bragg_fwd_pi_pl1[track_i] = Bragg_fwd_pi[1];
-    reco_track_Bragg_fwd_mu_pl1[track_i] = Bragg_fwd_mu[1];
-    reco_track_Bragg_fwd_ka_pl2[track_i] = Bragg_fwd_ka[2];
-    reco_track_Bragg_fwd_pr_pl2[track_i] = Bragg_fwd_pr[2];
-    reco_track_Bragg_fwd_pi_pl2[track_i] = Bragg_fwd_pi[2];
-    reco_track_Bragg_fwd_mu_pl2[track_i] = Bragg_fwd_mu[2];
-
-    std::cout << "Track: " << track_i << "\t\tBraggPeakLLH: " << reco_track_Bragg_fwd_pr_pl2[track_i] <<std::endl;
-
-    reco_track_MIP_pl0[track_i] = No_Bragg[0];
-    reco_track_MIP_pl1[track_i] = No_Bragg[1];
-    reco_track_MIP_pl2[track_i] = No_Bragg[2];
-
-    reco_track_chi2ka_3pl[track_i] = chi2ka_3pl;
-    reco_track_chi2pr_3pl[track_i] = chi2pr_3pl;
-    reco_track_chi2pi_3pl[track_i] = chi2pi_3pl;
-    reco_track_chi2mu_3pl[track_i] = chi2mu_3pl;
-    reco_track_likepr_3pl[track_i] = likepr_3pl;
-  }
-  else {
-    reco_track_daughter_chi2ka_pl0[track_i][daughter_i] = chi2ka[0];
-    reco_track_daughter_chi2pr_pl0[track_i][daughter_i] = chi2pr[0];
-    reco_track_daughter_chi2pi_pl0[track_i][daughter_i] = chi2pi[0];
-    reco_track_daughter_chi2mu_pl0[track_i][daughter_i] = chi2mu[0];
-    reco_track_daughter_chi2ka_pl1[track_i][daughter_i] = chi2ka[1];
-    reco_track_daughter_chi2pr_pl1[track_i][daughter_i] = chi2pr[1];
-    reco_track_daughter_chi2pi_pl1[track_i][daughter_i] = chi2pi[1];
-    reco_track_daughter_chi2mu_pl1[track_i][daughter_i] = chi2mu[1];
-    reco_track_daughter_chi2ka_pl2[track_i][daughter_i] = chi2ka[2];
-    reco_track_daughter_chi2pr_pl2[track_i][daughter_i] = chi2pr[2];
-    reco_track_daughter_chi2pi_pl2[track_i][daughter_i] = chi2pi[2];
-    reco_track_daughter_chi2mu_pl2[track_i][daughter_i] = chi2mu[2];
-    reco_track_daughter_chi2ka_3pl[track_i][daughter_i] = chi2ka_3pl;
-    reco_track_daughter_chi2pr_3pl[track_i][daughter_i] = chi2pr_3pl;
-    reco_track_daughter_chi2pi_3pl[track_i][daughter_i] = chi2pi_3pl;
-    reco_track_daughter_chi2mu_3pl[track_i][daughter_i] = chi2mu_3pl;
-    reco_track_daughter_likepr_3pl[track_i][daughter_i] = likepr_3pl;
-
-    reco_track_daughter_Bragg_fwd_ka_pl0[track_i][daughter_i] = Bragg_fwd_ka[0];
-    reco_track_daughter_Bragg_fwd_pr_pl0[track_i][daughter_i] = Bragg_fwd_pr[0];
-    reco_track_daughter_Bragg_fwd_pi_pl0[track_i][daughter_i] = Bragg_fwd_pi[0];
-    reco_track_daughter_Bragg_fwd_mu_pl0[track_i][daughter_i] = Bragg_fwd_mu[0];
-    reco_track_daughter_Bragg_fwd_ka_pl1[track_i][daughter_i] = Bragg_fwd_ka[1];
-    reco_track_daughter_Bragg_fwd_pr_pl1[track_i][daughter_i] = Bragg_fwd_pr[1];
-    reco_track_daughter_Bragg_fwd_pi_pl1[track_i][daughter_i] = Bragg_fwd_pi[1];
-    reco_track_daughter_Bragg_fwd_mu_pl1[track_i][daughter_i] = Bragg_fwd_mu[1];
-    reco_track_daughter_Bragg_fwd_ka_pl2[track_i][daughter_i] = Bragg_fwd_ka[2];
-    reco_track_daughter_Bragg_fwd_pr_pl2[track_i][daughter_i] = Bragg_fwd_pr[2];
-    reco_track_daughter_Bragg_fwd_pi_pl2[track_i][daughter_i] = Bragg_fwd_pi[2];
-    reco_track_daughter_Bragg_fwd_mu_pl2[track_i][daughter_i] = Bragg_fwd_mu[2];
-
-    reco_track_daughter_MIP_pl0[track_i][daughter_i] = No_Bragg[0];
-    reco_track_daughter_MIP_pl1[track_i][daughter_i] = No_Bragg[1];
-    reco_track_daughter_MIP_pl2[track_i][daughter_i] = No_Bragg[2];
-
-
-
-  }
-
-/*
-            Bragg_fwd_pr[0] = -9999;
-            Bragg_fwd_ka[0] = -9999;
-            Bragg_fwd_pi[0] = -9999;
-            Bragg_fwd_mu[0] = -9999;
-            No_Bragg[0] = -9999;
-
-            Bragg_fwd_pr[1] = -9999;
-            Bragg_fwd_ka[1] = -9999;
-            Bragg_fwd_pi[1] = -9999;
-            Bragg_fwd_mu[1] = -9999;
-            No_Bragg[1] = -9999;
-
-            Bragg_fwd_pr[2] = -9999;
-            Bragg_fwd_ka[2] = -9999;
-            Bragg_fwd_pi[2] = -9999;
-            Bragg_fwd_mu[2] = -9999;
-            No_Bragg[2] = -9999;
-
-*/
-
-
-}
-
-
-
-void CCKaonAnalyzer::fillPID_old(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i, int daughter_old_i)
+void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i, int daughter_i, bool wTrackRebuilder)
 {
 
   // check PID
@@ -3017,7 +2654,6 @@ void CCKaonAnalyzer::fillPID_old(const std::vector<art::Ptr<anab::ParticleID>> &
       }
     }
 
-
     if (AlgScore.fAlgName == "BraggPeakLLH") {
       if (anab::kVariableType(AlgScore.fVariableType) == anab::kLikelihood) {
               
@@ -3049,55 +2685,134 @@ void CCKaonAnalyzer::fillPID_old(const std::vector<art::Ptr<anab::ParticleID>> &
   double chi2pi_3pl = (wpl0*chi2pi[0] + wpl1*chi2pi[1] + wpl2*chi2pi[2])/(wpl0 + wpl1 + wpl2);
   double chi2mu_3pl = (wpl0*chi2mu[0] + wpl1*chi2mu[1] + wpl2*chi2mu[2])/(wpl0 + wpl1 + wpl2);
 
-  if (daughter_old_i<0) {
+  if(wTrackRebuilder==true){
+    if (daughter_i<0) {
+    }
+    else {
+
+      reco_track_daughter_chi2ka_pl0_rebuild[track_i][daughter_i] = chi2ka[0];
+      reco_track_daughter_chi2pr_pl0_rebuild[track_i][daughter_i] = chi2pr[0];
+      reco_track_daughter_chi2pi_pl0_rebuild[track_i][daughter_i] = chi2pi[0];
+      reco_track_daughter_chi2mu_pl0_rebuild[track_i][daughter_i] = chi2mu[0];
+      reco_track_daughter_chi2ka_pl1_rebuild[track_i][daughter_i] = chi2ka[1];
+      reco_track_daughter_chi2pr_pl1_rebuild[track_i][daughter_i] = chi2pr[1];
+      reco_track_daughter_chi2pi_pl1_rebuild[track_i][daughter_i] = chi2pi[1];
+      reco_track_daughter_chi2mu_pl1_rebuild[track_i][daughter_i] = chi2mu[1];
+      reco_track_daughter_chi2ka_pl2_rebuild[track_i][daughter_i] = chi2ka[2];
+      reco_track_daughter_chi2pr_pl2_rebuild[track_i][daughter_i] = chi2pr[2];
+      reco_track_daughter_chi2pi_pl2_rebuild[track_i][daughter_i] = chi2pi[2];
+      reco_track_daughter_chi2mu_pl2_rebuild[track_i][daughter_i] = chi2mu[2];
+      reco_track_daughter_chi2ka_3pl_rebuild[track_i][daughter_i] = chi2ka_3pl;
+      reco_track_daughter_chi2pr_3pl_rebuild[track_i][daughter_i] = chi2pr_3pl;
+      reco_track_daughter_chi2pi_3pl_rebuild[track_i][daughter_i] = chi2pi_3pl;
+      reco_track_daughter_chi2mu_3pl_rebuild[track_i][daughter_i] = chi2mu_3pl;
+      reco_track_daughter_likepr_3pl_rebuild[track_i][daughter_i] = likepr_3pl;
+      
+      reco_track_daughter_Bragg_fwd_ka_pl0_rebuild[track_i][daughter_i] = Bragg_fwd_ka[0];
+      reco_track_daughter_Bragg_fwd_pr_pl0_rebuild[track_i][daughter_i] = Bragg_fwd_pr[0];
+      reco_track_daughter_Bragg_fwd_pi_pl0_rebuild[track_i][daughter_i] = Bragg_fwd_pi[0];
+      reco_track_daughter_Bragg_fwd_mu_pl0_rebuild[track_i][daughter_i] = Bragg_fwd_mu[0];
+      reco_track_daughter_Bragg_fwd_ka_pl1_rebuild[track_i][daughter_i] = Bragg_fwd_ka[1];
+      reco_track_daughter_Bragg_fwd_pr_pl1_rebuild[track_i][daughter_i] = Bragg_fwd_pr[1];
+      reco_track_daughter_Bragg_fwd_pi_pl1_rebuild[track_i][daughter_i] = Bragg_fwd_pi[1];
+      reco_track_daughter_Bragg_fwd_mu_pl1_rebuild[track_i][daughter_i] = Bragg_fwd_mu[1];
+      reco_track_daughter_Bragg_fwd_ka_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_ka[2];
+      reco_track_daughter_Bragg_fwd_pr_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_pr[2];
+      reco_track_daughter_Bragg_fwd_pi_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_pi[2];
+      reco_track_daughter_Bragg_fwd_mu_pl2_rebuild[track_i][daughter_i] = Bragg_fwd_mu[2];
+      
+      reco_track_daughter_MIP_pl0_rebuild[track_i][daughter_i] = No_Bragg[0];
+      reco_track_daughter_MIP_pl1_rebuild[track_i][daughter_i] = No_Bragg[1];
+      reco_track_daughter_MIP_pl2_rebuild[track_i][daughter_i] = No_Bragg[2];
+
+    }
+  }else{
+    
+    if (daughter_i<0) {
+      reco_track_chi2ka_pl0[track_i] = chi2ka[0];
+      reco_track_chi2pr_pl0[track_i] = chi2pr[0];
+      reco_track_chi2pi_pl0[track_i] = chi2pi[0];
+      reco_track_chi2mu_pl0[track_i] = chi2mu[0];
+      reco_track_chi2ka_pl1[track_i] = chi2ka[1];
+      reco_track_chi2pr_pl1[track_i] = chi2pr[1];
+      reco_track_chi2pi_pl1[track_i] = chi2pi[1];
+      reco_track_chi2mu_pl1[track_i] = chi2mu[1];
+      reco_track_chi2ka_pl2[track_i] = chi2ka[2];
+      reco_track_chi2pr_pl2[track_i] = chi2pr[2];
+      reco_track_chi2pi_pl2[track_i] = chi2pi[2];
+      reco_track_chi2mu_pl2[track_i] = chi2mu[2];
+      
+      reco_track_Bragg_fwd_ka_pl0[track_i] = Bragg_fwd_ka[0];
+      reco_track_Bragg_fwd_pr_pl0[track_i] = Bragg_fwd_pr[0];
+      reco_track_Bragg_fwd_pi_pl0[track_i] = Bragg_fwd_pi[0];
+      reco_track_Bragg_fwd_mu_pl0[track_i] = Bragg_fwd_mu[0];
+      reco_track_Bragg_fwd_ka_pl1[track_i] = Bragg_fwd_ka[1];
+      reco_track_Bragg_fwd_pr_pl1[track_i] = Bragg_fwd_pr[1];
+      reco_track_Bragg_fwd_pi_pl1[track_i] = Bragg_fwd_pi[1];
+      reco_track_Bragg_fwd_mu_pl1[track_i] = Bragg_fwd_mu[1];
+      reco_track_Bragg_fwd_ka_pl2[track_i] = Bragg_fwd_ka[2];
+      reco_track_Bragg_fwd_pr_pl2[track_i] = Bragg_fwd_pr[2];
+      reco_track_Bragg_fwd_pi_pl2[track_i] = Bragg_fwd_pi[2];
+      reco_track_Bragg_fwd_mu_pl2[track_i] = Bragg_fwd_mu[2];
+      
+      reco_track_MIP_pl0[track_i] = No_Bragg[0];
+      reco_track_MIP_pl1[track_i] = No_Bragg[1];
+      reco_track_MIP_pl2[track_i] = No_Bragg[2];
+      
+      reco_track_chi2ka_3pl[track_i] = chi2ka_3pl;
+      reco_track_chi2pr_3pl[track_i] = chi2pr_3pl;
+      reco_track_chi2pi_3pl[track_i] = chi2pi_3pl;
+      reco_track_chi2mu_3pl[track_i] = chi2mu_3pl;
+      reco_track_likepr_3pl[track_i] = likepr_3pl;
+    }
+    else {
+      reco_track_daughter_chi2ka_pl0[track_i][daughter_i] = chi2ka[0];
+      reco_track_daughter_chi2pr_pl0[track_i][daughter_i] = chi2pr[0];
+      reco_track_daughter_chi2pi_pl0[track_i][daughter_i] = chi2pi[0];
+      reco_track_daughter_chi2mu_pl0[track_i][daughter_i] = chi2mu[0];
+      reco_track_daughter_chi2ka_pl1[track_i][daughter_i] = chi2ka[1];
+      reco_track_daughter_chi2pr_pl1[track_i][daughter_i] = chi2pr[1];
+      reco_track_daughter_chi2pi_pl1[track_i][daughter_i] = chi2pi[1];
+      reco_track_daughter_chi2mu_pl1[track_i][daughter_i] = chi2mu[1];
+      reco_track_daughter_chi2ka_pl2[track_i][daughter_i] = chi2ka[2];
+      reco_track_daughter_chi2pr_pl2[track_i][daughter_i] = chi2pr[2];
+      reco_track_daughter_chi2pi_pl2[track_i][daughter_i] = chi2pi[2];
+      reco_track_daughter_chi2mu_pl2[track_i][daughter_i] = chi2mu[2];
+      reco_track_daughter_chi2ka_3pl[track_i][daughter_i] = chi2ka_3pl;
+      reco_track_daughter_chi2pr_3pl[track_i][daughter_i] = chi2pr_3pl;
+      reco_track_daughter_chi2pi_3pl[track_i][daughter_i] = chi2pi_3pl;
+      reco_track_daughter_chi2mu_3pl[track_i][daughter_i] = chi2mu_3pl;
+      reco_track_daughter_likepr_3pl[track_i][daughter_i] = likepr_3pl;
+      
+      reco_track_daughter_Bragg_fwd_ka_pl0[track_i][daughter_i] = Bragg_fwd_ka[0];
+      reco_track_daughter_Bragg_fwd_pr_pl0[track_i][daughter_i] = Bragg_fwd_pr[0];
+      reco_track_daughter_Bragg_fwd_pi_pl0[track_i][daughter_i] = Bragg_fwd_pi[0];
+      reco_track_daughter_Bragg_fwd_mu_pl0[track_i][daughter_i] = Bragg_fwd_mu[0];
+      reco_track_daughter_Bragg_fwd_ka_pl1[track_i][daughter_i] = Bragg_fwd_ka[1];
+      reco_track_daughter_Bragg_fwd_pr_pl1[track_i][daughter_i] = Bragg_fwd_pr[1];
+      reco_track_daughter_Bragg_fwd_pi_pl1[track_i][daughter_i] = Bragg_fwd_pi[1];
+      reco_track_daughter_Bragg_fwd_mu_pl1[track_i][daughter_i] = Bragg_fwd_mu[1];
+      reco_track_daughter_Bragg_fwd_ka_pl2[track_i][daughter_i] = Bragg_fwd_ka[2];
+      reco_track_daughter_Bragg_fwd_pr_pl2[track_i][daughter_i] = Bragg_fwd_pr[2];
+      reco_track_daughter_Bragg_fwd_pi_pl2[track_i][daughter_i] = Bragg_fwd_pi[2];
+      reco_track_daughter_Bragg_fwd_mu_pl2[track_i][daughter_i] = Bragg_fwd_mu[2];
+      
+      reco_track_daughter_MIP_pl0[track_i][daughter_i] = No_Bragg[0];
+      reco_track_daughter_MIP_pl1[track_i][daughter_i] = No_Bragg[1];
+      reco_track_daughter_MIP_pl2[track_i][daughter_i] = No_Bragg[2];     
+    }
+    
   }
-  else {
-    reco_track_daughter_old_chi2ka_pl0[track_i][daughter_old_i] = chi2ka[0];
-    reco_track_daughter_old_chi2pr_pl0[track_i][daughter_old_i] = chi2pr[0];
-    reco_track_daughter_old_chi2pi_pl0[track_i][daughter_old_i] = chi2pi[0];
-    reco_track_daughter_old_chi2mu_pl0[track_i][daughter_old_i] = chi2mu[0];
-    reco_track_daughter_old_chi2ka_pl1[track_i][daughter_old_i] = chi2ka[1];
-    reco_track_daughter_old_chi2pr_pl1[track_i][daughter_old_i] = chi2pr[1];
-    reco_track_daughter_old_chi2pi_pl1[track_i][daughter_old_i] = chi2pi[1];
-    reco_track_daughter_old_chi2mu_pl1[track_i][daughter_old_i] = chi2mu[1];
-    reco_track_daughter_old_chi2ka_pl2[track_i][daughter_old_i] = chi2ka[2];
-    reco_track_daughter_old_chi2pr_pl2[track_i][daughter_old_i] = chi2pr[2];
-    reco_track_daughter_old_chi2pi_pl2[track_i][daughter_old_i] = chi2pi[2];
-    reco_track_daughter_old_chi2mu_pl2[track_i][daughter_old_i] = chi2mu[2];
-    reco_track_daughter_old_chi2ka_3pl[track_i][daughter_old_i] = chi2ka_3pl;
-    reco_track_daughter_old_chi2pr_3pl[track_i][daughter_old_i] = chi2pr_3pl;
-    reco_track_daughter_old_chi2pi_3pl[track_i][daughter_old_i] = chi2pi_3pl;
-    reco_track_daughter_old_chi2mu_3pl[track_i][daughter_old_i] = chi2mu_3pl;
-    reco_track_daughter_old_likepr_3pl[track_i][daughter_old_i] = likepr_3pl;
-
-    reco_track_daughter_old_Bragg_fwd_ka_pl0[track_i][daughter_old_i] = Bragg_fwd_ka[0];
-    reco_track_daughter_old_Bragg_fwd_pr_pl0[track_i][daughter_old_i] = Bragg_fwd_pr[0];
-    reco_track_daughter_old_Bragg_fwd_pi_pl0[track_i][daughter_old_i] = Bragg_fwd_pi[0];
-    reco_track_daughter_old_Bragg_fwd_mu_pl0[track_i][daughter_old_i] = Bragg_fwd_mu[0];
-    reco_track_daughter_old_Bragg_fwd_ka_pl1[track_i][daughter_old_i] = Bragg_fwd_ka[1];
-    reco_track_daughter_old_Bragg_fwd_pr_pl1[track_i][daughter_old_i] = Bragg_fwd_pr[1];
-    reco_track_daughter_old_Bragg_fwd_pi_pl1[track_i][daughter_old_i] = Bragg_fwd_pi[1];
-    reco_track_daughter_old_Bragg_fwd_mu_pl1[track_i][daughter_old_i] = Bragg_fwd_mu[1];
-    reco_track_daughter_old_Bragg_fwd_ka_pl2[track_i][daughter_old_i] = Bragg_fwd_ka[2];
-    reco_track_daughter_old_Bragg_fwd_pr_pl2[track_i][daughter_old_i] = Bragg_fwd_pr[2];
-    reco_track_daughter_old_Bragg_fwd_pi_pl2[track_i][daughter_old_i] = Bragg_fwd_pi[2];
-    reco_track_daughter_old_Bragg_fwd_mu_pl2[track_i][daughter_old_i] = Bragg_fwd_mu[2];
-
-
-  }
-
+  
 }
+
+
 
 void CCKaonAnalyzer::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_track,
                                       art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
                                       int track_i,
                                       int daughter_i)
 {
-
-  //std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-  //art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
-
-  //cout << "hits_from_track.size(): " << hits_from_track.size() << endl;
 
   simb::MCParticle const* matched_mcparticle = NULL;
   std::unordered_map<int,double> trkide;

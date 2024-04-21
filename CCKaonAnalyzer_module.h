@@ -293,16 +293,8 @@ namespace Kaon_Analyzer
      void analyze(const art::Event& evt); 
      void reset(); 
 
-     //void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, const recob::Track trk, const std::unique_ptr<art::FindManyP<simb::MCParticle, anab::BackTrackerHitMatchingData>> &assocMCPart, int track_i=-1, int daughter_i=-1); 
-     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1); 
-     void fillCalorimetry_old(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1); 
-     //double ModBoxCorrection(const double dQdx, const float x, const float y, const float z); 
-     //float GetLocalEFieldMag(const float x, const float y, const float z); 
-     void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1); 
-     void fillPID_old(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1); 
-
-
-  
+     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder); 
+     void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder);   
      double length(const simb::MCParticle& part, TLorentzVector& start, TLorentzVector& end, unsigned int &starti, unsigned int &endi); 
 
      bool isInsideVolume(string volume, double x, double y, double z); 
