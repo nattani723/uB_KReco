@@ -19,7 +19,7 @@ class RecoParticle : public TObject{
   public:
 
     RecoParticle(){}
-    ecoParticle(){}
+    ~RecoParticle(){}
 
     int Index;
     bool InNuSlice = false;

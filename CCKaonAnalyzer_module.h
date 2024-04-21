@@ -152,6 +152,12 @@
 #include "headers/LLRPID_proton_muon_lookup.h"
 #include "headers/LLR_PID_K.h"
 #include "headers/LLRPID_kaon_proton_lookup.h"
+#include "objects/RecoParticle.h"
+#include "objects/Helpers.h"
+#include "headers/ParticleTypes.h"
+#include "headers/FV.h"
+#include "algorithms/MeandEdX.h"
+#include "algorithms/ThreePlaneMeandEdX.h"
 
 //#include "larreco/RecoAlg/TrackMomentumCalculator.h"
 #include "larreco/RecoAlg/TrajectoryMCSFitter.h"
