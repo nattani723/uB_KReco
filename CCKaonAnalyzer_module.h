@@ -331,17 +331,97 @@ namespace Kaon_Analyzer
 
   private:
 
+     //basic event info
+     unsigned int fEventID;
+     int run,subrun,event;
+     
+     //output trees
+     TTree* fEventTree;
+     //TTree * fMetaTree;
+
+
+     ///////////////////////////
+     //   Truth level info    //
+     ///////////////////////////
+
+     //generator truth info
+
+     int fNMCTruths=0;
+
+     std::string fMode; //interaction mode
+     std::string fCCNC; //charged current/neutral current
+
+     bool fIsKaon = false;
+     bool fIsKaonPlus = false;
+     bool fIsKaonMinus = false;
+     bool fIsHyperon = false;
+
+     //neutrino
+     std::vector<SimParticle> fNeutrino;
+
+     //K+ from primary vertex
+     std::vector<SimParticle> fKaonPlus;
+
+     //K- from primary vertex
+     std::vector<SimParticle> fKaonMinus;
+
+     //kaons produced at primary vtx
+     std::vector<SimParticle> fKaonOthers;
+
+     //lepton produced at primary vtx
+     std::vector<SimParticle> fLepton;
+
+     //hyperon produced at primary vtx
+     std::vector<SimParticle> fPrimaryHyperon;
+
+     //nucleons produced at primary vtx
+     std::vector<SimParticle> fPrimaryNucleon;
+
+     //pions produced at primary vtx
+     std::vector<SimParticle> fPrimaryPion;
+
+     //vertex information
+     TVector3 fTruePrimaryVertex;
+
+     //g4 truth info
+     TVector3 fDecayVertex;
+
+     std::vector<SimParticle> fDecay; //kaon decay products
+
+     int fDecayHyperonID;
+     int fDecaySigmaID;
+
+     //data storage (should not be written to trees)
+
+     //used by G4 to track particles
+     std::vector<int>daughter_IDs; //ids of semistable K+ decay products
+     std::vector<int>primary_IDs; //ids of particles produced at primary vertex
+     std::vector<int>KaonPlus_daughter_IDs; //ids of K+ decay products
+     std::vector<int>KaonMinus_daughter_IDs; //ids of K- decay products
+     std::vector<int>KaonOthers_daughter_IDs;
+     std::vector<int>Hyperon_daughter_IDs;
+
+
+     //create map between particles and their ID's
+     std::map<int,art::Ptr<simb::MCParticle>> partByID;
+     std::pair<int,art::Ptr<simb::MCParticle>>  part_and_id;
+
+     int mode; //interaction mode for event generator
+     int ccnc;
+
+
      // PID
     searchingfornues::LLRPID llr_pid_calculator;
     searchingfornues::ProtonMuonLookUpParameters protonmuon_parameters;
     searchingfornuesk::LLRPIDK llr_pid_calculator_k;
     searchingfornuesk::KaonProtonLookUpParameters protonmuon_parameters_k;
 
-    TTree* fEventTree;
-    
+
+    /*    
     Int_t   run;                  
     Int_t   subrun;               
     Int_t   event;
+    */
 
      Int_t n_prip;
      std::vector<int> prip{vector<int>(20,-999)}; 

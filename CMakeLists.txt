@@ -97,6 +97,7 @@ art_make(
 			CCKaonHeaders
         )
 add_subdirectory(TrackRebuilder)
+add_subdirectory(headers)
 install_headers()
 install_fhicl()
 install_source()

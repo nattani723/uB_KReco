@@ -636,201 +636,332 @@ void CCKaonAnalyzer::beginJob()
 
 void CCKaonAnalyzer::analyze( const art::Event& evt){
 
-  reset();  
-  run=evt.run();
-  subrun=evt.subRun();
-  event=evt.id().event(); 
+  //begin by resetting everything
+  reset();
 
-  art::Handle< std::vector<simb::MCTruth> > mctruths;
-  std::vector< art::Ptr<simb::MCParticle> > ptList;
+  /////////////////////////
+  // EVENT ID INFORMATION /
+  /////////////////////////
+
+  fEventID = evt.id().event();
+  run = evt.run();
+  subrun = evt.subRun();
+  event = evt.event();
 
 
-  //-----------scan--------------
-  
-    n_prip=0;
-    n_prip_k_dau=0;
-    Int_t prim_k_id = -999;
-    prip = {-999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999};
-    prip_k_dau = {-999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999};
-    IsKaon = false;
-    IsSingleKaon = false;
-    IsAssociatedKaon = false;
-    IsMuBR = false;
-    IsPiBR = false;
-    flag_prim_k = true;
+  //////////////////////////////
+  // GET EVENT GENERATOR INFO //
+  //////////////////////////////
+
+  if(isMC) {
+
+    art::Handle<std::vector<simb::MCTruth>> mctruthListHandle;
+    std::vector<art::Ptr<simb::MCTruth> > mcTrVect;
+    if(e.getByLabel(fGenieGenModuleLabel,mctruthListHandle)) art::fill_ptr_vector(mcTrVect,mctruthListHandle); 
+
+    if(!mcTrVect.size()) return;
     
-
-    // get MCTruth     
-    evt.getByLabel("generator", mctruths);
-    if (mctruths->size()!=1) {
-      //std::cout << "Number of MCTruths objects in event " << mctruths->size() << std::endl;
-      return;
-    }
-    simb::MCTruth mctruth = mctruths->at(0);
-
-
-    // get MCParticles
-    art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
-    if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle)){
-      art::fill_ptr_vector(ptList, mcParticleHandle); 
-    }
-
-
+    fNMCTruths = mcTrVect.size();
+    art::Ptr<simb::MCTruth> MCtruth = mcTrVect.at(0);
+    
     // true neutrino information
+    simb::MCNeutrino Nu = MCtruth->GetNeutrino();
+    mode = Nu.Mode();
+    ccnc = Nu.CCNC();
     
-    true_nu_energy = mctruth.GetNeutrino().Nu().E();
-    true_nu_pdg = mctruth.GetNeutrino().Nu().PdgCode();
-    true_nu_ccnc = mctruth.GetNeutrino().CCNC();//0=CC,1=NC
-    true_nu_mode = mctruth.GetNeutrino().Mode();//0=QE,1=RES,2=DIS
-    true_nu_vtx_x = mctruth.GetNeutrino().Nu().Vx();
-    true_nu_vtx_y = mctruth.GetNeutrino().Nu().Vy();
-    true_nu_vtx_z = mctruth.GetNeutrino().Nu().Vz();
-    true_nu_vtx_inTPC = isInsideVolume("TPC",mctruth.GetNeutrino().Nu().Position().Vect());
-    true_nu_vtx_in5cmTPC = isInsideVolume("5cmTPC",mctruth.GetNeutrino().Nu().Position().Vect());
-    true_nu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",mctruth.GetNeutrino().Nu().Position().Vect());
+    if(ccnc == 0) fCCNC = "CC";
+    else fCCNC = "NC";
     
+    if(mode == 0) fMode = "QEL";
+    else if(mode == 1) fMode = "RES";
+    else if(mode == 2) fMode = "DIS";
+    else if(mode == 3) fMode = "COH";
+    else if(mode == 5) fMode = "ElectronScattering";
+    else if(mode == 10) fMode = "MEC";
+    else if(mode == 11) fMode = "Diffractive";
+    else fMode = "Other";
 
-
-    // print true information
-    for (auto const& pPart : ptList) {
-
-      /*      
-      cout << "trackId " << pPart->TrackId();
-      cout << ", mother " << pPart->Mother();
-      cout << ", pdg " << pPart->PdgCode();
-      cout << ", process " << pPart->Process() << " - " << pPart->EndProcess();
-      cout << ", ke " << pPart->E()-pPart->Mass() << " - " << pPart->EndE()-pPart->Mass();
-      cout << ", P " << pPart->Momentum().Vect().Mag();
-      cout << ", Eng " << pPart->E() << ", EndE " << pPart->EndE();
-      cout << ", X " << pPart->Vx() << " - " << pPart->EndX();
-      cout << ", Y " << pPart->Vy() << " - " << pPart->EndY();
-      cout << ", Z " << pPart->Vz() << " - " << pPart->EndZ();
-      cout << ", EndPointx " << pPart->EndPosition()[0];
-      cout << ", EndPointy " << pPart->EndPosition()[1];
-      cout << ", EndPointz " << pPart->EndPosition()[2];
-      cout << ", delta Z " << pPart->EndZ()-pPart->Vz();
-      cout << ", ndaughters " << pPart->NumberDaughters();
-      cout << endl;
-      */
+    for(int k_particles=0;k_particles<MCtruth->NParticles();k_particles++){
       
-      //cout << n_prip << endl;
-      if(n_prip<20 && pPart->Mother()==0){//primary interaction
+      simb::MCParticle Part = MCtruth->GetParticle(k_particles);
+      
+      // Get list of particles from true PV, if lepton or neutrino set PV
+      if((isLepton(Part.PdgCode()) || isNeutrino(Part.PdgCode())) && Part.StatusCode() == 1){ 
+	fTruePrimaryVertex.SetXYZ(Part.Vx(),Part.Vy(),Part.Vz());
+	fInActiveTPC=inActiveTPC(fTruePrimaryVertex);
+      }//if lepton
+      
+      // Record info about the neutrino
+      if(isNeutrino(Part.PdgCode()) && Part.StatusCode() == 0){
+	SimParticle P;
+	P.SetKinematics(Part.Momentum(),Part.Mass());
+	P.SetPositions(Part.Position(),Part.EndPosition());
+	P.PDG = Part.PdgCode();
+	P.Origin = 0;
+	fNeutrino.push_back( P );
 
-	prip.at(n_prip) = pPart->PdgCode();
+	//true_nu_vtx_inTPC = isInsideVolume("TPC",mctruth.GetNeutrino().Nu().Position().Vect());
+	//true_nu_vtx_in5cmTPC = isInsideVolume("5cmTPC",mctruth.GetNeutrino().Nu().Position().Vect());
+	//true_nu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",mctruth.GetNeutrino().Nu().Position().Vect());
 
-	if( (flag_prim_k ==true)  && (prip.at(n_prip) == 321)){//kaon
-	  prim_k_id = pPart->TrackId();
-	  flag_prim_k = false;
-	}
-	++n_prip;
-
-      }
-
-      else continue;
-      //++n_prip;  
-
+      }      
     }
-    n_prip=0;
+  }
 
 
+  ////////////////////////////////////////////
+  // Get Geant Information
+  ///////////////////////////////////////////
 
-    for (auto const& pPart : ptList) {  
+  if(isMC) {
 
-      if(n_prip_k_dau<20 && pPart->Mother()==prim_k_id){
-	prip_k_dau.at(n_prip_k_dau) = pPart->PdgCode();
-	++n_prip_k_dau;
-      }
+    //get list of geant4 particles
+    art::Handle<std::vector<simb::MCParticle>>g4particleHandle;
+    std::vector< art::Ptr<simb::MCParticle>>g4particleVect;
+    g4particleVect.clear();
 
-      else continue;
-      //++n_prip_k_dau;      
-
-    }
-    n_prip_k_dau=0;
-    flag_prim_k = true;
+    if(e.getByLabel(fLArG4ModuleLabel,g4particleHandle)) art::fill_ptr_vector(g4particleVect,g4particleHandle);
+    else
+      std::cout << "Geant Particles Missing!" << std::endl;
 
 
-    if(IsKaon == false){
+    //id numbers of particles produced at primary vertex
+    //KaonPlus_IDs.clear();
+    primary_IDs.clear();
 
-      //if(std::find(prip.begin(),prip.end(),321)!=prip.end() && std::find(prip.begin(),prip.end(),-321)==prip.end() && std::find(prip.begin(),prip.end(),13)!=prip.end()){
-    if(std::find(prip.begin(),prip.end(),321)!=prip.end() && std::find(prip.begin(),prip.end(),13)!=prip.end()){
-      IsKaon = true;
-      cout << "IS K+" << endl;
+    //id numbers of primary particle daughters
+    daughter_IDs.clear();
+    KaonPlus_daughter_IDs.clear();
+    KaonMinus_daughter_IDs.clear();
 
-      if( std::find(prip.begin(),prip.end(),3212)!=prip.end() || std::find(prip.begin(),prip.end(),3222)!=prip.end() || std::find(prip.begin(),prip.end(),3112)!=prip.end() || std::find(prip.begin(),prip.end(),3122)!=prip.end()){
-	IsAssociatedKaon = true;
+    //map between particle ID numbers (g4p->TrackId()) and pointers to simb::MCParticle
+    partByID.clear();
+
+
+    for(const art::Ptr<simb::MCParticle> &g4p : g4particleVect){
+
+      //if mother == 0 particle is produced at primary vertex
+      if(g4p->Mother() == 0){ 
+
+	//store vector of id's of primary particles
+	primary_IDs.push_back(g4p->TrackId());
 	
-	if(true_nu_pdg==14 && true_nu_ccnc==0 && true_nu_vtx_inCCInclusiveTPC==1){
+	if(isKaon(g4p->PdgCode())){ //if the particle is a kaon, store daughter ids
+
+	  fIsKaon = true;
+
+	  if(g4p->PdgCode() == 321){//K+
+	    
+	    fIsKaonPlus = true;
+
+	    if(g4p->EndProcess() == "Decay"){
+	      for(int i_d=0;i_d<g4p->NumberDaughters();i_d++){
+		KaonPlus_daughter_IDs.push_back( g4p->Daughter(i_d) );
+	      }
+	    }
+	    
+	    // record decay vertex of K+
+	    fDecayVertex.SetXYZ( g4p->EndPosition().X() , g4p->EndPosition().Y() , g4p->EndPosition().Z() );
+
+	  } else if(g4p->PdgCode() == -321){//K-
+	    
+	    fIsKaonMinus = true;
+	    
+	    if(g4p->EndProcess() == "Decay"){
+	      for(int i_d=0;i_d<g4p->NumberDaughters();i_d++){
+		KaonMinus_daughter_IDs.push_back( g4p->Daughter(i_d) );
+	      }	      
+	    }
+
+	  } else {//Other Ks
+	    if(g4p->EndProcess() == "Decay"){ 
+	      for(int i_d=0;i_d<g4p->NumberDaughters();i_d++){
+		KaonOthers_daughter_IDs.push_back( g4p->Daughter(i_d) );
+	      }
+	    }
+	  }
+
+	} else if(isHyperon(g4p->PdgCode())) { // hyperon from associated production
 	  
-	  cout << "IS ASSOCIATED KAON" << endl;
-	  cout << "Run " << run;
-	  cout << " Subrun " << subrun;
-	  cout << " Event " << event << endl;
-	  cout << "Primary K+ ID: " << prim_k_id << endl;
-	  
+	  fIsHyperon = true;
+
+	  if(g4p->EndProcess() == "Decay"){ 
+	    for(int i_d=0;i_d<g4p->NumberDaughters();i_d++){
+	      Hyperon_daughter_IDs.push_back( g4p->Daughter(i_d) );
+	    }
+	  }
+
+	}
+
+      }
+      // fill the map of MCParticle and TrackID
+      part_and_id = std::make_pair(g4p->TrackId() , g4p);
+      partByID.insert( part_and_id );
+
+    }
+
+
+    for(size_t i_p=0;i_p<primary_IDs.size();i_p++){
+
+      //geant does not always keep everything it simulates, make sure particle is in list of IDs (crashes otherwise!)
+      if(partByID.find(primary_IDs[i_p]) == partByID.end()) continue;
+      art::Ptr<simb::MCParticle> part = partByID[primary_IDs.at(i_p)];
+
+      if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+      SimParticle P = MakeSimParticle(*part);
+      P.Origin = getOrigin(part->TrackId());
+
+      if( isKaon(part->PdgCode()) ) { 
+	//K+ from primary vertex
+	if( isKaonPlus(part->PdgCode()) ) fKaonPlus.push_back( P );
+	
+	//K- from primary vertex
+	else if( isKaonMinus(part->PdgCode()) ) fKaonMinus.push_back( P );
+
+	//Other K from primary vertex
+	else fKaonOthers.push_back( P );
+      }
+
+      //lepton produced at primary vertex
+      if( isLepton(part->PdgCode()) || isNeutrino(part->PdgCode()) ) fLepton.push_back( P );
+
+      //hyperon produced at primary vertex
+      if( isHyperon(part->PdgCode()) ) fPrimaryHyperon.push_back( P );
+ 
+      //nucleon produced at primary vertex
+      if( isNucleon(part->PdgCode()) ) fPrimaryNucleon.push_back( P );
+
+      //pion produced at primary vertex
+      if( isPion(part->PdgCode()) ) fPrimaryPion.push_back( P );
+ 
+    }
+
+
+    //check all decay products are actually produced at decay vertex - sometimes you get some electrons thrown in
+    if(fKaonPlus.size() == 1){
+
+      //if using GENIE as evgen, hyperon events get labelled as QEL - change this to HYP
+      if( fMode == "QEL" || fMode == "RES" || fMode == "DIS" ) fMode = "KAON";
+      //if( fMode == "RES" || fMode == "DIS" ) fMode = "KAON";
+
+      std::vector<int> KaonPlus_daughter_IDs_tmp;
+
+      for(size_t i_d=0;i_d<KaonPlus_daughter_IDs.size();i_d++){
+
+	//geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+	if(partByID.find(KaonPlus_daughter_IDs[i_d]) == partByID.end()) continue;
+
+	art::Ptr<simb::MCParticle> part = partByID[KaonPlus_daughter_IDs[i_d]];
+
+	if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+	if(part->Position().X() == fKaonPlus.at(0).EndX && part->Position().Y() == fKaonPlus.at(0).EndY && part->Position().Z() == fKaonPlus.at(0).EndZ){
+
+	  KaonPlus_daughter_IDs_tmp.push_back(KaonPlus_daughter_IDs.at(i_d));
+
 	}
       }
-      else{
-	IsSingleKaon = true;
-	if(true_nu_pdg==14 && true_nu_ccnc==0 && true_nu_vtx_inCCInclusiveTPC==1){
-	//if(true_nu_pdg==14 && true_nu_ccnc==0 && true_kaon_ke>=0 && true_nu_vtx_inCCInclusiveTPC==1){
-	  cout << "IS SINGLE KAON!!!!" << endl;
-	  cout << "Run " << run;
-	  cout << " Subrun " << subrun;
-	  cout << " Event " << event << endl;
-	  cout << "Primary K+ ID: " << prim_k_id << endl;
-	  
-	  }
-      }
 
-      if( std::find(prip_k_dau.begin(),prip_k_dau.end(),-13)!=prip_k_dau.end()){
-	IsMuBR = true;
-	cout << "IS KAON -> MU" << endl;
-      }
-      else if( std::find(prip_k_dau.begin(),prip_k_dau.end(),211)!=prip_k_dau.end() ){
-	IsPiBR = true;
-	cout << "IS KAON -> PI" << endl;
-      }
+      //refined id list of K+
+      KaonPlus_daughter_IDs = KaonPlus_daughter_IDs_tmp;
 
     }
 
-    }
+    if(fKaonMinus.size() == 1){
 
-  //-----------------------------
+      std::vector<int> KaonMinus_daughter_IDs_tmp;
 
+      for(size_t i_d=0;i_d<KaonMinus_daughter_IDs.size();i_d++){
 
-  if (isMC) {
+	//geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+	if(partByID.find(KaonMinus_daughter_IDs[i_d]) == partByID.end()) continue;
 
-    // get MC event weights
-    art::InputTag eventweight_tag("eventweight");
-    art::Handle<std::vector<evwgh::MCEventWeight>> eventweights_handle;
-    
-    if (evt.getByLabel(eventweight_tag, eventweights_handle)) {
-      std::vector<art::Ptr<evwgh::MCEventWeight>> eventweights;
-      art::fill_ptr_vector(eventweights, eventweights_handle);
-      std::map<std::string, std::vector<double>> evtwgt_map = eventweights.at(0)->fWeight;
-      //std::cout << "Weight: " <<std::endl;
-      for (auto const& x : evtwgt_map) {
-        //std::cout << "Weight - Size fun:\t" << x.first << " " << x.second.size() << std::endl;
-        std::vector<float> wg;
-      //}
-      const std::vector<double> &weights = evtwgt_map.at(x.first);
-      //event_weight = weights.front();
-      //std::cout << "Event Weight:  " << event_weight << std::endl;
-      for (unsigned int i=0;i<weights.size();i++) {
-        //cout << i << "\t" << weights[i] << endl;
-        wg.push_back(weights[i]);
+	art::Ptr<simb::MCParticle> part = partByID[KaonMinus_daughter_IDs[i_d]];
+
+	if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+	if(part->Position().X() == fKaonMinus.at(0).EndX && part->Position().Y() == fKaonMinus.at(0).EndY && part->Position().Z() == fKaonMinus.at(0).EndZ){
+
+	  KaonMinus_daughter_IDs_tmp.push_back(KaonMinus_daughter_IDs.at(i_d));
+
+	}
       }
 
-      event_weight[x.first] = wg;
-      evtwgt_funcname.push_back(x.first);
-      evtwgt_weight.push_back(wg);
-      evtwgt_nweight.push_back(x.second.size());
+      KaonMinus_daughter_IDs = KaonMinus_daughter_IDs_tmp;
+
+    }
+
+
+    if(fHyperon.size() == 1){
+
+      std::vector<int> Hyperon_daughter_IDs_tmp;
+
+      for(size_t i_d=0;i_d<Hyperon_daughter_IDs.size();i_d++){
+
+	//geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+	if(partByID.find(Hyperon_daughter_IDs[i_d]) == partByID.end()) continue;
+
+	art::Ptr<simb::MCParticle> part = partByID[Hyperon_daughter_IDs[i_d]];
+
+	if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+	if(part->Position().X() == fPrimaryHyperon.at(0).EndX && part->Position().Y() == fPrimaryHyperon.at(0).EndY && part->Position().Z() == fPrimaryHyperon.at(0).EndZ){
+
+	  Hyperon_daughter_IDs_tmp.push_back(Hyperon_daughter_IDs.at(i_d));
+
+	}
+      }
+
+      Hyperon_daughter_IDs = Hyperon_daughter_IDs_tmp;
+
+    }
+
+
+    //now go through list of hyperon daughters, get info about the decay
+    for(size_t i_d=0;i_d<daughter_IDs.size();i_d++){
+      //geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+      if(partByID.find(daughter_IDs[i_d]) == partByID.end()) continue;
+
+      art::Ptr<simb::MCParticle> part = partByID[daughter_IDs[i_d]];
+
+      if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+      SimParticle Decay = MakeSimParticle(*part);
+      Decay.Origin = getOrigin(part->TrackId());
+      fDecay.push_back( Decay );
+
+
+
+      if(isPion(part->PdgCode()) && fLepton.size() == 1 ) {
+
+	SimParticle Lepton = fLepton.at(0);
+	fLeptonPionAngle = (180/3.1416)*TMath::ACos( (Decay.Px*Lepton.Px + Decay.Py*Lepton.Py + Decay.Pz*Lepton.Pz )/(Lepton.ModMomentum*Decay.ModMomentum) );
 
       }
+
+      if(isNucleon(part->PdgCode()) && fLepton.size() == 1){
+
+
+	SimParticle Lepton = fLepton.at(0);
+	fLeptonNucleonAngle = (180/3.1416)*TMath::ACos( (Decay.Px*Lepton.Px + Decay.Py*Lepton.Py + Decay.Pz*Lepton.Pz )/(Lepton.ModMomentum*Decay.ModMomentum) );
+
+      }
+
+
+
     }
-    else {
-      //std::cout << "***** Failed obtaining eventweight ******" << std::endl;
-    }
+
+
+
+
+
+
+
+  }// end of isMC
+
+
+
 
     // get MCTruth
     evt.getByLabel("generator", mctruths);
