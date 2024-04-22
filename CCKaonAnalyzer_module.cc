@@ -759,6 +759,11 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 		KaonPlus_daughter_IDs.push_back( g4p->Daughter(i_d) );
 	      }
 	    }
+	    else if(g4p->EndProcess() == "kaon+Inelastic"){
+	      for(int i_d=0;i_d<g4p->NumberDaughters();i_d++){
+		KaonPlus_Inelastic_daughter_IDs.push_back( g4p->Daughter(i_d) );
+	      }
+	    }	 
 	    
 	    // record decay vertex of K+
 	    fDecayVertex.SetXYZ( g4p->EndPosition().X() , g4p->EndPosition().Y() , g4p->EndPosition().Z() );
@@ -918,12 +923,13 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     }
 
 
-    //now go through list of hyperon daughters, get info about the decay
-    for(size_t i_d=0;i_d<daughter_IDs.size();i_d++){
-      //geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
-      if(partByID.find(daughter_IDs[i_d]) == partByID.end()) continue;
+    //now go through list of kaon daughters, get info about the decay
+    for(size_t i_d=0;i_d<KaonPlus_daughter_IDs.size();i_d++){
 
-      art::Ptr<simb::MCParticle> part = partByID[daughter_IDs[i_d]];
+      //geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+      if(partByID.find(KaonPlus_daughter_IDs[i_d]) == partByID.end()) continue;
+
+      art::Ptr<simb::MCParticle> part = partByID[KaonPlus_daughter_IDs[i_d]];
 
       if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
 
@@ -931,170 +937,327 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       Decay.Origin = getOrigin(part->TrackId());
       fDecay.push_back( Decay );
 
-
-
-      if(isPion(part->PdgCode()) && fLepton.size() == 1 ) {
-
-	SimParticle Lepton = fLepton.at(0);
-	fLeptonPionAngle = (180/3.1416)*TMath::ACos( (Decay.Px*Lepton.Px + Decay.Py*Lepton.Py + Decay.Pz*Lepton.Pz )/(Lepton.ModMomentum*Decay.ModMomentum) );
-
-      }
-
-      if(isNucleon(part->PdgCode()) && fLepton.size() == 1){
-
-
-	SimParticle Lepton = fLepton.at(0);
-	fLeptonNucleonAngle = (180/3.1416)*TMath::ACos( (Decay.Px*Lepton.Px + Decay.Py*Lepton.Py + Decay.Pz*Lepton.Pz )/(Lepton.ModMomentum*Decay.ModMomentum) );
-
-      }
-
-
-
     }
 
 
 
+    //we want to check K+ -> Nu_mu + mu+, K+ -> Pi+ + Pi0
 
+    if(fIsKaonPlus){
 
+      int countMuP = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == -13; });
+      int countEP = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == -11; });
+      int countNuMu = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == 14; });
+      int countNuE = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == 12; });
+      int countPiN = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == 111; });
+      int countPiP = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == 211; });
+      int countPiM = std::count_if(fDecay.begin(), fDecay.end(), [](const SimParticle& p) { return p.PDG == -211; });
+      
+      if(fDecay.size() == 2){
 
+	fDecayOpeningAngle = (180/3.1416)*TMath::ACos( (fDecay.at(0).Px*fDecay.at(1).Px + fDecay.at(0).Py*fDecay.at(1).Py + fDecay.at(0).Pz*fDecay.at(1).Pz)/(fDecay.at(0).ModMomentum*fDecay.at(1).ModMomentum));
 
-  }// end of isMC
+	if( countNuMu==1 && countMuP==1 ) fIsKaonPlus_NuMuP = true;
+	else if( countPiN==1 && countPiP==1 ) fIsKaonPlus_PiPPiN = true;
 
+      }else if(fDecay.size() == 3){
+	
+	if( countPiP==2 && countPiM==1 ) fIsKaonPlus_2PiPPiM = true;
+	else if( countPiN==1 && countEP==1 && countNuE==1 ) fIsKaonPlus_ENuE = true;
+	else if( countPiN==2 && countPiP==1 ) fIsKaonPlus_2PiNPiP = true;
+	else fIsKaonPlus_Others = true;
 
-
-
-    // get MCTruth
-    evt.getByLabel("generator", mctruths);
-    if (mctruths->size()!=1) {
-      //std::cout << "Number of MCTruths objects in event " << mctruths->size() << std::endl;
-      return;
       }
-      simb::MCTruth mctruth = mctruths->at(0);
-
-    // get MCParticles
-    /*
-    art::Handle< std::vector<simb::MCParticle> > mcParticleHandle; 
-    if (evt.getByLabel(fLArG4ModuleLabel, mcParticleHandle)){
-      art::fill_ptr_vector(ptList, mcParticleHandle); 
-    }
-    */
-
-    // true neutrino information
-    true_nu_energy = mctruth.GetNeutrino().Nu().E();
-    true_nu_pdg = mctruth.GetNeutrino().Nu().PdgCode();
-    true_nu_ccnc = mctruth.GetNeutrino().CCNC();//0=CC,1=NC
-    true_nu_mode = mctruth.GetNeutrino().Mode();//0=QE,1=RES,2=DIS
-    true_nu_vtx_x = mctruth.GetNeutrino().Nu().Vx();
-    true_nu_vtx_y = mctruth.GetNeutrino().Nu().Vy();
-    true_nu_vtx_z = mctruth.GetNeutrino().Nu().Vz();
-    true_nu_vtx_inTPC = isInsideVolume("TPC",mctruth.GetNeutrino().Nu().Position().Vect());
-    true_nu_vtx_in5cmTPC = isInsideVolume("5cmTPC",mctruth.GetNeutrino().Nu().Position().Vect());
-    true_nu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",mctruth.GetNeutrino().Nu().Position().Vect());
-
-    true_lepton_pdg = mctruth.GetNeutrino().Lepton().PdgCode();
-    true_lepton_p = mctruth.GetNeutrino().Lepton().P();
-    true_lepton_ke = mctruth.GetNeutrino().Lepton().E()-mctruth.GetNeutrino().Lepton().Mass();
-    true_lepton_theta = mctruth.GetNeutrino().Lepton().Momentum().Theta();
-    true_lepton_costheta = mctruth.GetNeutrino().Lepton().Momentum().CosTheta();
-    true_lepton_phi = mctruth.GetNeutrino().Lepton().Momentum().Phi();
-    TVector3 true_lepton_pvector = mctruth.GetNeutrino().Lepton().Momentum().Vect();
-
-    // print true information
-    /*
-    cout << mctruths->at(0) << endl;
-    for (auto const& pPart : ptList) {
-      if (pPart->Process()!="Primary" && pPart->E()-pPart->Mass()<0.001) continue;
-      cout << "trackId " << pPart->TrackId();
-      cout << ", mother " << pPart->Mother();
-      cout << ", pdg " << pPart->PdgCode();
-      cout << ", process " << pPart->Process() << " - " << pPart->EndProcess();
-      cout << ", ke " << pPart->E()-pPart->Mass() << " - " << pPart->EndE()-pPart->Mass();
-      cout << ", X " << pPart->Vx() << " - " << pPart->EndX();
-      cout << ", Z " << pPart->Vz() << " - " << pPart->EndZ();
-      cout << ", delta Z " << pPart->EndZ()-pPart->Vz();
-      cout << ", ndoughters " << pPart->NumberDaughters();
-      cout << endl;
-    }
-    */
-
-    // find the the highest momentum k+
-    double true_kaon_maxp = -1;
-    int true_kaon_maxp_id = -1;
-    true_nkaons = 0;
-    true_nprimary = 0;
-    true_nhyperons = 0;
-    //double true_hyperon_maxp = -1;
-    //int true_hyperon_maxp_id = -1;
-
-    int nparts = 0; 
-    for (auto const& pPart : ptList) {
-      if(pPart->Process()=="primary" && int(mctruths->at(0).Origin())==1){
-	TLorentzVector mcstart, mcend;
-	unsigned int pstarti, pendi;
-	true_length[nparts] = length(*pPart, mcstart, mcend, pstarti, pendi);
-	true_p[nparts]  = pPart->P();
-	true_ke[nparts] = pPart->E()-pPart->Mass();
-	true_theta[nparts] = pPart->Momentum().Theta();
-	true_costheta[nparts] = pPart->Momentum().CosTheta();
-	true_phi[nparts] = pPart->Momentum().Phi();
-	true_ccmuon_angle[nparts] = pPart->Momentum().Angle(true_lepton_pvector);
-	true_ccmuon_cosangle[nparts] = TMath::Cos(pPart->Momentum().Angle(true_lepton_pvector));
-	//true_pvector = pPart->Momentum().Vect();
-	true_end_ke[nparts] = pPart->EndE()-pPart->Mass();
-	true_end_x[nparts] = pPart->EndX();
-	true_end_y[nparts] = pPart->EndY();
-	true_end_z[nparts] = pPart->EndZ();
-	true_end_inTPC[nparts] = isInsideVolume("TPC",pPart->EndPosition().Vect());
-	true_end_in5cmTPC[nparts] = isInsideVolume("5cmTPC",pPart->EndPosition().Vect());
-	true_end_inCCInclusiveTPC[nparts] = isInsideVolume("CCInclusiveTPC",pPart->EndPosition().Vect());
-      }
-
-      if (pPart->Process()=="primary" && pPart->PdgCode()==321) {
-	Process = pPart->Process();
-	EndProcess = pPart->EndProcess();
-        if(int(mctruths->at(0).Origin())==1) { // make sure origin is neutrino beam
-          if (true_kaon_maxp < pPart->P()) {
-            true_kaon_maxp = pPart->P();
-            true_kaon_maxp_id = pPart->TrackId();
-            true_nkaons++;
-          }
-        }  
-      }
-
-      if (pPart->Process()=="primary") {
-	//Process = pPart->Process();
-	//EndProcess = pPart->EndProcess();
-        if(int(mctruths->at(0).Origin())==1) { // make sure origin is neutrino beam
-            true_nprimary++;
-        }  
-      }
-
-      if (pPart->Process()=="primary" && (pPart->PdgCode()==3212 || pPart->PdgCode()==3122 || pPart->PdgCode()==3222 || pPart->PdgCode()==3112)) {
-	//Process = pPart->Process();
-	//EndProcess = pPart->EndProcess();
-        if(int(mctruths->at(0).Origin())==1) { // make sure origin is neutrino beam
-          //if (true_hyperon_maxp < pPart->P()) {
-            //true_hyperon_maxp = pPart->P();
-            //true_hyperon_maxp_id = pPart->TrackId();
-            true_nhyperons++;
-	    //}
-        }  
-      }
-      nparts++;
     }
 
-    // true signal interaction: nu CC with at least one k+ // selection with true info
-    if (true_nu_pdg==14 && true_nu_ccnc==0 && true_nkaons>0) {
+    if(!KaonPlus_Inelastic_daughter_IDs.empty()){
+      if(fIsKaonPlus) fIsInelastic_KaonPlus = true;
+      else fIsInelastic_Others = true;
+    }
+  
 
-      vector<int> decay_daughters;
-      vector<int> decay_muplus_id;
-      vector<int> decay_piplus_id;
-      vector<int> inelastic_daughters;
-      vector<int> inelastic_kaplus_id;
-      TVector3 true_kaon_pvector;
-      TVector3 true_dau_muon_pvector;
-      TVector3 true_dau_pip_pvector;
-      TVector3 true_dau_pin_pvector;
+    // Add Hyperon daughters
+    for(size_t i_d=0;i_d<Hyperon_daughter_IDs.size();i_d++){
+
+      //geant does not always keep all particles it simulates, first check daughter is actually in list of IDs
+      if(partByID.find(Hyperon_daughter_IDs[i_d]) == partByID.end()) continue;
+
+      art::Ptr<simb::MCParticle> part = partByID[Hyperon_daughter_IDs[i_d]];
+
+      if(part->PdgCode() > 10000) continue; //anything with very large pdg code is a nucleus, skip these
+
+      SimParticle HyperonDecay = MakeSimParticle(*part);
+      HyperonDecay.Origin = getOrigin(part->TrackId());
+      fHyperonDecay.push_back( KaonDecay );
+
+    }
+
+  }// if isMC
+  
+
+  //FV cut to daughter tracks?
+  if(fNeutrino.size() == 1 && fInActiveTPC && fIsKaonPlus && fNeutrino.at(0).PDG == 14 && ( fMode == "QEL" || fMode == "KAON")){ 
+    
+    //add kinematic thresholds?
+    if(fIsKaonPlus_NuMuP = true) fIsSignal_NuMuP = true;
+    else if(fIsKaonPlus_PiPPiN = true) fIsSignal_PiPPiN = true;
+    else{
+      fIsSignal_NuMuP = false;
+      fIsSignal_PiPPiN = false
+    }
+    
+  } 
+
+
+   ///////////////////////////////////////////////////////////////////////////
+   //Get Reconstructed Info
+   //////////////////////////////////////////////////////////////////////////
+
+
+  // Check if event passed the NuCC inclusive filter
+  reco_nu_cc_filter = false;
+  string process(isMC ? "OverlayFiltersPostStage2" : "DataFiltersPostStage2");
+  art::InputTag trigResInputTag("TriggerResults","",process.data()); // the last is the name of process where the filters were run
+  art::ValidHandle<art::TriggerResults> trigRes = evt.getValidHandle<art::TriggerResults>(trigResInputTag);
+  fhicl::ParameterSet pset;
+  if (!fhicl::ParameterSetRegistry::get(trigRes->parameterSetID(), pset)) { throw cet::exception("PSet Not Found???"); }
+  std::vector<std::string> trigger_path_names = pset.get<std::vector<std::string> >("trigger_paths", {});
+  if (trigger_path_names.size()!=trigRes->size()) { throw cet::exception("Size mismatch???"); }
+  for (size_t itp=0;itp<trigRes->size();itp++) {
+    //cout << "Filter name " << trigger_path_names.at(itp) << " decision=" << trigRes->at(itp).accept() << endl;
+    if (trigger_path_names.at(itp)=="NuCC") {
+      reco_nu_cc_filter = trigRes->at(itp).accept();
+    }
+  }
+
+
+  //setup handles
+  art::Handle< std::vector<recob::PFParticle> > pfparticleHandle;
+  art::Handle< std::vector<recob::Hit> > hitHandle;
+  art::Handle< std::vector<recob::Track> > trackHandle;
+  art::Handle< std::vector<recob::Track> > trackRebuiltHandle;
+  art::Handle< std::vector<recob::Shower> > showerHandle;
+  art::Handle< std::vector<anab::ParticleID> > pidHandle;
+  art::Handle< std::vector<anab::Calorimetry> > caloHandle;
+  art::Handle< larpandoraobj::PFParticleMetadata > particleMetadataHandle;
+  art::Handle< std::vector<recob::SpacePoint> > spacepointHandle;
+
+  std::vector< art::Ptr<recob::PFParticle> >pfparticleVect;
+  std::vector<art::Ptr<recob::Hit> > hitVect;
+  std::vector<art::Ptr<recob::Track> > trackVect;
+  std::vector<art::Ptr<recob::Track> > trackRebuiltVect;
+  std::vector<art::Ptr<recob::Shower> > showerVect;
+  std::vector < art::Ptr<anab::ParticleID> > pidVect;
+  std::vector<art::Ptr<anab::Calorimetry> > caloVect;
+  std::vector< art::Ptr<larpandoraobj::PFParticleMetadata> > metadataVect;
+  std::vector<art::Ptr<recob::SpacePoint> > spacepointVect;
+
+  if(evt.getByLabel(fPFParticleLabel,pfparticleHandle)){
+    art::fill_ptr_vector(pfparticleVect,pfparticleHandle);
+  }
+
+  if(!pfparticleVect.size()) return;
+
+
+  if(evt.getByLabel(fTrackModuleLabel,trackHandle)) {
+    art::fill_ptr_vector(trackVect, trackHandle);
+  }
+  else std::cout << "Track handle not setup" << std::endl;
+
+  if(evt.getByLabel(fRebuiltTrackModuleLabel,rebuilttrackHandle)) {
+    art::fill_ptr_vector(rebuilttrackVect, rebuilttrackHandle);
+  }
+  else std::cout << "Rebuild Track handle not setup" << std::endl;
+
+  if(evt.getByLabel(fShowerModuleLabel,showerHandle)) {
+    art::fill_ptr_vector(showerVect, showerHandle);
+  }
+  else std::cout << "Shower handle not setup" << std::endl;
+
+  if(evt.getByLabel(fHitsModuleLabel,hitHandle)){
+    art::fill_ptr_vector(hitVect, hitHandle);
+  }
+  else std::cout << "Hit handle not setup" << std::endl;
+
+  if(evt.getByLabel(fSpacePointproducer,spacepointHandle)){
+    art::fill_ptr_vector(spacepointVect, spacepointHandle);
+  }
+  else std::cout << "SpacePoint handle not setup" << std::endl;
+
+
+  //vertices, tracks and showers assoc with PFPs
+  art::FindManyP<anab::T0> pfp_muon_assn(pfparticlesHandle, evt, "NuCCproducer");
+  art::FindManyP<recob::Vertex> vertexAssoc(pfparticleVect,evt,fVertexLabel);
+  art::FindManyP<recob::Track> trackAssoc(pfparticleVect,evt,fTrackModuleLabel);
+  art::FindManyP<recob::Shower> showerAssoc(pfparticleVect,evt,fShowerModuleLabel);
+  art::FindManyP<larpandoraobj::PFParticleMetadata> metadataAssoc(pfparticleVect,evt,fMetadataLabel);
+
+  art::FindManyP<anab::ParticleID> PIDAssoc(trackVect,evt,fPIDLabel);
+  art::FindManyP<anab::ParticleID> PIDRebuiltAssoc(trackRebuiltVect,evt,fPIDRebuiltLabel);
+  art::FindManyP<anab::Calorimetry> caloTrackAssoc(trackVect,evt,fCaloLabel);
+  art::FindManyP<anab::Calorimetry> caloTrackRebuiltAssoc(trackRebuiltVect,evt,fCaloRebuiltLabel);
+
+  //get hits assoc with tracks
+  art::FindManyP<recob::Hit> trackHitAssoc(trackHandle,evt,fTrackHitAssnLabel);
+  //get hits assoc with showers
+  art::FindManyP<recob::Hit> showerHitAssoc(showerHandle,evt,fShowerHitAssnLabel);
+
+  //backtracker
+  art::FindMany< simb::MCParticle , anab::BackTrackerHitMatchingData> particlesPerHit(hitHandle,evt,fHitTruthAssnLabel);
+
+  //spacepoints assoc with PFPs
+  art::FindManyP<recob::SpacePoint> pfpSpacePointAssoc(pfparticleHandle,e,fPFPSpacePointAssnLabel);
+
+  size_t neutrinoID = 99999;
+
+
+  //go through the list of pandora PFP's
+  lar_pandora::PFParticleVector pfneutrinos(0);
+  lar_pandora::PFParticleVector pfmuons(0);
+
+  for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect){
+    
+    std::vector< art::Ptr<recob::Vertex> > pfpVertex = vertexAssoc.at(pfp.key());
+    
+    //get reconstructed neutrino
+    if( pfp->IsPrimary() && std::abs(pfp->PdgCode())==14 ){
+      
+      neutrinoID = pfp->Self();
+      fNPrimaryDaughters = pfp->NumDaughters();     
+      pfneutrinos.push_back(pfp);
+ 
+      //get the reconstructed primary vertex
+      for(const art::Ptr<recob::Vertex> &vtx : pfpVertex){
+	
+	//correct for space charge
+	geo::Point_t point = { vtx->position().X() , vtx->position().Y() , vtx->position().Z() };                
+	geo::Vector_t sce_corr = SCE->GetPosOffsets(point);
+	
+	//w SC correction - forward
+	fRecoPrimaryVertex.SetXYZ( vtx->position().X() + sce_corr.X() , vtx->position().Y() - sce_corr.Y() , vtx->position().Z() - sce_corr.Z());
+	//WE NEED TO STORE RECO NEUTRINO INFORMATION!!
+	
+      }
+    }
+  }
+  
+  art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
+  
+  // Find CC muon and daughters
+  for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect){ 
+
+    // look at particles with neutrino parent and one associated track
+    if ( pfp->Parent()==pfnu->Self() && trackAssoc.at(pfp.key()).size()==1) { 
+
+      art::Ptr<recob::Track> track = trackAssoc.at(pfp.key()).front();
+      // CC muon has a T0 associated 
+      if (pfp_muon_assn.at(pfp.key()).size()==1) 
+	pfmuons.push_back(pfparticle);
+
+    }
+  }
+
+  if(pfmuons.size()==1) pfmuon = pfmuons.front();
+  art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
+
+
+
+  std::vector<TVector3> TrackStarts;
+
+  //go through rest of particles, get lots of useful info!
+
+  for(const art::Ptr<recob::PFParticle> &pfp : pfparticleVect){
+
+    RecoParticle ThisPrimaryDaughter;
+
+    //get data from every PFP, not just neutrino daughters
+    if(pfp->Parent() != neutrinoID) continue;
+
+    std::vector< art::Ptr<recob::Track> > pfpTracks = trackAssoc.at(pfp.key());
+    std::vector< art::Ptr<recob::Vertex> > pfpVertex = vertexAssoc.at(pfp.key());
+
+    std::vector< art::Ptr<recob::Shower> > pfpShowers = showerAssoc.at(pfp.key());
+    std::vector< art::Ptr<larpandoraobj::PFParticleMetadata> >pfpMeta = metadataAssoc.at(pfp.key());
+
+    std::vector< art::Ptr<recob::SpacePoint> > pfpSpacePoints = pfpSpacePointAssoc.at(pfp.key());
+
+    ThisPrimaryDaughter.PDG = pfp->PdgCode();
+
+    for(const art::Ptr<larpandoraobj::PFParticleMetadata> &meta : pfpMeta){
+
+      const larpandoraobj::PFParticleMetadata::PropertiesMap &pfParticlePropertiesMap(meta->GetPropertiesMap());
+
+      if (!pfParticlePropertiesMap.empty()){
+	for (larpandoraobj::PFParticleMetadata::PropertiesMap::const_iterator it = pfParticlePropertiesMap.begin(); it != pfParticlePropertiesMap.end(); ++it){
+
+	  if(it->first == "TrackScore"){
+	    ThisPrimaryDaughter.TrackShowerScore = it->second;
+	  }
+	}
+      }
+    }
+
+
+    //////////////////////////////////////////////
+    //            Get track info                //
+    //////////////////////////////////////////////
+
+
+  
+
+
+  reco_nu_ndaughters = reco_nu_daughters_id.size();
+  //--std::cout << "Number of neutrino daughters with one associated track " << reco_nu_ndaughters << std::endl;
+  reco_nu_cc_nmue = pfmuons.size();
+
+  if (pfmuons.size()!=1) {
+    //--std::cout << "Number of CC inclusive muons is not 1: " << pfmuons.size() << std::endl;
+    fEventTree->Fill();
+    return;
+  }
+
+  art::Ptr<recob::PFParticle> pfmuon = pfmuons.front();
+  art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
+  //art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.ID()).front();
+
+  reco_ccmu_vtx_x = pfparticleVertexAssn.at(pfmuon.key()).front()->position().X();
+  reco_ccmu_vtx_y = pfparticleVertexAssn.at(pfmuon.key()).front()->position().Y();
+  reco_ccmu_vtx_z = pfparticleVertexAssn.at(pfmuon.key()).front()->position().Z();
+  //--cout << "CC muon start (x,y,z) = " << reco_ccmu_vtx_x << ", " << reco_ccmu_vtx_y << ", " << reco_ccmu_vtx_z << endl;
+  reco_ccmu_vtx_inTPC = isInsideVolume("TPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
+  reco_ccmu_vtx_in5cmTPC = isInsideVolume("5cmTPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
+  reco_ccmu_vtx_inCCInclusiveTPC = isInsideVolume("CCInclusiveTPC",reco_ccmu_vtx_x,reco_ccmu_vtx_y,reco_ccmu_vtx_z);
+
+
+
+  // get track associations
+  art::FindManyP<anab::Calorimetry> fmcal(trackListHandle, evt, fCalorimetryModuleLabel);
+  if(!fmcal.isValid()) cout << "fmcal is invalid" << endl;
+  if(!fmcal.isValid()){
+    //--cout << "Track-Calorimetry associations are not valid" << endl;
+    fEventTree->Fill();
+    return;
+  }
+  art::FindManyP<anab::Calorimetry> fmcal_rebuilt(rebuilttrackListHandle, evt, fRebuiltCalorimetryModuleLabel);
+
+  art::FindManyP<recob::Hit> hits_from_rebuilttracks(rebuilttrackListHandle, evt, fRebuiltHitTrackAssns);
+  art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns);
+  art::FindManyP<recob::Hit> hits_from_showers(showerListHandle, evt, fHitShowerAssns);
+  if(!hits_from_tracks.isValid()){
+    //--cout << "Track-Hit associations are not valid" << endl;
+    fEventTree->Fill();
+    return;
+  }
+
+  art::FindManyP<anab::ParticleID> rebuilttrackPIDAssn(rebuilttrackListHandle, evt, fRebuiltPIDLabel);
+  art::FindManyP<anab::ParticleID> trackPIDAssn(trackListHandle, evt, fPIDLabel);
+  if(!trackPIDAssn.isValid()){
+    //--cout << "Track PID associations are not valid" << endl;
+    fEventTree->Fill();
+    return;
+  }
+
+
 
       for (auto const& pPart : ptList) {
 
@@ -1220,66 +1383,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       true_kaon_ndaughters_decay = decay_daughters.size();
       true_kaon_ndaughters_inelastic = inelastic_daughters.size();
 
-      int n_decay_muplus     = decay_muplus_id.size();
-      int n_decay_piplus     = decay_piplus_id.size();
-      int n_decay_numu       = count(decay_daughters.begin(),decay_daughters.end(),14);
-      int n_decay_pi0        = count(decay_daughters.begin(),decay_daughters.end(),111);
-      int n_inelastic_kaplus = inelastic_kaplus_id.size();
-      int n_inelastic_piplus = count(inelastic_daughters.begin(),inelastic_daughters.end(),211);
-      int n_inelastic_proton = count(inelastic_daughters.begin(),inelastic_daughters.end(),2212);
-
-      true_kaon_ndecmup = n_decay_muplus;
-      true_kaon_ndecpip = n_decay_piplus;
-      true_kaon_ninekap = n_inelastic_kaplus;
-      true_kaon_ninepip = n_inelastic_piplus;
-      true_kaon_ninepro = n_inelastic_proton;
-    
-      // define kaon end process
-      int daughter_id = -1;
-      if (decay_daughters.size()) {
-        //kaon+ -> muon+ numu
-        if (decay_daughters.size()==2 && n_decay_muplus==1 && n_decay_numu==1) {
-          true_kaon_end_process = 0;
-          daughter_id = decay_muplus_id.front();
-        }
-        //kaon+ -> pion+ + pi0
-        else if (decay_daughters.size()==2 && n_decay_piplus==1 && n_decay_pi0==1) {
-          true_kaon_end_process = 1;
-          daughter_id = decay_piplus_id.front();
-        }
-        //kaon+ -> muon+ nopion+
-        else if (n_decay_muplus==1 && n_decay_piplus==0) {
-          true_kaon_end_process = 2;
-          daughter_id = decay_muplus_id.front();
-        }
-        //kaon+ -> pion+ and nomuon+
-        else if (n_decay_muplus==0 && n_decay_piplus==1) {
-          true_kaon_end_process = 3;
-          daughter_id = decay_piplus_id.front();
-        }
-        //other decays
-        else {
-          true_kaon_end_process = 4;
-        }
-      }
-
-      if (inelastic_daughters.size()) {
-        //inelasitic with kaon+
-        if (n_inelastic_kaplus==1) {
-          true_kaon_end_process = 5;
-          daughter_id = inelastic_kaplus_id.front();
-        }
-        //other inelastic
-        else {
-          true_kaon_end_process = 6;
-        }
-      }
-
-      //this shouldn't happen but it does! rarely
-      if (decay_daughters.size() && inelastic_daughters.size()) {
-        // -- cout << "Primary kaon+ decay and inelastic at the same time!!!" << endl;
-        true_kaon_end_process = 7;
-      }
 
       // -- cout << "True kaon end process " << true_kaon_end_process << endl;
 
@@ -1319,187 +1422,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     }//is true signal
 
   
-    // find the the highest momentum k-
-    double true_kaon_maxp_anti = -1;
-    int true_kaon_maxp_id_anti = -1;
-    true_nkaons_anti = 0;
-
-    for (auto const& pPart : ptList) {
-      if (pPart->Process()=="primary" && pPart->PdgCode()==-321) {
-        if(int(mctruths->at(0).Origin())==1) { // make sure origin is neutrino beam
-          if (true_kaon_maxp_anti < pPart->P()) {
-            true_kaon_maxp_anti = pPart->P();
-            true_kaon_maxp_id_anti = pPart->TrackId();
-            true_nkaons_anti++;
-          }
-        }  
-      }
-    }
-  
-    // true signal interaction: nu CC with at least one k- // selection with true info
-    if (true_nu_pdg==14 && true_nu_ccnc==0 && true_nkaons_anti>0) {
-
-      vector<int> decay_daughters_anti;
-      vector<int> decay_muplus_id_anti;
-      vector<int> decay_piplus_id_anti;
-      vector<int> inelastic_daughters_anti;
-      vector<int> inelastic_kaplus_id_anti;
-      TVector3 true_kaon_pvector_anti;
-
-      for (auto const& pPart : ptList) {
-
-        // primary kaon- (w/ highest momentum)
-        if (pPart->TrackId()==true_kaon_maxp_id_anti) {
-          TLorentzVector mcstart_anti, mcend_anti;
-          unsigned int pstarti_anti, pendi_anti;
-          true_kaon_length_anti = length(*pPart, mcstart_anti, mcend_anti, pstarti_anti, pendi_anti);
-          true_kaon_p_anti  = pPart->P();
-          true_kaon_ke_anti = pPart->E()-pPart->Mass();
-          true_kaon_theta_anti = pPart->Momentum().Theta();
-          true_kaon_costheta_anti = pPart->Momentum().CosTheta();
-          true_kaon_phi_anti = pPart->Momentum().Phi();
-          true_kaon_ccmuon_angle_anti = pPart->Momentum().Angle(true_lepton_pvector);
-          true_kaon_ccmuon_cosangle_anti = TMath::Cos(pPart->Momentum().Angle(true_lepton_pvector));
-          true_kaon_pvector_anti = pPart->Momentum().Vect();
-          true_kaon_end_ke_anti = pPart->EndE()-pPart->Mass();
-          true_kaon_end_x_anti = pPart->EndX();
-          true_kaon_end_y_anti = pPart->EndY();
-          true_kaon_end_z_anti = pPart->EndZ();
-          true_kaon_end_inTPC_anti = isInsideVolume("TPC",pPart->EndPosition().Vect());
-          true_kaon_end_in5cmTPC_anti = isInsideVolume("5cmTPC",pPart->EndPosition().Vect());
-          true_kaon_end_inCCInclusiveTPC_anti = isInsideVolume("CCInclusiveTPC",pPart->EndPosition().Vect());
-        }
-
-        // find kaon- daughters
-        else if (pPart->Mother()==true_kaon_maxp_id_anti) {
-
-          // decay daughters
-          if (pPart->Process()=="Decay") {
-            decay_daughters_anti.push_back(pPart->PdgCode());
-            if (pPart->PdgCode()==13) {
-              decay_muplus_id_anti.push_back(pPart->TrackId());
-            }
-            else if (pPart->PdgCode()==-211) {
-              decay_piplus_id_anti.push_back(pPart->TrackId());
-            }
-            //cout << "Decay " << pPart->PdgCode() << endl;
-          }
-
-          // inelastic interaction daughters
-          if (pPart->Process()=="kaon+Inelastic") {
-            inelastic_daughters_anti.push_back(pPart->PdgCode());
-            if (pPart->PdgCode()==-321) {
-              inelastic_kaplus_id_anti.push_back(pPart->TrackId());
-            }
-            //cout << "Inelastic " << pPart->PdgCode() << endl;
-          }
-
-        }
-
-      }//MC particles loop
-    
-      true_kaon_ndaughters_anti = decay_daughters_anti.size() + inelastic_daughters_anti.size();
-      true_kaon_ndaughters_decay_anti = decay_daughters_anti.size();
-      true_kaon_ndaughters_inelastic_anti = inelastic_daughters_anti.size();
-
-      int n_decay_muplus_anti     = decay_muplus_id_anti.size();
-      int n_decay_piplus_anti     = decay_piplus_id_anti.size();
-      int n_decay_numu_anti       = count(decay_daughters_anti.begin(),decay_daughters_anti.end(),-14);
-      int n_decay_pi0_anti        = count(decay_daughters_anti.begin(),decay_daughters_anti.end(),111);
-      int n_inelastic_kaplus_anti = inelastic_kaplus_id_anti.size();
-      int n_inelastic_piplus_anti = count(inelastic_daughters_anti.begin(),inelastic_daughters_anti.end(),-211);
-      int n_inelastic_proton_anti = count(inelastic_daughters_anti.begin(),inelastic_daughters_anti.end(),-2212);
-
-      true_kaon_ndecmup_anti = n_decay_muplus_anti;
-      true_kaon_ndecpip_anti = n_decay_piplus_anti;
-      true_kaon_ninekap_anti = n_inelastic_kaplus_anti;
-      true_kaon_ninepip_anti = n_inelastic_piplus_anti;
-      true_kaon_ninepro_anti = n_inelastic_proton_anti;
-
-      // define kaon end process
-      int daughter_id_anti = -1;
-      if (decay_daughters_anti.size()) {
-        //kaon+ -> muon+ numu
-        if (decay_daughters_anti.size()==2 && n_decay_muplus_anti==1 && n_decay_numu_anti==1) {
-          true_kaon_end_process_anti = 0;
-          daughter_id_anti = decay_muplus_id_anti.front();
-        }
-        //kaon+ -> pion+ + pi0
-        else if (decay_daughters_anti.size()==2 && n_decay_piplus_anti==1 && n_decay_pi0_anti==1) {
-          true_kaon_end_process_anti = 1;
-          daughter_id_anti = decay_piplus_id_anti.front();
-        }
-        //kaon+ -> muon+ nopion+
-        else if (n_decay_muplus_anti==1 && n_decay_piplus_anti==0) {
-          true_kaon_end_process_anti = 2;
-          daughter_id_anti = decay_muplus_id_anti.front();
-        }
-        //kaon+ -> pion+ and nomuon+
-        else if (n_decay_muplus_anti==0 && n_decay_piplus_anti==1) {
-          true_kaon_end_process_anti = 3;
-          daughter_id_anti = decay_piplus_id_anti.front();
-        }
-        //other decays
-        else {
-          true_kaon_end_process_anti = 4;
-        }
-      }
-
-      if (inelastic_daughters_anti.size()) {
-        //inelasitic with kaon-
-        if (n_inelastic_kaplus_anti==1) {
-          true_kaon_end_process_anti = 5;
-          daughter_id_anti = inelastic_kaplus_id_anti.front();
-        }
-        //other inelastic
-        else {
-          true_kaon_end_process_anti = 6;
-        }
-      }
-
-      //this shouldn't happen but it does! rarely
-      if (decay_daughters_anti.size() && inelastic_daughters_anti.size()) {
-        // -- cout << "Primary kaon+ decay and inelastic at the same time!!!" << endl;
-        true_kaon_end_process_anti = 7;
-      }
-
-      // -- cout << "True kaon end process " << true_kaon_end_process << endl;
-
-      //check kaon daughter if it exists
-      //only if there is one pion+, one muon+ or one kaon+
-      if (daughter_id_anti!=-1) {
-        for (auto const& pPart : ptList) {
-      
-          // kaon- daughter
-          if (pPart->TrackId()==daughter_id_anti) {
-            TLorentzVector mcstart, mcend;
-            unsigned int pstarti, pendi;
-            true_kaon_daughter_length_anti = length(*pPart, mcstart, mcend, pstarti, pendi);
-            true_kaon_daughter_p_anti = pPart->P();
-            true_kaon_daughter_ke_anti = pPart->E()-pPart->Mass();
-            true_kaon_daughter_theta_anti = pPart->Momentum().Theta();
-            true_kaon_daughter_costheta_anti = pPart->Momentum().CosTheta();
-            true_kaon_daughter_angle_anti = pPart->Momentum().Angle(true_kaon_pvector_anti);
-            true_kaon_daughter_cosangle_anti = TMath::Cos(pPart->Momentum().Angle(true_kaon_pvector_anti));
-            true_kaon_daughter_pdg_anti = pPart->PdgCode();
-            true_kaon_daughter_end_x_anti = pPart->EndX();
-            true_kaon_daughter_end_y_anti = pPart->EndY();
-            true_kaon_daughter_end_z_anti = pPart->EndZ();
-            true_kaon_daughter_end_inTPC_anti = isInsideVolume("TPC",pPart->EndPosition().Vect());
-            true_kaon_daughter_end_in5cmTPC_anti = isInsideVolume("5cmTPC",pPart->EndPosition().Vect());
-            true_kaon_daughter_end_inCCInclusiveTPC_anti = isInsideVolume("CCInclusiveTPC",pPart->EndPosition().Vect());
-            break;
-          }
-      
-        }//MC particles loop
-      }//kaon daughter exists
-
-    }//is true signal
-
-    //this->filter(evt);
-  
-  }//isMC
-
 
   // Check if event passed the NuCC inclusive filter
   reco_nu_cc_filter = false;

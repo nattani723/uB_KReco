@@ -356,6 +356,19 @@ namespace Kaon_Analyzer
      bool fIsKaonMinus = false;
      bool fIsHyperon = false;
 
+     //flags for K+ decay modes
+     bool fIsKaonPlus_NuMuP = false;
+     bool fIsKaonPlus_PiPPiN = false;
+     bool fIsKaonPlus_2PiPPiM = false;
+     bool fIsKaonPlus_ENuE = false;
+     bool fIsKaonPlus_2PiNPiP = false;
+     bool fIsKaonPlus_Others = false;
+     bool fIsInelastic_KaonPlus = false;
+     bool fIsInelastic_Others = false;
+
+     bool fIsSignal_NuMuP = false;
+     bool fIsSignal_PiPPiN = false;
+
      //neutrino
      std::vector<SimParticle> fNeutrino;
 
@@ -380,6 +393,7 @@ namespace Kaon_Analyzer
      //pions produced at primary vtx
      std::vector<SimParticle> fPrimaryPion;
 
+
      //vertex information
      TVector3 fTruePrimaryVertex;
 
@@ -387,9 +401,7 @@ namespace Kaon_Analyzer
      TVector3 fDecayVertex;
 
      std::vector<SimParticle> fDecay; //kaon decay products
-
-     int fDecayHyperonID;
-     int fDecaySigmaID;
+     std::vector<SimParticle> fHyperonDecay; //hyperon decay products
 
      //data storage (should not be written to trees)
 
@@ -400,6 +412,7 @@ namespace Kaon_Analyzer
      std::vector<int>KaonMinus_daughter_IDs; //ids of K- decay products
      std::vector<int>KaonOthers_daughter_IDs;
      std::vector<int>Hyperon_daughter_IDs;
+     std::vector<int>KaonPlus_Inelastic_daughter_IDs;
 
 
      //create map between particles and their ID's
