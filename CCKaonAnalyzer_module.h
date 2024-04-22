@@ -880,21 +880,6 @@ namespace Kaon_Analyzer
     Float_t k_vtx_dis; //distance between kaon and muon start
 
 
-    Int_t cut_1;
-    Int_t cut_2;
-    Int_t cut_3;
-    Int_t cut_4;
-    Int_t cut_5;
-    Int_t cut_6;
-    Int_t cut_7;
-    Int_t cut_8;
-    Int_t cut_9;
-    Int_t cut_10;
-    Int_t cut_11;
-    Int_t cut_12;
-    Int_t cut_13;
-
-    //const trkf::TrackMomentumCalculator trkmom;
 
     std::string fDigitModuleLabel;
     std::string fHitsModuleLabel;

@@ -631,19 +631,6 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("k_mu_can_dis", &k_mu_can_dis,"k_mu_can_dis/F");
   fEventTree->Branch("k_mu_open_angle", &k_mu_open_angle,"k_mu_open_angle/F");
   fEventTree->Branch("k_vtx_dis", &k_vtx_dis,"k_vtx_dis/F");
-  fEventTree->Branch("cut_1", &cut_1,"cut_1/I");
-  fEventTree->Branch("cut_2", &cut_2,"cut_2/I");
-  fEventTree->Branch("cut_3", &cut_3,"cut_3/I");
-  fEventTree->Branch("cut_4", &cut_4,"cut_4/I");
-  fEventTree->Branch("cut_5", &cut_5,"cut_5/I");
-  fEventTree->Branch("cut_6", &cut_6,"cut_6/I");
-  fEventTree->Branch("cut_7", &cut_7,"cut_7/I");
-  fEventTree->Branch("cut_8", &cut_8,"cut_8/I");
-  fEventTree->Branch("cut_9", &cut_9,"cut_9/I");
-  fEventTree->Branch("cut_10", &cut_10,"cut_10/I");
-  fEventTree->Branch("cut_11", &cut_11,"cut_11/I");
-  fEventTree->Branch("cut_12", &cut_12,"cut_12/I");
-  fEventTree->Branch("cut_13", &cut_13,"cut_13/I");
 
   fSubrunTree = tfs->make<TTree>("subruns", "SubRun Tree");
   fSubrunTree->Branch("run", &m_run, "run/i");
@@ -1408,14 +1395,12 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
   }
 
 
+  /*
   if (!reco_nu_cc_filter) {
-    // -- std::cout << "Event didn't pass NuCC filter" << std::endl;
     fEventTree->Fill();
     return;
   }
-
-  // -- std::cout << "Event passed NuCC filter" << std::endl;
-  cut_1=1;
+  */
 
   // Collect all recontructed particles
   art::Handle<std::vector<recob::PFParticle>> pfparticles;
@@ -1426,8 +1411,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  // -- std::cout << "Number of PFParticles " << pfparticles->size() << std::endl;
-  cut_2=1;	  
 
   // Get PFParticle associations
   art::FindManyP<anab::T0> pfp_muon_assn(pfparticles, evt, "NuCCproducer");
@@ -1436,7 +1419,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_3=1;	  
 
   art::FindManyP<recob::Track> pfparticleTrackAssn(pfparticles, evt, "pandora");
   if(!pfparticleTrackAssn.isValid()){
@@ -1444,7 +1426,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_4=1;	  
 
   art::FindManyP<recob::Vertex> pfparticleVertexAssn(pfparticles, evt, "pandora");
   if(!pfparticleVertexAssn.isValid()){
@@ -1452,7 +1433,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_5=1;	  
 
   // Find recontructed neutrino (there should be one)
   lar_pandora::PFParticleVector pfneutrinos(0);
@@ -1472,7 +1452,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_6=1;	  
 
   art::Ptr<recob::PFParticle> pfnu = pfneutrinos.front();
 
@@ -1517,7 +1496,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_7=1;	  
 
   art::Ptr<recob::PFParticle> pfmuon = pfmuons.front();
   art::Ptr<recob::Track> trkmuon = pfparticleTrackAssn.at(pfmuon.key()).front();
@@ -1569,7 +1547,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     return;
   }
   art::FindManyP<anab::Calorimetry> fmcal_rebuilt(rebuilttrackListHandle, evt, fRebuiltCalorimetryModuleLabel);
-  cut_8=1;	  
 
   art::FindManyP<recob::Hit> hits_from_rebuilttracks(rebuilttrackListHandle, evt, fRebuiltHitTrackAssns);
   art::FindManyP<recob::Hit> hits_from_tracks(trackListHandle, evt, fHitTrackAssns);
@@ -1579,7 +1556,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_9=1;	  
 
   art::FindManyP<anab::ParticleID> rebuilttrackPIDAssn(rebuilttrackListHandle, evt, fRebuiltPIDLabel);
   art::FindManyP<anab::ParticleID> trackPIDAssn(trackListHandle, evt, fPIDLabel);
@@ -1588,8 +1564,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     fEventTree->Fill();
     return;
   }
-  cut_10=1;
-
 
   // find track multiplicity around vertex
   int NTracks=tracklist.size();
@@ -2464,30 +2438,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
    k_mu_can_dis=-999;
    k_mu_open_angle=-999;
    k_vtx_dis=-999;
-      cut_1=-9;
-      cut_2=-9;
-      cut_3=-9;
-      cut_4=-9;
-      cut_5=-9;
-      cut_6=-9;
-      cut_7=-9;
-      cut_8=-9;
-      cut_9=-9;
-      cut_10=-9;
-      cut_11=-9;
-      cut_12=-9;
-      cut_13=-9;
-      
-      /*
-      rv0.clear();
-      dv0.clear();
-
-      rv1.clear();
-      dv1.clear();
-
-      rv2.clear();
-      dv2.clear();
-      */
  }
  
  /////////////////////////////////////////////////////////////////////////////////////////
