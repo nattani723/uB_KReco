@@ -408,6 +408,10 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_chi2pr_3pl", &reco_track_chi2pr_3pl, "reco_track_chi2pr_3pl[20]/F");
   fEventTree->Branch("reco_track_chi2pi_3pl", &reco_track_chi2pi_3pl, "reco_track_chi2pi_3pl[20]/F");
   fEventTree->Branch("reco_track_chi2mu_3pl", &reco_track_chi2mu_3pl, "reco_track_chi2mu_3pl[20]/F");
+  fEventTree->Branch("reco_track_mean_dedx_3pl", &reco_track_mean_dedx_3pl, "reco_track_mean_dedx_3pl[20]/F");
+  fEventTree->Branch("reco_track_mean_dedx_pl0", &reco_track_mean_dedx_pl0, "reco_track_mean_dedx_pl0[20]/F");
+  fEventTree->Branch("reco_track_mean_dedx_pl1", &reco_track_mean_dedx_pl1, "reco_track_mean_dedx_pl1[20]/F");
+  fEventTree->Branch("reco_track_mean_dedx_pl2", &reco_track_mean_dedx_pl2, "reco_track_mean_dedx_pl2[20]/F");
   fEventTree->Branch("reco_track_likepr_3pl", &reco_track_likepr_3pl, "reco_track_likepr_3pl[20]/F");
   fEventTree->Branch("reco_track_llrpid_3pl", &reco_track_llrpid_3pl, "reco_track_llrpid_3pl[20]/F");
   fEventTree->Branch("reco_track_total_llrpid_3pl", &reco_track_total_llrpid_3pl, "reco_track_total_llrpid_3pl[20]/F");
@@ -520,6 +524,10 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_chi2pi_3pl", &reco_track_daughter_chi2pi_3pl, "reco_track_daughter_chi2pi_3pl[20][20]/F");
   fEventTree->Branch("reco_track_daughter_chi2mu_3pl", &reco_track_daughter_chi2mu_3pl, "reco_track_daughter_chi2mu_3pl[20][20]/F");
   fEventTree->Branch("reco_track_daughter_likepr_3pl", &reco_track_daughter_likepr_3pl, "reco_track_daughter_likepr_3pl[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_3pl", &reco_track_daughter_mean_dedx_3pl, "reco_track_daughter_mean_dedx_3pl[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl0", &reco_track_daughter_mean_dedx_pl0, "reco_track_daughter_mean_dedx_pl0[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl1", &reco_track_daughter_mean_dedx_pl1, "reco_track_daughter_mean_dedx_pl1[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl2", &reco_track_daughter_mean_dedx_pl2, "reco_track_daughter_mean_dedx_pl2[20][20]/F");
   fEventTree->Branch("reco_track_daughter_llrpid_3pl", &reco_track_daughter_llrpid_3pl, "reco_track_daughter_llrpid_3pl[20][20]/F");
   fEventTree->Branch("reco_track_daughter_llrpid_k_3pl", &reco_track_daughter_llrpid_k_3pl, "reco_track_daughter_llrpid_k_3pl[20][20]/F");
   fEventTree->Branch("reco_track_daughter_vtx_inTPC", &reco_track_daughter_vtx_inTPC, "reco_track_daughter_vtx_inTPC[20][20]/O");
@@ -589,6 +597,11 @@ void CCKaonAnalyzer::beginJob()
   fEventTree->Branch("reco_track_daughter_chi2pr_3pl_rebuild", &reco_track_daughter_chi2pr_3pl_rebuild, "reco_track_daughter_chi2pr_3pl_rebuild[20][20]/F");
   fEventTree->Branch("reco_track_daughter_chi2pi_3pl_rebuild", &reco_track_daughter_chi2pi_3pl_rebuild, "reco_track_daughter_chi2pi_3pl_rebuild[20][20]/F");
   fEventTree->Branch("reco_track_daughter_chi2mu_3pl_rebuild", &reco_track_daughter_chi2mu_3pl_rebuild, "reco_track_daughter_chi2mu_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_3pl_rebuild", &reco_track_daughter_mean_dedx_3pl_rebuild, "reco_track_daughter_mean_dedx_3pl_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl0_rebuild", &reco_track_daughter_mean_dedx_pl0_rebuild, "reco_track_daughter_mean_dedx_pl0_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl1_rebuild", &reco_track_daughter_mean_dedx_pl1_rebuild, "reco_track_daughter_mean_dedx_pl1_rebuild[20][20]/F");
+  fEventTree->Branch("reco_track_daughter_mean_dedx_pl2_rebuild", &reco_track_daughter_mean_dedx_pl2_rebuild, "reco_track_daughter_mean_dedx_pl2_rebuild[20][20]/F");
+
   fEventTree->Branch("reco_track_daughter_likepr_3pl_rebuild", &reco_track_daughter_likepr_3pl_rebuild, "reco_track_daughter_likepr_3pl_rebuild[20][20]/F");
   fEventTree->Branch("reco_track_daughter_llrpid_3pl_rebuild", &reco_track_daughter_llrpid_3pl_rebuild, "reco_track_daughter_llrpid_3pl_rebuild[20][20]/F");
   fEventTree->Branch("reco_track_daughter_llrpid_k_3pl_rebuild", &reco_track_daughter_llrpid_k_3pl_rebuild, "reco_track_daughter_llrpid_k_3pl_rebuild[20][20]/F");
@@ -1671,7 +1684,8 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     reco_track_dir[ntracks] = (st_vtx<end_dis);
 
     //fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
-    fillCalorimetry(fmcal.at(ptrack.key()),ntracks,-1,false);//no daughter track id
+    //fillCalorimetry(fmcal.at(ptrack.key()),ntracks,-1,false);//no daughter track id
+    fillCalorimetry(fmcal.at(ptrack.key()), ptrack, ntracks, -1, false);//no daughter track id
   
     // check PID
     if (trackPIDAssn.isValid()){
@@ -1747,7 +1761,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
         reco_track_daughter_phi[ntracks][ndaughters] = track_dau.Phi();
 
         //fillCalorimetry_old(fmcal.at(ptrack_dau_old.key()),ntracks,ndaughters_old);
-        fillCalorimetry(fmcal.at(ptrack_dau.key()),ntracks,ndaughters,false);
+        fillCalorimetry(fmcal.at(ptrack_dau.key()), ptrack_dau, ntracks, ndaughters, false);
 
         // check PID
         if (rebuilttrackPIDAssn.isValid()) {
@@ -1837,7 +1851,8 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
         reco_track_daughter_vtx_distance_rebuild[ntracks][ndaughters_rebuild] = start_dis;
 
 	//cout << "track length is " << track_dau.Length() << endl;
-        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters_rebuild,true);
+        //fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters_rebuild,true);
+        fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()), ptrack_dau, ntracks, ndaughters_rebuild, true);
 
         // check PID
         if (rebuilttrackPIDAssn.isValid()) {
@@ -2224,6 +2239,10 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
      reco_track_chi2pi_3pl[k]=-99;
      reco_track_chi2mu_3pl[k]=-99;
      reco_track_likepr_3pl[k]=-99;
+     reco_track_mean_dedx_3pl[k] = -9;
+     reco_track_mean_dedx_pl0[k] = -9;
+     reco_track_mean_dedx_pl1[k] = -9;
+     reco_track_mean_dedx_pl2[k] = -9;
      reco_track_llrpid_3pl[k] = -9;
      reco_track_total_llrpid_3pl[k] = -9;
      reco_track_llrpid_k_3pl[k] = -9;
@@ -2339,6 +2358,10 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
        reco_track_daughter_chi2pi_3pl_rebuild[k][m]=-99;
        reco_track_daughter_chi2mu_3pl_rebuild[k][m]=-99;
        reco_track_daughter_likepr_3pl_rebuild[k][m]=-99;
+       reco_track_daughter_mean_dedx_3pl_rebuild[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl0_rebuild[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl1_rebuild[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl2_rebuild[k][m] = -9;
        reco_track_daughter_llrpid_3pl_rebuild[k][m]=-9;
        reco_track_daughter_llrpid_k_3pl_rebuild[k][m]=-9;
        reco_track_daughter_vtx_inTPC_rebuild[k][m]=false;
@@ -2398,6 +2421,10 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
        reco_track_daughter_chi2pi_3pl[k][m]=-99;
        reco_track_daughter_chi2mu_3pl[k][m]=-99;
        reco_track_daughter_likepr_3pl[k][m]=-99;
+       reco_track_daughter_mean_dedx_3pl[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl0[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl1[k][m] = -9;
+       reco_track_daughter_mean_dedx_pl2[k][m] = -9;
        reco_track_daughter_llrpid_3pl[k][m]=-9;
        reco_track_daughter_llrpid_k_3pl[k][m]=-9;
        reco_track_daughter_vtx_inTPC[k][m]=false;
@@ -2451,6 +2478,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       cut_12=-9;
       cut_13=-9;
       
+      /*
       rv0.clear();
       dv0.clear();
 
@@ -2459,7 +2487,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
       rv2.clear();
       dv2.clear();
-
+      */
  }
  
  /////////////////////////////////////////////////////////////////////////////////////////
@@ -2511,7 +2539,8 @@ double CCKaonAnalyzer::length(const simb::MCParticle& p, TLorentzVector& start, 
   return result;
 }
 
-void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_i, bool wTrackRebuilder)
+  //void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i, int daughter_i, bool wTrackRebuilder)
+  void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, art::Ptr<recob::Track>& ptrack, int track_i, int daughter_i, bool wTrackRebuilder)
 {
 
   double llr_pid_total = 0;
@@ -2519,11 +2548,12 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
 
   for (auto const &calo : calos) {
 
-    int planenum = calo->PlaneID().Plane;
+    //int planenum = calo->PlaneID().Plane;
 
     auto const &plane = calo->PlaneID().Plane;
     auto const &dedx_values = calo->dEdx();
 
+    /*
     if(planenum==0) dv0 = calo->dEdx();
     if(planenum==0) rv0 = calo->ResidualRange();
 
@@ -2532,6 +2562,7 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
 
     if(planenum==2) dv2 = calo->dEdx();
     if(planenum==2) rv2 = calo->ResidualRange();
+    */
 
     auto const &rr = calo->ResidualRange();
     auto const &pitch = calo->TrkPitchVec();
@@ -2542,6 +2573,11 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
 
     if (calo->ResidualRange().size() == 0) continue;
 
+    float calo_energy = 0;
+    for (size_t i = 0; i < dedx_values.size(); i++) {
+      calo_energy += dedx_values[i] * pitch[i];
+    }
+    
     llr_pid_total += llr_pid_calculator.LLR_many_hits_one_plane(dedx_values, par_values, plane);
     llr_pid_total_k += llr_pid_calculator_k.LLR_many_hits_one_plane(dedx_values, par_values, plane);
 
@@ -2551,22 +2587,57 @@ void CCKaonAnalyzer::fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetr
   double llr_pid_score_k = atan(llr_pid_total_k / 100.) * 2 / 3.14159266;
 
 
+  //Mean dE/dX
+  std::vector<std::pair<int,double>> MeandEdXs = MeandEdX(calos);
+  double thisThreePlaneMeandEdX = ThreePlaneMeandEdX(ptrack,MeandEdXs);
+  if( thisThreePlaneMeandEdX != thisThreePlaneMeandEdX ) std::cout << "NAN for three plane dedx!" << std::endl;
+  //ThisPrimaryDaughter.MeandEdX_ThreePlane = thisThreePlaneMeandEdX;
+
+  //add single plane mean dEdX
+
+
   if(wTrackRebuilder == true){
 
     if (daughter_i<0) {
     }
     else {
+
+      for(size_t i_plane=0;i_plane<MeandEdXs.size();i_plane++){
+	if( MeandEdXs.at(i_plane).first == 0 ) reco_track_daughter_mean_dedx_pl0_rebuild[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 1 ) reco_track_daughter_mean_dedx_pl1_rebuild[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 2 ) reco_track_daughter_mean_dedx_pl2_rebuild[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+      }
+
+      reco_track_daughter_mean_dedx_3pl_rebuild[track_i][daughter_i] = ThreePlaneMeandEdX(ptrack,MeandEdXs);
       reco_track_daughter_llrpid_3pl_rebuild[track_i][daughter_i] = llr_pid_score;
       reco_track_daughter_llrpid_k_3pl_rebuild[track_i][daughter_i] = llr_pid_score_k;
+
     }
 
   }else{
 
     if (daughter_i<0) {
+
+      for(size_t i_plane=0;i_plane<MeandEdXs.size();i_plane++){
+	if( MeandEdXs.at(i_plane).first == 0 ) reco_track_mean_dedx_pl0[track_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 1 ) reco_track_mean_dedx_pl1[track_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 2 ) reco_track_mean_dedx_pl2[track_i] = MeandEdXs.at(i_plane).second;
+      }
+
+      reco_track_mean_dedx_3pl[track_i] = ThreePlaneMeandEdX(ptrack,MeandEdXs);
       reco_track_llrpid_3pl[track_i] = llr_pid_score;
       reco_track_total_llrpid_3pl[track_i] = llr_pid_total;
       reco_track_llrpid_k_3pl[track_i] = llr_pid_score_k;
+
     }else{
+
+      for(size_t i_plane=0;i_plane<MeandEdXs.size();i_plane++){
+	if( MeandEdXs.at(i_plane).first == 0 ) reco_track_daughter_mean_dedx_pl0[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 1 ) reco_track_daughter_mean_dedx_pl1[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+	if( MeandEdXs.at(i_plane).first == 2 ) reco_track_daughter_mean_dedx_pl2[track_i][daughter_i] = MeandEdXs.at(i_plane).second;
+      }
+
+      reco_track_daughter_mean_dedx_3pl[track_i][daughter_i] = ThreePlaneMeandEdX(ptrack,MeandEdXs);
       reco_track_daughter_llrpid_3pl[track_i][daughter_i] = llr_pid_score;
       reco_track_daughter_llrpid_k_3pl[track_i][daughter_i] = llr_pid_score_k;
     }

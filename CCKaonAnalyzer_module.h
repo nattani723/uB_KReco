@@ -295,7 +295,8 @@ namespace Kaon_Analyzer
      void analyze(const art::Event& evt); 
      void reset(); 
 
-     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false); 
+     //void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false); 
+     void fillCalorimetry(const std::vector<art::Ptr<anab::Calorimetry>> &calos, art::Ptr<recob::Track>& ptrack, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false); 
      void fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trackPID, double angle_y, int track_i=-1, int daughter_i=-1, bool wTrackRebuilder=false);   
      void fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& hits_from_recoobj,
                            art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit,
@@ -679,7 +680,10 @@ namespace Kaon_Analyzer
     Float_t reco_track_daughter_MIP_pl1[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_MIP_pl2[kMaxTracks][kMaxTracks];
 
-
+    Float_t reco_track_mean_dedx_3pl[kMaxTracks];
+    Float_t reco_track_mean_dedx_pl0[kMaxTracks];
+    Float_t reco_track_mean_dedx_pl1[kMaxTracks];
+    Float_t reco_track_mean_dedx_pl2[kMaxTracks];
     Float_t reco_track_llrpid_3pl[kMaxTracks];
     Float_t reco_track_total_llrpid_3pl[kMaxTracks];
     Float_t reco_track_llrpid_k_3pl[kMaxTracks];
@@ -759,6 +763,10 @@ namespace Kaon_Analyzer
     Float_t reco_track_daughter_chi2pi_3pl_rebuild[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_chi2mu_3pl_rebuild[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_likepr_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_3pl_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl0_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl1_rebuild[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl2_rebuild[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_llrpid_3pl_rebuild[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_llrpid_k_3pl_rebuild[kMaxTracks][kMaxTracks];
     Bool_t  reco_track_daughter_vtx_inTPC_rebuild[kMaxTracks][kMaxTracks];
@@ -843,6 +851,10 @@ namespace Kaon_Analyzer
     Float_t reco_track_daughter_chi2pi_3pl[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_chi2mu_3pl[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_likepr_3pl[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_3pl[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl0[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl1[kMaxTracks][kMaxTracks];
+    Float_t reco_track_daughter_mean_dedx_pl2[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_llrpid_3pl[kMaxTracks][kMaxTracks];
     Float_t reco_track_daughter_llrpid_k_3pl[kMaxTracks][kMaxTracks];
     Bool_t  reco_track_daughter_vtx_inTPC[kMaxTracks][kMaxTracks];
@@ -907,14 +919,15 @@ namespace Kaon_Analyzer
 
   //    std::string m_pandoraLabel;
   //   std::string m_is_verbose;  
-
     //std::vector<Float_t> adEdx;
+    /*
   std::vector<Float_t> dv0;
   std::vector<Float_t> rv0;
   std::vector<Float_t> dv1;
   std::vector<Float_t> rv1;
   std::vector<Float_t> dv2;
   std::vector<Float_t> rv2;
+    */
 
     //// Tree for the POT subrun info
     TTree *fSubrunTree;
