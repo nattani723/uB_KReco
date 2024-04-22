@@ -1203,8 +1203,88 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     //////////////////////////////////////////////
 
 
-  
+    for(const art::Ptr<recob::Track> &trk : trackVec){
 
+      //sets track length/position related variables in ThisPrimaryDaughter
+      SetTrackVariables(ThisPrimaryDaughter , trk);
+      TrackStarts.push_back(TVector3(trk->Start().X(),trk->Start().Y(),trk->Start().Z()));
+
+      if(isMC) ThisPrimaryDaughter.HasTruth = true;
+
+      if(isMC){
+
+	//get hits assoc with track
+	std::vector< art::Ptr< recob::Hit> > hits = trackHitAssoc.at(trk.key());
+	art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitHandle, evt, fHitTruthAssns);
+
+	simb::MCParticle const* matchedParticle = NULL;
+	matchedParticle = fillTrueMatching(hits, particles_per_hit);
+
+
+	if(matchedParticle != NULL){
+	  
+	  SimParticle P = MakeSimParticle(*matchedParticle);
+	  P.Origin = getOrigin(matchedParticle->TrackId());
+	  
+	  ThisPrimaryDaughter.HasTruth = true;
+	  ThisPrimaryDaughter.TrackTruthPurity = maxe/tote;
+	  
+	  ThisPrimaryDaughter.TrackTruePDG = P.PDG;
+	  ThisPrimaryDaughter.TrackTrueE = P.E;
+	  ThisPrimaryDaughter.TrackTruePx = P.Px;
+	  ThisPrimaryDaughter.TrackTruePy = P.Py;
+	  ThisPrimaryDaughter.TrackTruePz = P.Pz;
+	  
+	  ThisPrimaryDaughter.TrackTrueModMomentum = P.ModMomentum;
+	  ThisPrimaryDaughter.TrackTrueKE = P.KE;
+	  
+	  ThisPrimaryDaughter.TrackTrueLength = P.Travel;
+	  
+	  ThisPrimaryDaughter.TrackTrueOrigin = P.Origin;
+	  
+	}
+	else ThisPrimaryDaughter.HasTruth = false;
+	
+      }//if isMC
+
+
+
+      ///////////////////////
+      // get PID for track //
+      ///////////////////////
+
+      // Setup Calo Assn
+      std::vector<art::Ptr<anab::Calorimetry>> caloFromTrack = caloTrackAssoc.at(trk.key());
+      std::vector<art::Ptr<anab::Calorimetry>> PIDFromTrack = PIDAssoc.at(trk.key());
+ 
+      fillCalorimetry(caloFromTrack, trk, ThisPrimaryDaughter);//fill values
+      fillPID(PIDFromTrack, trk, ThisPrimaryDaughter);//fill values
+
+
+      ////////////////////////////
+      // Get Vertex information //
+      ////////////////////////////
+
+      for(const art::Ptr<recob::Vertex> &vtx : pfpVertex){
+
+	geo::Point_t point = { vtx->position().X() , vtx->position().Y() , vtx->position().Z() };                
+	geo::Vector_t sce_corr = SCE->GetPosOffsets(point);
+
+	//w SC correction - forward
+	TVector3 pos( vtx->position().X() + sce_corr.X() , vtx->position().Y() - sce_corr.Y() , vtx->position().Z() - sce_corr.Z() );
+
+	ThisPrimaryDaughter.SetVertex( pos );
+	ThisPrimaryDaughter.Displacement = (pos - fRecoPrimaryVertex).Mag();
+
+      }
+
+
+      if(ThisPrimaryDaughter.PDG == -13 && pfpTracks.size() == 1){
+	fTrackPrimaryDaughters.push_back( ThisPrimaryDaughter );
+	fNPrimaryTrackDaughters++;
+      }
+
+    }//end of TrackVec loop
 
   reco_nu_ndaughters = reco_nu_daughters_id.size();
   //--std::cout << "Number of neutrino daughters with one associated track " << reco_nu_ndaughters << std::endl;
