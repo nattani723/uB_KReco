@@ -393,7 +393,6 @@ namespace Kaon_Analyzer
      //pions produced at primary vtx
      std::vector<SimParticle> fPrimaryPion;
 
-
      //vertex information
      TVector3 fTruePrimaryVertex;
 
@@ -414,13 +413,107 @@ namespace Kaon_Analyzer
      std::vector<int>Hyperon_daughter_IDs;
      std::vector<int>KaonPlus_Inelastic_daughter_IDs;
 
-
      //create map between particles and their ID's
      std::map<int,art::Ptr<simb::MCParticle>> partByID;
      std::pair<int,art::Ptr<simb::MCParticle>>  part_and_id;
 
      int mode; //interaction mode for event generator
      int ccnc;
+
+
+
+     ///////////////////////////
+     //   Reco level info    //
+     ///////////////////////////
+
+
+     bool fSelectedEvent = false; //true if event passes some selection criteria
+
+     TVector3 fRecoPrimaryVertex;
+
+     int fNPrimaryDaughters; //num of primary daughters
+     int fNPrimaryTrackDaughters_NuMuP; //num of track like primary daughters
+     int fNPrimaryTrackDaughters_PiPPiN; //num of track like primary daughters
+     int fNPrimaryShowerDaughters; //num of shower like primary daughters
+
+
+     //Primary daughters
+     std::vector<RecoParticle> fTrackPrimaryDaughters_NuMuP;
+     std::vector<RecoParticle> fTrackPrimaryDaughters_PiPPiN;
+     std::vector<RecoParticle> fShowerPrimaryDaughters;
+     int fMuonIndex=-1; //index of muon candidate in fTrackPrimaryDaughters , -1 if no muon candidate found
+
+
+
+     ///////////////////////////
+     //  Truth Matching info  //
+     ///////////////////////////
+
+     //indices in the reco track vector of the true muon
+     //and proton and pion from hyperon decay if the exist
+
+     //will have values of -1 if they do not exist
+
+     int fTrueMuonIndex=-1;
+     int fTrueKaonIndex=-1;
+     int fTrueDecayMuonIndex=-1;
+     int fTrueDecayPionIndex=-1;
+
+
+
+     /////////////////////////
+     // Metadata for sample //
+     /////////////////////////
+
+     //truth level metadata
+
+     int fNEvents; //total events in sample
+     int fNEventsInActiveVol; //total events in active volume (at truth level)
+
+     int fNChargedCurrent; //number of cc events
+     int fNNeutralCurrent; //number of nc events
+     int fNnuMu; //number of numu events
+     int fNnue; //number of nue events
+     int fNnuMuBar; //number of numubar events
+     int fNnueBar; //number of nuebar events
+
+     int fNHyperons;
+
+     int fNSignal; //number of signal events
+
+     int fNGoodReco; //number of signal events with both pion and proton reco'd
+
+     //reco level metadata
+
+     int fNSelectedEvents; //total events passing selection
+
+     int fNSelectedHyperons; //total true hyperon events passing selection
+
+     int fNSelectedSignal; //number of signal events passing selection
+
+     int fNSelectedGoodReco; //number of signal events passing selection
+
+     //selection performance metrics
+
+     double fHyperonEfficiency; //hyperon selection efficiency
+     double fHyperonPurity;  //hyperon selection purity
+     double fHyperonTruePurity; //hyperon selection efficiency x purity
+     doublefHyperonEfficiencyTimesPurity; //hyperon selection efficiency x purity
+     doublefHyperonEfficiencyTimesTruePurity; //hyperon selection efficiency x true purity
+
+     doublefSignalEfficiency=0; //hyperon selection efficiency
+     doublefSignalPurity=0;  //hyperon selection purity
+     doublefSignalTruePurity=0; //hyperon purity after converting from enriched sample to real sample
+     doublefSignalEfficiencyTimesPurity=0; //hyperon selection efficiency x purity
+     doublefSignalEfficiencyTimesTruePurity=0; //hyperon selection efficiency x true purity
+
+     doublefGoodRecoEfficiency=0; //hyperon selection efficiency
+     doublefGoodRecoPurity=0;  //hyperon selection purity
+     doublefGoodRecoTruePurity=0; //hyperon purity after converting from enriched sample to real sample
+     doublefGoodRecoEfficiencyTimesPurity=0; //hyperon selection efficiency x purity
+     doublefGoodRecoEfficiencyTimesTruePurity=0; //hyperon selection efficiency x true purity
+
+     double fPOT=0; //total POT of the sample
 
 
      // PID
