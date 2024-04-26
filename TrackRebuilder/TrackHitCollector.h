@@ -82,23 +82,14 @@ namespace kaon_reconstruction
     void find_track_hits(SPList& sp_list, HitList& unavailable_hit_list, HitList& track_hit_list, const TVector3& k_end, const TVector3& peak_direction, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap) const;
 
     /**
-     *  @brief  Reassign extrapolated direction and start/end positions
+     *  @brief Determine if the peak_direction is downstream relative to the fit's directional flow from minimum to maximum
      *
-     *  @param  count: n-th step path (how many times it has been looping)
-     *  @param  extrapolated_fit: the fit to the collected hits on each step path
-     *  @param  extrapolated_start_position: the track step path projection start position
-     *  @param  extrapolated_end_position the track step path projection end position
-     *  @param  extrapolated_direction: the track step path projection direction
-     *  @param  is_end_downstream whether the shower direction is downstream (in Z) of the kaon track end
-     *  @param  sp_list: spacepoint list of K+ daughter candidate hits 
-     *  @param  running_fit_position_vector: the vector of the collected hit positions
-     *  @param  pandora_running_fit_position_vector: CartesianPointVector of the collected hit positions
-     *  @param  unavailable_hit_list: protected hits that cannot be collected
-     *  @param  track_hit_list: the output list of daughter track hits 
+     *  @param peak_direction: vector of peak direction  
+     *  @param extrapolated_fit: the fit to the collected hits on each step path
      *
      */
 
-    void update_extrapolation(int count, const lar_content::ThreeDSlidingFitResult& extrapolated_fit, TVector3& extrapolated_start_position, TVector3& extrapolated_end_position, TVector3& extrapolated_direction, const bool is_end_downstream, const SPList& sp_list, TVector3& running_fit_position_vector, pandora::CartesianPointVector& pandora_running_fit_position_vector, HitList& unavailable_hit_list, HitList& track_hit_list) const;
+    bool determine_is_end_down_stream(const TVector3 peak_direction, const lar_content::ThreeDSlidingFitResult& extrapolated_fit) const;
 
     /**
      *  @brief  Reassign extrapolated direction and start/end positions
