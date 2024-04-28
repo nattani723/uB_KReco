@@ -109,6 +109,10 @@ namespace kaon_reconstruction
 	running_fit_position_vec.push_back(hit_position);
 	pandora_running_fit_position_vec.push_back(pandora_hit_position);      
 
+
+	//std::cout << "HITS passed the first selection" << std::endl;
+	//std::cout << "l: " << l << ", t: " << t << std::endl;
+
       }
     }
 
@@ -135,15 +139,16 @@ namespace kaon_reconstruction
     while (hits_collected){
 
       ++count;
+
       const int excess_hits_in_fit = pandora_running_fit_position_vec.size() - m_max_fitting_hits;
+      std::cout << "excess_hits_in_fit: " << excess_hits_in_fit << std::endl;
+
+      // sort running_fit_position_vec and pandora_fit_position_vec
+      lar_content::LArConnectionPathwayHelper::SortByDistanceToPoint sort_end(pandora_extrapolated_end_position); 
+      std::sort(pandora_running_fit_position_vec.begin(), pandora_running_fit_position_vec.end(), sort_end);
 
       // Remove furthest away hits
       if(excess_hits_in_fit>0){
-
-	// sort running_fit_position_vec and pandora_fit_position_vec
-	// is there a better way to do this?
-	lar_content::LArConnectionPathwayHelper::SortByDistanceToPoint sort_end(pandora_extrapolated_end_position); 
-	std::sort(pandora_running_fit_position_vec.begin(), pandora_running_fit_position_vec.end(), sort_end);
 
 	for (int i = 0; i < excess_hits_in_fit; ++i){
 	  pandora_running_fit_position_vec.erase(std::prev(pandora_running_fit_position_vec.end())); 
@@ -158,11 +163,12 @@ namespace kaon_reconstruction
 	
       }
 
-
       // apply nominal fit
       const lar_content::ThreeDSlidingFitResult extrapolated_fit(&pandora_running_fit_position_vec, m_local_sliding_fit_window, sliding_fit_pitch); 
       is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit);
       this->update_extrapolation(count, extrapolated_fit, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
+
+      std::cout << "count: " << count << ", peak_direction: " << extrapolated_direction.X() << " " << extrapolated_direction.Y() << " " << extrapolated_direction.Z() << std::endl;
       
       hits_collected = this->collect_subsection_hits(extrapolated_fit, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_distance_to_line, m_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
 
@@ -182,6 +188,9 @@ namespace kaon_reconstruction
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_trackall(&pandora_running_fit_position_trackall_vec, m_trackall_sliding_fit_window, sliding_fit_pitch);
 	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit);
 	this->update_extrapolation(count, extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
+	
+	hits_collected = this->collect_subsection_hits(extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_distance_to_line, m_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
+
       }
 
 
@@ -190,6 +199,9 @@ namespace kaon_reconstruction
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_micro(&pandora_running_fit_position_vec, m_high_resolution_sliding_fit_window, sliding_fit_pitch);
 	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit);
 	this->update_extrapolation(count, extrapolated_fit_micro, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
+
+	hits_collected = this->collect_subsection_hits(extrapolated_fit_micro, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_distance_to_line, m_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
+
       }
 	    
     }
@@ -209,6 +221,7 @@ namespace kaon_reconstruction
     TVector3 vector_from_min_to_max(pandora_vector_from_min_to_max.GetX(), pandora_vector_from_min_to_max.GetY(), pandora_vector_from_min_to_max.GetZ());
 
     return (peak_direction.Dot(vector_from_min_to_max) > 0);
+
   }
 
   //------------------------------------------------------------------------------------------------------------------------------------------    
@@ -261,10 +274,18 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
     extrapolated_fit.GetLocalPosition(pandora_extrapolated_start_position, extrapolated_start_l, extrapolated_start_t1, extrapolated_start_t2);
     extrapolated_fit.GetLocalPosition(pandora_extrapolated_end_position, extrapolated_end_l, extrapolated_end_t1, extrapolated_end_t2); 
 
+    std::cout << "extrapolated_start_l: " << extrapolated_start_l << std::endl;;
+    std::cout << "extrapolated_end_l: " << extrapolated_end_l << std::endl;;
+
     HitList collected_hit_list;
     this->sort_sp_by_distance(sp_list, extrapolated_start_position);
 
     for(auto it_sp = sp_list.begin(); it_sp != sp_list.end(); ++it_sp) {
+
+      auto hit = spacepointToHitMap.at(*it_sp);
+      if(std::find(track_hit_list.begin(), track_hit_list.end(), hit) != track_hit_list.end()) continue;
+      if(std::find(unavailable_hit_list.begin(), unavailable_hit_list.end(), hit) != unavailable_hit_list.end()) continue;
+
 
       float hit_l(0.f), hit_t1(0.f), hit_t2(0.f);
       const TVector3 hit_position = (*it_sp)->XYZ();
@@ -283,6 +304,8 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
 	  std::cout << "and spacepointToHitMap.find(*it_sp) is NOT the key of hitToSpacePointMap" << std::endl;
       }
       */
+
+      std::cout << "Assess whether hit is close to connecting line" << is_close_to_line(hit_position, extrapolated_start_position, extrapolated_direction, m_distance_to_line) << std::endl;
 
       if (this->is_close_to_line(hit_position, extrapolated_start_position, extrapolated_direction, m_distance_to_line))
 	collected_hit_list.push_back(spacepointToHitMap.at(*it_sp));
@@ -323,6 +346,7 @@ void TrackHitCollector::update_extrapolation(int count, const lar_content::Three
   bool TrackHitCollector::is_close_to_line(const TVector3& hit_position, const TVector3& line_start, const TVector3& line_direction, const double& distance_to_line) const
   {
     const double transverse_distance_from_line = line_direction.Cross(hit_position - line_start).Mag();
+    std::cout << "transverse_distance_from_line is " << transverse_distance_from_line << ", and distance_to_line is " << distance_to_line << std::endl;
     if(transverse_distance_from_line <= distance_to_line) return true;
     return false;
   }
