@@ -184,10 +184,15 @@ namespace kaon_reconstruction
     unsigned int m_max_fitting_hits;                 ///< The number of hits to consider in the running fit
     unsigned int m_local_sliding_fit_window;          ///< The standard sliding fit window for track fits
     float m_growing_fit_segment_length;               ///< The standard step distance
-    unsigned int m_high_resolution_sliding_fit_window; ///< The high resolution sliding fit window for track fits
     float m_distance_to_line;                        ///< The max. proximity to the spine projection for collection
     float m_hit_connection_distance;                 ///< The max. separation between connected hits
-    float m_trackall_sliding_fit_window;
+    unsigned int m_trackall_sliding_fit_window;
+    float m_trackall_distance_to_line;
+    float m_trackall_hit_connection_distance;
+    unsigned int m_high_resolution_sliding_fit_window; ///< The high resolution sliding fit window for track fits
+    float m_high_resolution_distance_to_line;
+    float m_high_resolution_hit_connection_distance;
+
 
   }; // end of class
   
