@@ -53,10 +53,10 @@ namespace kaon_reconstruction
     m_hit_connection_distance(0.75),
     m_trackall_sliding_fit_window(10),
     m_trackall_distance_to_line(1.f),
-    m_trackall_hit_connection_distance(5.f),
+    m_trackall_hit_connection_distance(3.f),
     m_high_resolution_sliding_fit_window(5),
     m_high_resolution_distance_to_line(1.f),
-    m_high_resolution_hit_connection_distance(5.f)
+    m_high_resolution_hit_connection_distance(3.f)
   {
   }
 
@@ -194,7 +194,7 @@ namespace kaon_reconstruction
 	}
 
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_trackall(&pandora_running_fit_position_trackall_vec, m_trackall_sliding_fit_window, sliding_fit_pitch);
-	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit);
+	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit_trackall);
 	this->update_extrapolation(count, extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
 	
 	hits_collected = this->collect_subsection_hits(extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_trackall_distance_to_line, m_trackall_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
@@ -205,7 +205,7 @@ namespace kaon_reconstruction
       // If no hits found, as a final effort, reduce the sliding fit window
       if (!hits_collected){
 	const lar_content::ThreeDSlidingFitResult extrapolated_fit_micro(&pandora_running_fit_position_vec, m_high_resolution_sliding_fit_window, sliding_fit_pitch);
-	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit);
+	is_end_downstream = this->determine_is_end_down_stream(peak_direction, extrapolated_fit_micro);
 	this->update_extrapolation(count, extrapolated_fit_micro, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream);
 
 	hits_collected = this->collect_subsection_hits(extrapolated_fit_micro, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_high_resolution_distance_to_line, m_high_resolution_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
