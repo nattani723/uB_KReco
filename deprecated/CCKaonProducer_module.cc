@@ -35,6 +35,8 @@ namespace kaon_reconstruction {
 
     theDetector = lar::providerFrom<detinfo::DetectorPropertiesService>();
     detClocks   = lar::providerFrom<detinfo::DetectorClocksService>();
+    //SCE = lar::providerFrom<spacecharge::SpaceChargeService>();
+    //geom = lar::providerFrom<geo::Geometry>();    
 
   }
   
@@ -194,7 +196,6 @@ namespace kaon_reconstruction {
       return;
     }
 
-
     art::FindOneP<recob::Hit> findSPToHit(spacepointVector, evt, fSpacePointproducer); 
     art::FindManyP<recob::Hit> findTrackToHit(trackList, evt, fTrackModuleLabel);
     art::FindManyP<recob::Hit> findShowerToHit(showerList, evt, fShowerModuleLabel);
@@ -208,79 +209,12 @@ namespace kaon_reconstruction {
       return;
     }
 
-    /*
+    
     for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
       const art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
       const art::Ptr<recob::Hit> hit = findSPToHit.at(iSP);
       spacepointToHitMap[spacepoint] = hit;
       hitToSpacePointMap[hit] = spacepoint;
-    }
-    */
-    
-    art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
-    std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObject;
-    std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
-
-    for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
-
-      const art::Ptr<recob::Track> track = trackList.at(itrk);
-      if (track.key()==trkmuon.key()) continue;
-
-      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.key());
-
-      art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
-
-      for(size_t i_h=0; i_h<hits_from_track.size(); i_h++){
-
-	spacepoint_vec.clear();
-	spacepoint_vec = spacepoint_per_hit.at(hits_from_track[i_h].key());
-	
-	if(spacepoint_vec.size()!=1) continue;
-	art::Ptr<recob::SpacePoint> spacepoint = spacepoint_vec.at(0);
-	art::Ptr<recob::Hit> hit = hits_from_track.at(i_h);
-	
-	/*
-	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
-	if(!mcparticle) continue;
-	if(mcparticle->PdgCode()!=-13) continue;
-	*/
-	  spacepointFromRecoObject.push_back(spacepoint);
-	  spacepointToHitMap[spacepoint] = hit;
-	  hitToSpacePointMap[hit] = spacepoint;
-
-      }
-
-    }
-
-    
-    for (unsigned int ishw=0; ishw < showerList.size(); ++ishw) {
-
-      const art::Ptr<recob::Shower> shower = showerList.at(ishw);
-
-      std::vector<art::Ptr<recob::Hit>> hits_from_shower = hits_from_showers.at(shower.key());
-
-      art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
-
-      for(size_t i_h=0; i_h<hits_from_shower.size(); i_h++){
-
-	spacepoint_vec.clear();
-	spacepoint_vec = spacepoint_per_hit.at(hits_from_shower[i_h].key());
-	
-	if(spacepoint_vec.size()!=1) continue;
-	art::Ptr<recob::SpacePoint> spacepoint = spacepoint_vec.at(0);
-	art::Ptr<recob::Hit> hit = hits_from_shower.at(i_h);
-
-	/*
-	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
-	if(!mcparticle) continue;
-	if(mcparticle->PdgCode()!=-13) continue;
-	*/
-	
-	  spacepointFromRecoObject.push_back(spacepoint);
-	  spacepointToHitMap[spacepoint] = hit;
-	  hitToSpacePointMap[hit] = spacepoint;
-      }
-
     }
     
 
@@ -295,14 +229,10 @@ namespace kaon_reconstruction {
       if (ptrack.key()==trkmuon.key()) continue;
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-
-      simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
-      if(mcparticle){
-	if(mcparticle->PdgCode()!=321) continue;
-      } 
- 
+            
       ReconstructionOrchestrator orchestrator;
-      orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      orchestrator.runReconstruction(spacepointList, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      //orchestrator.runReconstruction(spacepointVector, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
 
       std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
 
@@ -328,57 +258,6 @@ namespace kaon_reconstruction {
     evt.put(std::move(anaTrackHitAssociations));
 
   }
-
-  simb::MCParticle const* CCKaonProducer::truthMatchTrack(std::vector<art::Ptr<recob::Hit>>& hits_from_track, art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit){
-
-    simb::MCParticle const* matched_mcparticle = NULL;
-
-    std::unordered_map<int,double> trkide;
-    double maxe=-1, tote=0;
-    std::vector<simb::MCParticle const*> particle_vec;
-    std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-  
-    for(size_t i_h=0; i_h<hits_from_track.size(); i_h++) {
-      particle_vec.clear(); match_vec.clear();
-      particles_per_hit.get(hits_from_track[i_h].key(), particle_vec, match_vec);
-
-      //cout << "track's particle_vec.size(): " << particle_vec.size() << endl;
-
-      for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-	trkide[ particle_vec[i_p]->TrackId() ] += match_vec[i_p]->energy;
-	//trkide[ particle_vec[i_p]->TrackId() ] ++;
-	tote += match_vec[i_p]->energy;
-	if( trkide[ particle_vec[i_p]->TrackId() ] > maxe ){
-	  maxe = trkide[ particle_vec[i_p]->TrackId() ];
-	  matched_mcparticle = particle_vec[i_p];
-	}
-      }
-    }
-    if(matched_mcparticle) return matched_mcparticle;
-    else return NULL;
-  }
-
-  simb::MCParticle const* CCKaonProducer::truthMatchHit(art::Ptr<recob::Hit>& hit, art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit){
-
-    simb::MCParticle const* matched_mcparticle = NULL;
-
-    double maxe=-1;
-    std::vector<simb::MCParticle const*> particle_vec;
-    std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
-
-    particle_vec.clear();
-    particles_per_hit.get(hit.key(), particle_vec, match_vec);
-
-    for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
-      if(match_vec[i_p]->energy>maxe){
-	maxe = match_vec[i_p]->energy;
-	matched_mcparticle = particle_vec[i_p];
-      }
-    }
-    if(matched_mcparticle) return matched_mcparticle;
-    else return NULL;
-  }
-
 }// namespace kaon_reconstruction
 
 

@@ -40,24 +40,22 @@ namespace kaon_reconstruction
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  pandora::StatusCode ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> primary_track,  const HitList& unavailable_hit_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, std::vector<TVector3> &peak_direction_vector)
+  pandora::StatusCode ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> primary_track,  const HitList& unavailable_hit_list, std::vector<TVector3> &peak_direction_vector)
 {
 
 	//get coordinates of k track end and store unavailable_hit_list
 	k_end.SetXYZ(primary_track->End().x(), primary_track->End().y(), primary_track->End().z());
 
 	// get sp list inside region of interest
-	this->collect_sp_in_roi(sp_list, k_end, m_region_of_interest, sp_list_roi, unavailable_hit_list, spacepointToHitMap);
+	this->collect_sp_in_roi(sp_list, k_end, m_region_of_interest, sp_list_roi);
 	
-	std::cout << "sp_list_roi.size(): " << sp_list_roi.size() <<std::endl;
 	if (sp_list_roi.empty())
 		return STATUS_CODE_NOT_FOUND;
 	
 	// get sp list for peak finder
 	SPList sp_list_peak_search;
-	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search, unavailable_hit_list, spacepointToHitMap);
+	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search);
 		
-	std::cout << "sp_list_peak_search.size(): " << sp_list_peak_search.size() << std::endl;
 	if (sp_list_peak_search.empty())
         	return STATUS_CODE_NOT_FOUND;
 
@@ -65,7 +63,6 @@ namespace kaon_reconstruction
 	AngularDistribution3DMap angular_distribution_map;
 	this->fill_angular_distribution_map(sp_list_roi, k_end, angular_distribution_map);
 
-	std::cout << "angular_distribution_map.size(): " << angular_distribution_map.size() << std::endl;
 	if (angular_distribution_map.empty())
 		return STATUS_CODE_NOT_FOUND;
 
@@ -90,8 +87,7 @@ namespace kaon_reconstruction
 
   //------------------------------------------------------------------------------------------------------------------------------------------
 
-  //void ParticleDirectionFinder::collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, float& region_of_interest, SPList& sp_list_roi) const
-  void ParticleDirectionFinder::collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, float& region_of_interest, SPList& sp_list_roi, const HitList& unavailable_hit_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap) const
+  void ParticleDirectionFinder::collect_sp_in_roi(const SPList& sp_list, const TVector3& k_end, float& region_of_interest, SPList& sp_list_roi) const
   {
 
     for(auto it_sp = sp_list.begin(); it_sp != sp_list.end(); ++it_sp){
@@ -99,29 +95,10 @@ namespace kaon_reconstruction
       const TVector3 hit_position = (*it_sp)->XYZ();
       const TVector3 displacement_vector = hit_position - k_end;
 
-      auto corresponding_hit = spacepointToHitMap.at(*it_sp);
-      //skip hits in primary track 
-      if (std::find(unavailable_hit_list.begin(), unavailable_hit_list.end(), corresponding_hit) != unavailable_hit_list.end()){
-	//cout << "THIS IS A HIT IN PRIMARY TRACK: " << hit_position.X() << " " << hit_position.Y() << " " << hit_position.Z() << endl;
-	continue;
-      }
-
       if( displacement_vector.Mag() > region_of_interest) continue;
       sp_list_roi.push_back(*it_sp);
 
     }
-
-    /*
-    for(auto it_sp = sp_list.begin(); it_sp != sp_list.end(); ++it_sp){
-
-      const TVector3 hit_position = (*it_sp)->XYZ();
-      const TVector3 displacement_vector = hit_position - k_end;
-
-      if( displacement_vector.Mag() > region_of_interest) continue;
-      sp_list_roi.push_back(*it_sp);
-
-    }
-    */
     
   }
 

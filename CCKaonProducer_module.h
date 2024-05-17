@@ -183,6 +183,8 @@ namespace kaon_reconstruction {
 
     void beginJob();
     void produce(art::Event& evt) override;
+    simb::MCParticle const* truthMatchTrack(std::vector<art::Ptr<recob::Hit>>& hit_list, art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit);
+    simb::MCParticle const* truthMatchHit(art::Ptr<recob::Hit>& hit, art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData>& particles_per_hit);
     //void produce(const art::Event& evt) override;
 
 
