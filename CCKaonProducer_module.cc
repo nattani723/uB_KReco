@@ -219,6 +219,8 @@ namespace kaon_reconstruction {
     
     art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
     std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObject;
+    std::vector< art::Ptr<recob::SpacePoint> > spacepointFromMu;
+    std::vector< art::Ptr<recob::SpacePoint> > spacepointFromPi;
     std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
 
     for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
@@ -238,15 +240,15 @@ namespace kaon_reconstruction {
 	if(spacepoint_vec.size()!=1) continue;
 	art::Ptr<recob::SpacePoint> spacepoint = spacepoint_vec.at(0);
 	art::Ptr<recob::Hit> hit = hits_from_track.at(i_h);
-	
-	/*
+			
+	spacepointFromRecoObject.push_back(spacepoint);
+	spacepointToHitMap[spacepoint] = hit;
+	hitToSpacePointMap[hit] = spacepoint;
+
 	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
 	if(!mcparticle) continue;
-	if(mcparticle->PdgCode()!=-13) continue;
-	*/
-	  spacepointFromRecoObject.push_back(spacepoint);
-	  spacepointToHitMap[spacepoint] = hit;
-	  hitToSpacePointMap[hit] = spacepoint;
+	if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
+	if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
 
       }
 
@@ -270,15 +272,15 @@ namespace kaon_reconstruction {
 	art::Ptr<recob::SpacePoint> spacepoint = spacepoint_vec.at(0);
 	art::Ptr<recob::Hit> hit = hits_from_shower.at(i_h);
 
-	/*
+	spacepointFromRecoObject.push_back(spacepoint);
+	spacepointToHitMap[spacepoint] = hit;
+	hitToSpacePointMap[hit] = spacepoint;
+
 	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
 	if(!mcparticle) continue;
-	if(mcparticle->PdgCode()!=-13) continue;
-	*/
-	
-	  spacepointFromRecoObject.push_back(spacepoint);
-	  spacepointToHitMap[spacepoint] = hit;
-	  hitToSpacePointMap[hit] = spacepoint;
+	if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
+	if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
+
       }
 
     }
@@ -296,13 +298,16 @@ namespace kaon_reconstruction {
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
+      /*
       simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
       if(mcparticle){
 	if(mcparticle->PdgCode()!=321) continue;
       } 
+      */
  
       ReconstructionOrchestrator orchestrator;
       orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
 
       std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
 
