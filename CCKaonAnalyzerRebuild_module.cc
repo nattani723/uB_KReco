@@ -1360,7 +1360,9 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       hitToSpacePointMap[hit] = spacepoint;
       
       simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
+      //std::cout << "hit.key(): " << hit.key() << endl;
       if(!mcparticle) continue;
+      if(hit.key()==1509) cout << "hit 1509 has pdg of " << mcparticle->PdgCode() << endl;
       //std::cout << "(mcparticle->PdgCode(): " << mcparticle->PdgCode() << endl;
       if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
       if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
@@ -1437,7 +1439,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
-    //simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
+    simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
+    if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
     
     ReconstructionOrchestrator orchestrator;
@@ -1475,10 +1478,13 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	art::Ptr<recob::Hit> hit = hits_from_track_rebuild.at(i_h);
 
 	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
+	//std::cout << "hit.key(): " << hit.key() << endl;
 	if(!mcparticle){
-	  cout << "THIS HAS NO MCPARTICLE!!!" << endl;
+	  //cout << "THIS HAS NO MCPARTICLE!!!" << endl;
 	  continue;
-	}
+	}//else cout << "THIS HAS MCPARTICLE WITH PDG " << mcparticle->PdgCode()<< endl;
+	//if(hit.key()==1509) cout << "hit 1509 has pdg of " << mcparticle->PdgCode() << endl;
+
  
 	hit_pdg_map[(*hit)] = mcparticle->PdgCode();
 
@@ -1491,11 +1497,11 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       if(nhits_pdg_map.size()){
 	for (map<int, int>::iterator it = nhits_pdg_map.begin(); it != nhits_pdg_map.end(); it++) {
 	  v.push_back({ it->second, it->first });
-	  cout << it->second << " " << it->first << endl;
+	  //cout << it->second << " " << it->first << endl;
 	}
 	sort(v.rbegin(), v.rend());
 	rebdautrack_pdg[i][n_recoRebDauTracks[i]] = v[0].second;
-	std::cout<< "rebdau pdg: " <<  v[0].second << endl;
+	//std::cout<< "rebdau pdg: " <<  v[0].second << endl;
       }
       n_recoRebDauTracks[i]++;
 
@@ -2423,7 +2429,7 @@ void CCKaonAnalyzerRebuild::fillCalorimetry(const std::vector<art::Ptr<anab::Cal
     reco_track_kin0[track_i] = kin_p0;
     reco_track_kin1[track_i] = kin_p1;
     reco_track_kin2[track_i] = kin_p2;
-    cout << "Kin p0: " << kin_p0 << " Kin p1: " << kin_p1 << " Kin p2: " << kin_p2 <<endl;
+    //cout << "Kin p0: " << kin_p0 << " Kin p1: " << kin_p1 << " Kin p2: " << kin_p2 <<endl;
     reco_track_llrpid_3pl[track_i] = llr_pid_score;
     reco_track_total_llrpid_3pl[track_i] = llr_pid_total;
     reco_track_llrpid_k_3pl[track_i] = llr_pid_score_k;
@@ -2757,7 +2763,7 @@ void CCKaonAnalyzerRebuild::fillPID(const std::vector<art::Ptr<anab::ParticleID>
     std::vector<simb::MCParticle const*> particle_vec;
     std::vector<anab::BackTrackerHitMatchingData const*> match_vec;
 
-    particle_vec.clear();
+    particle_vec.clear(); match_vec.clear();
     particles_per_hit.get(hit.key(), particle_vec, match_vec);
 
     //cout << particle_vec.size() << endl;
