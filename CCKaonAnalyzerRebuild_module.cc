@@ -879,7 +879,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       TVector3 true_dau_pip_pvector;
       TVector3 true_dau_pin_pvector;
 
-      cout << "true_kaon_maxp_id: " << true_kaon_maxp_id << endl;
+      //cout << "true_kaon_maxp_id: " << true_kaon_maxp_id << endl;
 
       for (auto const& pPart : ptList) {
 
@@ -1361,6 +1361,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       
       simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
       if(!mcparticle) continue;
+      //std::cout << "(mcparticle->PdgCode(): " << mcparticle->PdgCode() << endl;
       if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
       if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
 
@@ -1452,18 +1453,26 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 
       const std::vector<TVector3> peakDirectionVector = orchestrator.getPeakDirectionList();
+      if (!(j < peakDirectionVector.size())) break;
       best_peak_x[i][j] = peakDirectionVector.at(j).X();
       best_peak_y[i][j] = peakDirectionVector.at(j).Y();
       best_peak_z[i][j] = peakDirectionVector.at(j).Z();
 
       if(trackHitLists[j].empty()) continue;
+
       rebdautrack_length[i][n_recoRebDauTracks[i]] = rebuildTrackList[j].Length();
+      std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[j];
 
       //simb::MCParticle const* mcparticle;
       std::map<int,int> nhits_pdg_map;
       std::map<recob::Hit,int> hit_pdg_map;
 
-      for(auto & hit : trackHitLists[j]){
+      simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track_rebuild,  particles_per_hit);
+      if(mcparticle) std::cout << mcparticle->PdgCode() << ": mcparticle->PdgCode()" << endl;
+
+      for(unsigned int i_h=0; i_h<hits_from_track_rebuild.size(); i_h++){
+
+	art::Ptr<recob::Hit> hit = hits_from_track_rebuild.at(i_h);
 
 	simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
 	if(!mcparticle){
@@ -1485,7 +1494,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	  cout << it->second << " " << it->first << endl;
 	}
 	sort(v.rbegin(), v.rend());
-	rebdautrack_pdg[i][n_recoRebDauTracks[i]] = v[0].second;	
+	rebdautrack_pdg[i][n_recoRebDauTracks[i]] = v[0].second;
+	std::cout<< "rebdau pdg: " <<  v[0].second << endl;
       }
       n_recoRebDauTracks[i]++;
 
@@ -2750,7 +2760,10 @@ void CCKaonAnalyzerRebuild::fillPID(const std::vector<art::Ptr<anab::ParticleID>
     particle_vec.clear();
     particles_per_hit.get(hit.key(), particle_vec, match_vec);
 
+    //cout << particle_vec.size() << endl;
     for(size_t i_p=0; i_p<particle_vec.size(); ++i_p) {
+      //cout<< "match_vec[i_p]->energy: " << match_vec[i_p]->energy << endl;
+
       if(match_vec[i_p]->energy>maxe){
 	maxe = match_vec[i_p]->energy;
 	matched_mcparticle = particle_vec[i_p];

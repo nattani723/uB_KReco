@@ -78,11 +78,13 @@ namespace kaon_reconstruction {
     for(const TVector3& peakDirection : peakDirectionVector){
       
       HitList trackHitList;
+      PeakDirectionList.push_back( peakDirection );
       
       // Run the TrackHitCollector
 
       if(spacepointToHitMap.empty()) return;
       auto collectorStatus = hitCollector.Run(directionFinder.get_k_end(), directionFinder.get_sp_list_roi(), peakDirection, unavailableHitList, trackHitList, spacepointToHitMap, hitToSpacePointMap);
+
       if (collectorStatus != pandora::STATUS_CODE_SUCCESS) {
 	std::cout << "TrackHitCollector FAILED" << std::endl;
 	continue;
