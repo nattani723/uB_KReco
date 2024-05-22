@@ -1362,7 +1362,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
       //std::cout << "hit.key(): " << hit.key() << endl;
       if(!mcparticle) continue;
-      if(hit.key()==1509) cout << "hit 1509 has pdg of " << mcparticle->PdgCode() << endl;
+      //if(hit.key()==1509) cout << "hit 1509 has pdg of " << mcparticle->PdgCode() << endl;
       //std::cout << "(mcparticle->PdgCode(): " << mcparticle->PdgCode() << endl;
       if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
       if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
@@ -1430,7 +1430,11 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   // loop over nu daughters
   trkf::TrackMomentumCalculator trkmom;
 
+  int ntracks = 0;
+
   for (int i=0; i<reco_nu_ndaughters; i++) {
+
+    n_recoRebDauTracks[i] = 0;
 
     art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
 
@@ -1440,7 +1444,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
     simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
-    if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
+    //if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
     
     ReconstructionOrchestrator orchestrator;
@@ -1456,13 +1460,14 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 
       const std::vector<TVector3> peakDirectionVector = orchestrator.getPeakDirectionList();
-      if (!(j < peakDirectionVector.size())) break;
+      //if (!(j < peakDirectionVector.size())) break;
       best_peak_x[i][j] = peakDirectionVector.at(j).X();
       best_peak_y[i][j] = peakDirectionVector.at(j).Y();
       best_peak_z[i][j] = peakDirectionVector.at(j).Z();
 
       if(trackHitLists[j].empty()) continue;
 
+      //cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
       rebdautrack_length[i][n_recoRebDauTracks[i]] = rebuildTrackList[j].Length();
       std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[j];
 
@@ -1471,7 +1476,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       std::map<recob::Hit,int> hit_pdg_map;
 
       simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track_rebuild,  particles_per_hit);
-      if(mcparticle) std::cout << mcparticle->PdgCode() << ": mcparticle->PdgCode()" << endl;
+      //if(mcparticle) std::cout << mcparticle->PdgCode() << ": mcparticle->PdgCode()" << endl;
 
       for(unsigned int i_h=0; i_h<hits_from_track_rebuild.size(); i_h++){
 
@@ -1545,9 +1550,18 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       }
       
     }
+
+
+    if (isMC) {
+      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
+      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
+    }
+
+    ntracks++;
     	
   }//NTrack loop
   
+  reco_ntracks = ntracks;
     
   // find true matched particle for ccmuon
   if (isMC) {
