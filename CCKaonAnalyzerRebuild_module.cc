@@ -1066,7 +1066,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
         true_kaon_end_process = 7;
       }
 
-      // -- cout << "True kaon end process " << true_kaon_end_process << endl;
+      cout << "True kaon end process " << true_kaon_end_process << endl;
 
       //check kaon daughter if it exists
       //only if there is one pion+, one muon+ or one kaon+
@@ -1332,6 +1332,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
   art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObject;
+  std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObjectOld;
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromMu;
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromPi;
   std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
@@ -1340,8 +1341,19 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
     
     const art::Ptr<recob::Track> track = trackList.at(itrk);
+
     if (track.key()==trkmuon.key()) continue;
-    
+
+    //skip primary track
+    bool skip = false;
+    for (int i_nutrk=0; i_nutrk<reco_nu_ndaughters; i_nutrk++) {
+      if (int(track.key())==reco_nu_daughters_id[i_nutrk]) {
+	skip=true;
+	break;
+      }
+    }
+    if (skip) continue;    
+
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.key());
 
     art::FindManyP<recob::SpacePoint> spacepoint_per_hit(hitListHandle, evt, fSpacePointproducer);
@@ -1432,6 +1444,9 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
   int ntracks = 0;
 
+  //int NTracks=trackList.size();
+  //int NShowers=showerList.size();
+
   for (int i=0; i<reco_nu_ndaughters; i++) {
 
     n_recoRebDauTracks[i] = 0;
@@ -1444,15 +1459,24 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
     simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
-    //if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
+    //if(mcparticle && mcparticle->PdgCode()==321) cout << "This is Primary Kaon" << endl;
+    //if(mcparticle->PdgCode()!=321) continue;
+    //if(true_kaon_end_process!=0) continue;
+    if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
+
+    /*
+    // check track start and end
+    TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
+    TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
+    */
     
     ReconstructionOrchestrator orchestrator;
     ReconstructionOrchestrator orchestrator_cheatpi;
     ReconstructionOrchestrator orchestrator_cheatmu;
 
-    orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap,
-				   ptrack, hits_from_track);
+    orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+    //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
 
     std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
     std::vector<std::vector<art::Ptr<recob::Hit>>> trackHitLists = orchestrator.getHitLists();
@@ -1467,7 +1491,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
       if(trackHitLists[j].empty()) continue;
 
-      //cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
+      cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
       rebdautrack_length[i][n_recoRebDauTracks[i]] = rebuildTrackList[j].Length();
       std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[j];
 
@@ -1475,7 +1499,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       std::map<int,int> nhits_pdg_map;
       std::map<recob::Hit,int> hit_pdg_map;
 
-      simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track_rebuild,  particles_per_hit);
+      //simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track_rebuild,  particles_per_hit);
       //if(mcparticle) std::cout << mcparticle->PdgCode() << ": mcparticle->PdgCode()" << endl;
 
       for(unsigned int i_h=0; i_h<hits_from_track_rebuild.size(); i_h++){
@@ -1506,14 +1530,16 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	}
 	sort(v.rbegin(), v.rend());
 	rebdautrack_pdg[i][n_recoRebDauTracks[i]] = v[0].second;
-	//std::cout<< "rebdau pdg: " <<  v[0].second << endl;
+	std::cout<< "rebdau pdg: " <<  v[0].second << endl;
       }
       n_recoRebDauTracks[i]++;
 
     }
     
     if(true_kaon_end_process==0){
+      cout << "this is cheat mu start" << endl;
       orchestrator_cheatmu.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+      cout << "this is cheat mu end" << endl;
       std::vector<recob::Track> rebuildTrackList_cheatmu = orchestrator_cheatmu.getRebuildTrackList(); 
       
       if(!rebuildTrackList_cheatmu.empty()){
@@ -1532,7 +1558,9 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       
     }
     else if(true_kaon_end_process==1){
+      cout << "this is cheat pi start" << endl;
       orchestrator_cheatmu.runReconstruction(spacepointFromPi, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+      cout << "this is cheat pi start" << endl;
       std::vector<recob::Track> rebuildTrackList_cheatpi = orchestrator_cheatpi.getRebuildTrackList(); 
       
       if(!rebuildTrackList_cheatpi.empty()){
@@ -2835,6 +2863,7 @@ void CCKaonAnalyzerRebuild::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& 
 
     if (daughter_i<0) {
       //cout << "this case daughter_i is: " << daughter_i << endl;
+      cout << "matched_mcparticle->PdgCode(): " << matched_mcparticle->PdgCode() << endl;
       reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
       reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
       reco_track_true_primary[track_i] = matched_mcparticle->Process()=="primary";
