@@ -43,6 +43,8 @@ namespace kaon_reconstruction
   pandora::StatusCode ParticleDirectionFinder::Run(const SPList& sp_list, const art::Ptr<recob::Track> primary_track,  const HitList& unavailable_hit_list, const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap, std::vector<TVector3> &peak_direction_vector)
 {
 
+        this->clearData();
+
 	//get coordinates of k track end and store unavailable_hit_list
 	k_end.SetXYZ(primary_track->End().x(), primary_track->End().y(), primary_track->End().z());
 
