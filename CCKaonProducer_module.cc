@@ -298,6 +298,10 @@ namespace kaon_reconstruction {
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
+      simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
+      if(mcparticle && mcparticle->PdgCode()==321) std::cout << "This is Primary Kaon" << std::endl;
+      if(mcparticle->PdgCode()!=321) continue;
+      //if(true_kaon_end_process!=0) continue; 
       /*
       simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
       if(mcparticle){
@@ -306,8 +310,8 @@ namespace kaon_reconstruction {
       */
  
       ReconstructionOrchestrator orchestrator;
-      orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
-      //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      //orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
 
       std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
 

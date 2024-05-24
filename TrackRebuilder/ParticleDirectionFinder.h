@@ -56,6 +56,7 @@ namespace kaon_reconstruction
 
     SPList& get_sp_list_roi();
     const TVector3& get_k_end() const;
+    void clearData(){ sp_list_roi.clear(); }
     
   private:
     

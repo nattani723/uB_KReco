@@ -62,6 +62,13 @@ namespace kaon_reconstruction
 			    const std::map<art::Ptr<recob::SpacePoint>, art::Ptr<recob::Hit>>& spacepointToHitMap,
 			    const std::map<art::Ptr<recob::Hit>, art::Ptr<recob::SpacePoint>>& hitToSpacePointMap);
 
+    //void clear_peak_direction();
+
+    void set_peak_direction(const TVector3 peak_direction);
+
+    const TVector3 get_peak_direction();
+
+
   private:
 
 
@@ -176,7 +183,6 @@ namespace kaon_reconstruction
 
     double get_closest_distance(const TVector3& hit_position, const std::vector<TVector3>& test_positions) const;
 
-
     unsigned int m_hit_threshold_for_track;           ///< The hit threshold for a significant track
     float m_growing_fit_initial_length;               ///< The first step distance
     float m_initial_fit_distance_to_line;              ///< The max. proximity to the track projection for collection in the first step
@@ -193,6 +199,7 @@ namespace kaon_reconstruction
     float m_high_resolution_distance_to_line;
     float m_high_resolution_hit_connection_distance;
 
+    TVector3 m_peak_direction;
 
   }; // end of class
   

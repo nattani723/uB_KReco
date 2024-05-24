@@ -48,6 +48,7 @@ namespace kaon_reconstruction
 
 	// get sp list inside region of interest
 	this->collect_sp_in_roi(sp_list, k_end, m_region_of_interest, sp_list_roi, unavailable_hit_list, spacepointToHitMap);
+	std::cout << "sp_list.size(): " << sp_list.size() << ", sp_list_roi.size(): " << sp_list_roi.size() << std::endl;
 	
 	if (sp_list_roi.empty())
 		return STATUS_CODE_NOT_FOUND;
@@ -55,13 +56,16 @@ namespace kaon_reconstruction
 	// get sp list for peak finder
 	SPList sp_list_peak_search;
 	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search, unavailable_hit_list, spacepointToHitMap);
+	std::cout << "sp_list_roi.size(): " << sp_list_roi.size() << ", sp_list_peak_search.size(): " << sp_list_peak_search.size() << std::endl;
+
 		
 	if (sp_list_peak_search.empty())
         	return STATUS_CODE_NOT_FOUND;
 
 	// Fill angular distribution map
 	AngularDistribution3DMap angular_distribution_map;
-	this->fill_angular_distribution_map(sp_list_roi, k_end, angular_distribution_map);
+	//this->fill_angular_distribution_map(sp_list_roi, k_end, angular_distribution_map);
+	this->fill_angular_distribution_map(sp_list_peak_search, k_end, angular_distribution_map);
 
 	if (angular_distribution_map.empty())
 		return STATUS_CODE_NOT_FOUND;
