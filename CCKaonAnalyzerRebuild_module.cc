@@ -6386,6 +6386,8 @@ void CCKaonAnalyzerRebuild::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& 
     unsigned int pstarti, pendi;
 
     if (daughter_i<0) {
+      cout << "this case track_i is: " << track_i << endl;
+      cout << "matched_mcparticle->PdgCode(): " << matched_mcparticle->PdgCode() << endl;
       //cout << "this case daughter_i is: " << daughter_i << endl;
       reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
       reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
