@@ -1487,15 +1487,18 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 
       const std::vector<TVector3> peakDirectionVector = orchestrator.getPeakDirectionList();
-      //if (!(j < peakDirectionVector.size())) break;
-      best_peak_x[i][j] = peakDirectionVector.at(j).X();
-      best_peak_y[i][j] = peakDirectionVector.at(j).Y();
-      best_peak_z[i][j] = peakDirectionVector.at(j).Z();
+
+      //best_peak_x[i][j] = peakDirectionVector.at(j).X();
+      //best_peak_y[i][j] = peakDirectionVector.at(j).Y();
+      //best_peak_z[i][j] = peakDirectionVector.at(j).Z();
+      best_peak_x[ntracks][j] = peakDirectionVector.at(j).X();
+      best_peak_y[ntracks][j] = peakDirectionVector.at(j).Y();
+      best_peak_z[ntracks][j] = peakDirectionVector.at(j).Z();
 
       if(trackHitLists[j].empty()) continue;
 
-      cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
-      rebdautrack_length[i][n_recoRebDauTracks[i]] = rebuildTrackList[j].Length();
+      //cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
+      rebdautrack_length[ntracks][n_recoRebDauTracks[ntracks]] = rebuildTrackList[j].Length();
       std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[j];
 
       //simb::MCParticle const* mcparticle;
@@ -1532,10 +1535,10 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	  //cout << it->second << " " << it->first << endl;
 	}
 	sort(v.rbegin(), v.rend());
-	rebdautrack_pdg[i][n_recoRebDauTracks[i]] = v[0].second;
+	rebdautrack_pdg[ntracks][n_recoRebDauTracks[ntracks]] = v[0].second;
 	std::cout<< "rebdau pdg: " <<  v[0].second << endl;
       }
-      n_recoRebDauTracks[i]++;
+      n_recoRebDauTracks[ntracks]++;
 
     }
     
@@ -1547,16 +1550,16 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       
       if(!rebuildTrackList_cheatmu.empty()){
         
-	rebdautracktrue_length[i] = rebuildTrackList_cheatmu[0].Length();
+	rebdautracktrue_length[ntracks] = rebuildTrackList_cheatmu[0].Length();
         
 	std::vector<TVector3> peakDirectionVector =  orchestrator_cheatmu.getPeakDirectionList();
         
-	best_peak_x_true[i] = peakDirectionVector[0].X(); 
-	best_peak_y_true[i] = peakDirectionVector[0].Y(); 
-	best_peak_z_true[i] = peakDirectionVector[0].Z(); 
+	best_peak_x_true[ntracks] = peakDirectionVector[0].X(); 
+	best_peak_y_true[ntracks] = peakDirectionVector[0].Y(); 
+	best_peak_z_true[ntracks] = peakDirectionVector[0].Z(); 
 	
 	orchestrator_cheatmu.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
-	rebdautracktruedir_length[i] = orchestrator_cheatmu.getRebuildTrackList().at(0).Length();
+	rebdautracktruedir_length[ntracks] = orchestrator_cheatmu.getRebuildTrackList().at(0).Length();
       }
       
     }
@@ -1568,16 +1571,16 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       
       if(!rebuildTrackList_cheatpi.empty()){
         
-	rebdautracktrue_length[i] = rebuildTrackList_cheatpi[0].Length();
+	rebdautracktrue_length[ntracks] = rebuildTrackList_cheatpi[0].Length();
         
 	std::vector<TVector3> peakDirectionVector =  orchestrator_cheatpi.getPeakDirectionList();
         
-	best_peak_x_true[i] = peakDirectionVector[0].X(); 
-	best_peak_y_true[i] = peakDirectionVector[0].Y(); 
-	best_peak_z_true[i] = peakDirectionVector[0].Z(); 
+	best_peak_x_true[ntracks] = peakDirectionVector[0].X(); 
+	best_peak_y_true[ntracks] = peakDirectionVector[0].Y(); 
+	best_peak_z_true[ntracks] = peakDirectionVector[0].Z(); 
 	
 	orchestrator_cheatpi.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
-	rebdautracktruedir_length[i] = orchestrator_cheatpi.getRebuildTrackList().at(0).Length();
+	rebdautracktruedir_length[ntracks] = orchestrator_cheatpi.getRebuildTrackList().at(0).Length();
       }
       
     }
