@@ -1465,10 +1465,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
 
-    if (isMC) {
-      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
-    }
+    /*
+    */
 
     /*
     // check track start and end
@@ -1585,6 +1583,10 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     }
 
 
+    if (isMC) {
+      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
+      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
+    }
 
     ntracks++;
     	
