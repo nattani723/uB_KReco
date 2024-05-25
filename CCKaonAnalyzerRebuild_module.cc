@@ -1465,6 +1465,11 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
 
+    if (isMC) {
+      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
+      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
+    }
+
     /*
     // check track start and end
     TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
@@ -1580,10 +1585,6 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     }
 
 
-    if (isMC) {
-      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
-      fillTrueMatching(hits_from_track, particles_per_hit, ntracks);
-    }
 
     ntracks++;
     	
@@ -2862,7 +2863,7 @@ void CCKaonAnalyzerRebuild::fillTrueMatching(std::vector<art::Ptr<recob::Hit>>& 
     unsigned int pstarti, pendi;
 
     if (daughter_i<0) {
-      //cout << "this case daughter_i is: " << daughter_i << endl;
+      cout << "this case track_i is: " << track_i << endl;
       cout << "matched_mcparticle->PdgCode(): " << matched_mcparticle->PdgCode() << endl;
       reco_track_true_pdg[track_i] = matched_mcparticle->PdgCode();
       reco_track_true_origin[track_i] = 1;//int(mc_truth->Origin());
