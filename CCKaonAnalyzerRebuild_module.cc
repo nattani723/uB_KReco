@@ -247,15 +247,15 @@ void CCKaonAnalyzerRebuild::beginJob()
 
   fEventTree->Branch("n_recoRebDauTracks", &n_recoRebDauTracks, "n_recoRebDauTracks[20]/I"); 
   fEventTree->Branch("rebdautrack_length", &rebdautrack_length, "rebdautrack_length[20][10]/F"); 
-  fEventTree->Branch("rebdautracktrue_length", &rebdautracktrue_length, "rebdautracktrue_length[20][10]/F"); 
-  fEventTree->Branch("rebdautracktruedir_length", &rebdautracktruedir_length, "rebdautracktruedir_length[20][10]/F"); 
+  fEventTree->Branch("rebdautracktrue_length", &rebdautracktrue_length, "rebdautracktrue_length[20]/F"); 
+  fEventTree->Branch("rebdautracktruedir_length", &rebdautracktruedir_length, "rebdautracktruedir_length[20]/F"); 
   fEventTree->Branch("rebdautrack_pdg", &rebdautrack_pdg, "rebdautrack_pdg[20][10]/F"); 
   fEventTree->Branch("best_peak_x", &best_peak_x, "best_peak_x[20][10]/F");
   fEventTree->Branch("best_peak_y", &best_peak_y, "best_peak_y[20][10]/F");
   fEventTree->Branch("best_peak_z", &best_peak_z, "best_peak_z[20][10]/F");
-  fEventTree->Branch("best_peak_x_true", &best_peak_x_true, "best_peak_x_true[20][10]/F");
-  fEventTree->Branch("best_peak_y_true", &best_peak_y_true, "best_peak_y_true[20][10]/F");
-  fEventTree->Branch("best_peak_z_true", &best_peak_z_true, "best_peak_z_true[20][10]/F");
+  fEventTree->Branch("best_peak_x_true", &best_peak_x_true, "best_peak_x_true[20]/F");
+  fEventTree->Branch("best_peak_y_true", &best_peak_y_true, "best_peak_y_true[20]/F");
+  fEventTree->Branch("best_peak_z_true", &best_peak_z_true, "best_peak_z_true[20]/F");
 
 
   fEventTree->Branch("true_length", &true_length, "true_length[10]/F");
@@ -1452,6 +1452,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     n_recoRebDauTracks[i] = 0;
 
     art::Ptr<recob::Track> ptrack(trackListHandle,reco_nu_daughters_id[i]);
+    const recob::Track& track = *ptrack;
 
     // skip cc muon track
     if (ptrack.key()==trkmuon.key()) continue;
@@ -1465,14 +1466,15 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
     //if(mcparticle) recoprimarttrack_pdg[itrk]mcparticle->PdgCode();    
 
-    /*
-    */
-
-    /*
+    /*    
     // check track start and end
     TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
     TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
     */
+    
+    reco_track_end_x[ntracks] = track.End().X();
+    reco_track_end_y[ntracks] = track.End().Y();
+    reco_track_end_z[ntracks] = track.End().Z();
     
     ReconstructionOrchestrator orchestrator;
     ReconstructionOrchestrator orchestrator_cheatpi;
