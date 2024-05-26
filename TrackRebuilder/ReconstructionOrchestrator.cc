@@ -135,7 +135,7 @@ namespace kaon_reconstruction {
     for(const TVector3& peakDirection : peakDirectionVector){
 
       HitList trackHitList;
-      PeakDirectionList.push_back( peakDirection );
+      //PeakDirectionList.push_back( peakDirection );
 
       // Run the TrackHitCollector
 

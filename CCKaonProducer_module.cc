@@ -226,7 +226,18 @@ namespace kaon_reconstruction {
     for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
 
       const art::Ptr<recob::Track> track = trackList.at(itrk);
+
       if (track.key()==trkmuon.key()) continue;
+
+      //skip primary track
+      bool skip = false;
+      for (int i_nutrk=0; i_nutrk<reco_nu_ndaughters; i_nutrk++) {
+	if (int(track.key())==reco_nu_daughters_id[i_nutrk]) { 
+	  skip=true;
+	  break;
+	}
+      }
+      if (skip) continue;
 
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.key());
 

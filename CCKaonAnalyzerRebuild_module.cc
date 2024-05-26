@@ -1332,11 +1332,53 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 
   art::FindMany<simb::MCParticle,anab::BackTrackerHitMatchingData> particles_per_hit(hitListHandle, evt, fHitTruthAssns);
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObject;
-  std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObjectOld;
+  std::vector< art::Ptr<recob::SpacePoint> > spacepointFromMap;
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromMu;
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromPi;
+  std::vector< art::Ptr<recob::Hit> > hitFromTrack;
   std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
   
+  
+  for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) { 
+
+    const art::Ptr<recob::Track> track = trackList.at(itrk);
+
+    //skip primary track
+    bool primary = false; 
+    for (int i_nutrk=0; i_nutrk<reco_nu_ndaughters; i_nutrk++) {
+      if (int(track.key())==reco_nu_daughters_id[i_nutrk]) {
+	primary=true;
+	break;
+      }
+    }
+
+    if (track.key()==trkmuon.key() || primary){
+      std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.key());
+      hitFromTrack.insert(hitFromTrack.end(), hits_from_track.begin(), hits_from_track.end());
+    }
+  }
+
+  for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
+    art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
+    art::Ptr<recob::Hit> hit = findSPToHit.at(iSP);
+    spacepointToHitMap[spacepoint] = hit;
+    hitToSpacePointMap[hit] = spacepoint;
+
+    //skip ccmu primary hits
+    if( std::find(hitFromTrack.begin(), hitFromTrack.end(), hit) != hitFromTrack.end()) continue;
+
+    spacepointFromMap.push_back(spacepoint);
+
+    simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
+    if(!mcparticle) continue;
+    if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
+    if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
+
+  }
+    
+
+
+  /*
   //fill the SP-Hit map
   for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
     
@@ -1413,6 +1455,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     }
     
   }
+  */
   
   
   // get track associations
@@ -1480,7 +1523,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     ReconstructionOrchestrator orchestrator_cheatpi;
     ReconstructionOrchestrator orchestrator_cheatmu;
 
-    orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+    orchestrator.runReconstruction(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+    //orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
     //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
 
     std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
@@ -1560,7 +1604,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	best_peak_y_true[ntracks] = peakDirectionVector[0].Y(); 
 	best_peak_z_true[ntracks] = peakDirectionVector[0].Z(); 
 	
-	orchestrator_cheatmu.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
+	orchestrator_cheatmu.runReconstruction(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
+	//orchestrator_cheatmu.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
 	rebdautracktruedir_length[ntracks] = orchestrator_cheatmu.getRebuildTrackList().at(0).Length();
       }
       
@@ -1581,7 +1626,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	best_peak_y_true[ntracks] = peakDirectionVector[0].Y(); 
 	best_peak_z_true[ntracks] = peakDirectionVector[0].Z(); 
 	
-	orchestrator_cheatpi.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
+	orchestrator_cheatpi.runReconstruction(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
+	//orchestrator_cheatpi.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, peakDirectionVector);
 	rebdautracktruedir_length[ntracks] = orchestrator_cheatpi.getRebuildTrackList().at(0).Length();
       }
       

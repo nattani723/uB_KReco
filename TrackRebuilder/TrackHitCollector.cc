@@ -49,14 +49,14 @@ namespace kaon_reconstruction
     m_max_fitting_hits(15),
     m_local_sliding_fit_window(10),
     m_growing_fit_segment_length(5.f),
-    m_distance_to_line(3),
-    m_hit_connection_distance(3),
+    m_distance_to_line(1.5),
+    m_hit_connection_distance(1.5),
     m_trackall_sliding_fit_window(10),
     m_trackall_distance_to_line(1),
     m_trackall_hit_connection_distance(5),
     m_high_resolution_sliding_fit_window(5),
-    m_high_resolution_distance_to_line(1),
-    m_high_resolution_hit_connection_distance(5)
+    m_high_resolution_distance_to_line(3),
+    m_high_resolution_hit_connection_distance(3)
   {
   }
 
@@ -210,7 +210,7 @@ namespace kaon_reconstruction
 
 
       // If no hits found, fit by all collected hits      
-      
+      /*
       if (!hits_collected){
 
 	// fill pandora_running_fit_position_trackall_vector by storingg all positions of track hits collected so far
@@ -233,6 +233,7 @@ namespace kaon_reconstruction
 	hits_collected = this->collect_subsection_hits(extrapolated_fit_trackall, extrapolated_start_position, extrapolated_end_position, extrapolated_direction, is_end_downstream, sp_list, running_fit_position_vec, pandora_running_fit_position_vec, unavailable_hit_list, track_hit_list, m_trackall_distance_to_line, m_trackall_hit_connection_distance, spacepointToHitMap, hitToSpacePointMap);
 
       }
+      */
       
            
 
