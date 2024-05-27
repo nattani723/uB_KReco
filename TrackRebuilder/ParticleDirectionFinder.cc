@@ -7,7 +7,7 @@ namespace kaon_reconstruction
   
   ParticleDirectionFinder::ParticleDirectionFinder() :
 
-    m_region_of_interest(100.),
+    m_region_of_interest(120.),
     m_peak_search_region(20.),
     m_theta_bin_size(0.06),
     m_phi_bin_size(0.06),

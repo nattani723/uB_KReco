@@ -1537,11 +1537,12 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       //best_peak_x[i][j] = peakDirectionVector.at(j).X();
       //best_peak_y[i][j] = peakDirectionVector.at(j).Y();
       //best_peak_z[i][j] = peakDirectionVector.at(j).Z();
-      best_peak_x[ntracks][j] = peakDirectionVector.at(j).X();
-      best_peak_y[ntracks][j] = peakDirectionVector.at(j).Y();
-      best_peak_z[ntracks][j] = peakDirectionVector.at(j).Z();
 
       if(trackHitLists[j].empty()) continue;
+
+      best_peak_x[ntracks][n_recoRebDauTracks[ntracks]] = peakDirectionVector.at(j).X();
+      best_peak_y[ntracks][n_recoRebDauTracks[ntracks]] = peakDirectionVector.at(j).Y();
+      best_peak_z[ntracks][n_recoRebDauTracks[ntracks]] = peakDirectionVector.at(j).Z();
 
       //cout << "j: " << j << ", n_recoRebDauTracks[i]: " << n_recoRebDauTracks[i] << ", rebuildTrackList[j].Length(): " << rebuildTrackList[j].Length() << endl;
       rebdautrack_length[ntracks][n_recoRebDauTracks[ntracks]] = rebuildTrackList[j].Length();
@@ -1582,16 +1583,14 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
 	}
 	sort(v.rbegin(), v.rend());
 	rebdautrack_pdg[ntracks][n_recoRebDauTracks[ntracks]] = v[0].second;
-	std::cout<< "rebdau pdg: " <<  v[0].second << endl;
       }
       n_recoRebDauTracks[ntracks]++;
 
     }
     
     if(true_kaon_end_process==0){
-      cout << "this is cheat mu start" << endl;
+
       orchestrator_cheatmu.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
-      cout << "this is cheat mu end" << endl;
       std::vector<recob::Track> rebuildTrackList_cheatmu = orchestrator_cheatmu.getRebuildTrackList(); 
       
       if(!rebuildTrackList_cheatmu.empty()){
@@ -1611,9 +1610,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       
     }
     else if(true_kaon_end_process==1){
-      cout << "this is cheat pi start" << endl;
-      orchestrator_cheatmu.runReconstruction(spacepointFromPi, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
-      cout << "this is cheat pi start" << endl;
+
+      orchestrator_cheatpi.runReconstruction(spacepointFromPi, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
       std::vector<recob::Track> rebuildTrackList_cheatpi = orchestrator_cheatpi.getRebuildTrackList(); 
       
       if(!rebuildTrackList_cheatpi.empty()){

@@ -49,13 +49,13 @@ namespace kaon_reconstruction
     m_max_fitting_hits(15),
     m_local_sliding_fit_window(10),
     m_growing_fit_segment_length(5.f),
-    m_distance_to_line(1.5),
-    m_hit_connection_distance(1.5),
+    m_distance_to_line(0.75),
+    m_hit_connection_distance(0.75),
     m_trackall_sliding_fit_window(10),
     m_trackall_distance_to_line(1),
     m_trackall_hit_connection_distance(5),
     m_high_resolution_sliding_fit_window(5),
-    m_high_resolution_distance_to_line(3),
+    m_high_resolution_distance_to_line(1),
     m_high_resolution_hit_connection_distance(3)
   {
   }
