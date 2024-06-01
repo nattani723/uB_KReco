@@ -221,8 +221,49 @@ namespace kaon_reconstruction {
     std::vector< art::Ptr<recob::SpacePoint> > spacepointFromRecoObject;
     std::vector< art::Ptr<recob::SpacePoint> > spacepointFromMu;
     std::vector< art::Ptr<recob::SpacePoint> > spacepointFromPi;
+    std::vector< art::Ptr<recob::Hit> > hitFromTrack;
     std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
 
+
+    for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) { 
+      
+      const art::Ptr<recob::Track> track = trackList.at(itrk);
+
+      //skip primary track
+      bool primary = false; 
+      for (int i_nutrk=0; i_nutrk<reco_nu_ndaughters; i_nutrk++) {
+	if (int(track.key())==reco_nu_daughters_id[i_nutrk]) {
+	  primary=true;
+	  break;
+	}
+      }
+      
+      if (track.key()==trkmuon.key() || primary){
+	std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(track.key());
+	hitFromTrack.insert(hitFromTrack.end(), hits_from_track.begin(), hits_from_track.end());
+      }
+    }
+    
+    for (unsigned int iSP = 0; iSP < spacepointVector.size(); ++iSP) { 
+      art::Ptr<recob::SpacePoint> spacepoint = spacepointVector.at(iSP);
+      art::Ptr<recob::Hit> hit = findSPToHit.at(iSP);
+      spacepointToHitMap[spacepoint] = hit;
+      hitToSpacePointMap[hit] = spacepoint;
+      
+      //skip ccmu primary hits
+      if( std::find(hitFromTrack.begin(), hitFromTrack.end(), hit) != hitFromTrack.end()) continue;
+      
+      spacepointFromRecoObject.push_back(spacepoint);
+      
+      simb::MCParticle const* mcparticle = truthMatchHit(hit, particles_per_hit);
+      if(!mcparticle) continue;
+      if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
+      if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
+      
+    }
+
+    /*
+    //fill the SP-Hit map 
     for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) {
 
       const art::Ptr<recob::Track> track = trackList.at(itrk);
@@ -295,7 +336,8 @@ namespace kaon_reconstruction {
       }
 
     }
-    
+    */
+
 
     //loop over primary nu track
     for (int i=0; i<reco_nu_ndaughters; i++) {
@@ -309,9 +351,9 @@ namespace kaon_reconstruction {
       
       std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
-      simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
-      if(mcparticle && mcparticle->PdgCode()==321) std::cout << "This is Primary Kaon" << std::endl;
-      if(mcparticle->PdgCode()!=321) continue;
+      //simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
+      //if(mcparticle && mcparticle->PdgCode()==321) std::cout << "This is Primary Kaon" << std::endl;
+      //if(mcparticle->PdgCode()!=321) continue;
       //if(true_kaon_end_process!=0) continue; 
       /*
       simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
@@ -321,18 +363,21 @@ namespace kaon_reconstruction {
       */
  
       ReconstructionOrchestrator orchestrator;
-      //orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
-      orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
+      //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
 
       std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
 
       std::vector<std::vector<art::Ptr<recob::Hit>>> trackHitLists = orchestrator.getHitLists();
 
       //for(Reco::Track reco_track : rebuildTrackList) {
-      for(unsigned int i=0; i < rebuildTrackList.size(); i++) {
+      for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 	
-	anaTrackCollection->push_back(rebuildTrackList[i]);	
-	std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[i];
+	if(trackHitLists[j].empty()) continue;
+
+	anaTrackCollection->push_back(rebuildTrackList[j]);
+
+	std::vector<art::Ptr<recob::Hit>> hits_from_track_rebuild = trackHitLists[j];
 	
 	lar_pandora::HitVector anaHitCollection_rebuild_tmp;
 	for(auto hitptr : hits_from_track_rebuild){
