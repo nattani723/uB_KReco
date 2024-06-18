@@ -156,6 +156,17 @@ namespace kaon_reconstruction
     TVector3 extrapolated_start_position = k_end;
     TVector3 extrapolated_end_position = extrapolated_start_position + (extrapolated_direction * highest_l); 
 
+    const pandora::CartesianVector pandora_vertex_position(extrapolated_start_position.X(), extrapolated_start_position.Y(), extrapolated_start_position.Z());
+    lar_content::LArConnectionPathwayHelper::SortByDistanceToPoint vtx_distance(pandora_vertex_position);
+    std::sort(pandora_running_fit_position_vec.begin(), pandora_running_fit_position_vec.end(), vtx_distance);
+    TVector3 closest_hit;
+    closest_hit.SetXYZ(pandora_running_fit_position_vec[0].GetX(), pandora_running_fit_position_vec[0].GetY(), pandora_running_fit_position_vec[0].GetZ());
+
+    if( (k_end - closest_hit).Mag()>8 ){
+      track_hit_list.clear();
+      return;
+    }
+
     const float sliding_fit_pitch = TrackUtilities::get_wire_pitch();
     // do we need to sort pandora_running_fit_position by vertex position?
     while (hits_collected){

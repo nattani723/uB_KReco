@@ -1500,6 +1500,9 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     // skip cc muon track
     if (ptrack.key()==trkmuon.key()) continue;
 
+    TVector3 pos(track.Vertex().X(),track.Vertex().Y(),track.Vertex().Z());
+    TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
+
     std::vector<art::Ptr<recob::Hit>> hits_from_track = hits_from_tracks.at(ptrack.key());
 
     simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
@@ -1515,10 +1518,30 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     TVector3 end(track.End().X(),track.End().Y(),track.End().Z());
     */
     
+    reco_track_start_x[ntracks] = track.Vertex().X();
+    reco_track_start_y[ntracks] = track.Vertex().Y();
+    reco_track_start_z[ntracks] = track.Vertex().Z();
+
     reco_track_end_x[ntracks] = track.End().X();
     reco_track_end_y[ntracks] = track.End().Y();
     reco_track_end_z[ntracks] = track.End().Z();
-    
+
+    reco_track_vtx_inTPC[ntracks] = isInsideVolume("TPC",pos);
+    reco_track_vtx_in5cmTPC[ntracks] = isInsideVolume("5cmTPC",pos);
+    reco_track_vtx_inCCInclusiveTPC[ntracks] = isInsideVolume("CCInclusiveTPC",pos);
+
+    reco_track_end_inTPC[ntracks] = isInsideVolume("TPC",end);
+    reco_track_end_in5cmTPC[ntracks] = isInsideVolume("5cmTPC",end);
+    reco_track_end_inCCInclusiveTPC[ntracks] = isInsideVolume("CCInclusiveTPC",end);
+
+    // track length and angles
+    double trklen=track.Length();
+    reco_track_length[ntracks] = trklen;
+    reco_track_theta[ntracks] = track.Theta();
+    reco_track_phi[ntracks] = track.Phi();
+
+
+    //running reconstruction algorithm    
     ReconstructionOrchestrator orchestrator;
     ReconstructionOrchestrator orchestrator_cheatpi;
     ReconstructionOrchestrator orchestrator_cheatmu;
@@ -1539,6 +1562,14 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
       //best_peak_z[i][j] = peakDirectionVector.at(j).Z();
 
       if(trackHitLists[j].empty()) continue;
+
+      TVector3 pos(rebuildTrackList[j].Vertex().X(),rebuildTrackList[j].Vertex().Y(),rebuildTrackList[j].Vertex().Z());
+
+      double track_dau_distance=TMath::Sqrt((end.X()-pos.X())*(end.X()-pos.X()) +
+					    (end.Y()-pos.Y())*(end.Y()-pos.Y()) +
+					    (end.Z()-pos.Z())*(end.Z()-pos.Z()));
+
+      if (track_dau_distance>10) continue;
 
       best_peak_x[ntracks][n_recoRebDauTracks[ntracks]] = peakDirectionVector.at(j).X();
       best_peak_y[ntracks][n_recoRebDauTracks[ntracks]] = peakDirectionVector.at(j).Y();

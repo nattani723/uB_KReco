@@ -1719,7 +1719,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
   }
 
   reco_nu_ndaughters = reco_nu_daughters_id.size();
-  //--std::cout << "Number of neutrino daughters with one associated track " << reco_nu_ndaughters << std::endl;
+
   reco_nu_cc_nmue = pfmuons.size();
 
   if (pfmuons.size()!=1) {
@@ -1856,8 +1856,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
  
  // loop over nu daughters
-  cout << "reco_nu_ndaughters: " << reco_nu_ndaughters << endl;
-
   for (int i=0; i<NTracks; i++) {
 
 
@@ -1871,23 +1869,18 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       continue;
     }
 
-    cout << "track.key(): " << ptrack.key() << ", track.ID(): "<< track.ID() << endl;
-    cout << "trkmuon.key(): " << trkmuon.key() << endl;
+    //cout << "track.key(): " << ptrack.key() << ", track.ID(): "<< track.ID() << endl;
+    //cout << "trkmuon.key(): " << trkmuon.key() << endl;
 
-    // take all primary tracks    
+    // take all primary tracks        
     bool skip = true;
-    for (int k=0; k<reco_nu_ndaughters; k++) {
-	cout << "reco_nu_daughters_id[k]: " << reco_nu_daughters_id[k] << endl;
-
+    for (int k=0; k<reco_nu_ndaughters; k++) { 
       if (int(track.ID())==reco_nu_daughters_id[k]) {
-
-      //if (int(ptrack.key())!=reco_nu_daughters_id[k]) {
-	skip=false;
+	skip = false;
 	break;
       }
     }
     if (skip) continue;
-    
 
     cout << "THIS TRACK IS NOT SKIPPED" << endl;
 
@@ -1931,9 +1924,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
                                (reco_nu_vtx_z-end.Z())*(reco_nu_vtx_z-end.Z()));
     reco_track_dir[ntracks] = (st_vtx<end_dis);
 
-    cout << "call fillcalorimetry for a primary track in event " << event << ", track ID " << track.ID() << endl;
-    cout << "track length is " << track.Length() << endl;
-    cout << "number of hits is " << hits_from_tracks.at(ptrack.key()).size() << endl;
     fillCalorimetry(fmcal.at(ptrack.key()),ntracks);
 
   
@@ -1997,6 +1987,7 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
     }//isMC
 
     int ndaughters_old = 0; 
+    int ntrackothers=0;
     for (int j=0; j<NTracks; j++) {
       art::Ptr<recob::Track> ptrack_dau_old(trackListHandle,j);
       const recob::Track& track_dau_old = *ptrack_dau_old;
@@ -2018,8 +2009,11 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       }
       if (skip) continue;
      
+      ntrackothers++;
 
       TVector3 pos2_old(track_dau_old.Vertex().X(),track_dau_old.Vertex().Y(),track_dau_old.Vertex().Z());
+
+        TVector3 end2_old(track_dau_old.End().X(),track_dau_old.End().Y(),track_dau_old.End().Z());
 
       double track_dau_distance_old=TMath::Sqrt((end.X()-pos2_old.X())*(end.X()-pos2_old.X()) +
                                          (end.Y()-pos2_old.Y())*(end.Y()-pos2_old.Y()) +
@@ -2031,7 +2025,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 	cout << "this is daughter track" << endl;
         reco_track_daughter_old_distance[ntracks][ndaughters_old] = track_dau_distance_old;
 
-        TVector3 end2_old(track_dau_old.End().X(),track_dau_old.End().Y(),track_dau_old.End().Z());
 
         reco_track_daughter_old_vtx_inTPC[ntracks][ndaughters_old] = isInsideVolume("TPC",pos2_old);
         reco_track_daughter_old_vtx_in5cmTPC[ntracks][ndaughters_old] = isInsideVolume("5cmTPC",pos2_old);
@@ -2069,8 +2062,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
       } // remove condition on gap between K+ end and daughter start
     
       reco_track_ndaughters_old[ntracks] = ndaughters_old;
- 
-
     }
 
 
@@ -2078,7 +2069,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
     // check if there is a track at the end
     int ndaughters = 0;
-    cout << "RebuiltNTracks: " << RebuiltNTracks << endl;
     //for (int j=0; j<NTracks; j++) {
     for (int j=0; j<RebuiltNTracks; j++) {
     
@@ -2146,9 +2136,6 @@ void CCKaonAnalyzer::analyze( const art::Event& evt){
 
         reco_track_daughter_vtx_distance[ntracks][ndaughters] = start_dis;
 
-	cout << "ptrack_dau.key(): " << ptrack_dau.key() << endl;
-	cout << "call fillcalorimetry for a daughter track in event " << event << ", track_dau.ID() " << track_dau.ID() << endl;
-	cout << "track length is " << track_dau.Length() << endl;
         fillCalorimetry(fmcal_rebuilt.at(ptrack_dau.key()),ntracks,ndaughters);
 
         // check PID
@@ -3344,7 +3331,6 @@ void CCKaonAnalyzer::fillPID(const std::vector<art::Ptr<anab::ParticleID>> &trac
           if (UBPID::uB_getSinglePlane(AlgScore.fPlaneMask)==pl) {
             if (AlgScore.fAssumedPdg==321) {
 	      chi2ka[pl]=AlgScore.fValue;
-	      if(pl==2) std::cout << "kaon chi2 on collection plane " << AlgScore.fValue <<std::endl;
 	    }
             if (AlgScore.fAssumedPdg==2212) chi2pr[pl]=AlgScore.fValue;
             if (AlgScore.fAssumedPdg==211)  chi2pi[pl]=AlgScore.fValue;
@@ -3535,7 +3521,9 @@ void CCKaonAnalyzer::fillPID_old(const std::vector<art::Ptr<anab::ParticleID>> &
       if (anab::kVariableType(AlgScore.fVariableType) == anab::kGOF) {
         for (int pl=0; pl<3; pl++) {
           if (UBPID::uB_getSinglePlane(AlgScore.fPlaneMask)==pl) {
-            if (AlgScore.fAssumedPdg==321)  chi2ka[pl]=AlgScore.fValue;
+            if (AlgScore.fAssumedPdg==321) {
+	      chi2ka[pl]=AlgScore.fValue;
+	    }
             if (AlgScore.fAssumedPdg==2212) chi2pr[pl]=AlgScore.fValue;
             if (AlgScore.fAssumedPdg==211)  chi2pi[pl]=AlgScore.fValue;
             if (AlgScore.fAssumedPdg==13)   chi2mu[pl]=AlgScore.fValue;
