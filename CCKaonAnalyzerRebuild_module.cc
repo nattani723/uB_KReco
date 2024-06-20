@@ -1337,6 +1337,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
   std::vector< art::Ptr<recob::SpacePoint> > spacepointFromPi;
   std::vector< art::Ptr<recob::Hit> > hitFromTrack;
   std::vector<art::Ptr<recob::SpacePoint>> spacepoint_vec;
+  std::map<recob::Hit,int> hit_pdg_map;
   
   
   for (unsigned int itrk=0; itrk < trackList.size(); ++itrk) { 
@@ -1374,6 +1375,7 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     if(mcparticle->PdgCode()==-13) spacepointFromMu.push_back(spacepoint);
     if(mcparticle->PdgCode()==211) spacepointFromPi.push_back(spacepoint);
 
+    hit_pdg_map[(*hit)] = mcparticle->PdgCode();
   }
     
 
@@ -1546,12 +1548,22 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     ReconstructionOrchestrator orchestrator_cheatpi;
     ReconstructionOrchestrator orchestrator_cheatmu;
 
-    orchestrator.runReconstruction(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
+    orchestrator.runReconstruction(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track);
     //orchestrator.runReconstruction(spacepointFromRecoObject, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
     //orchestrator.runReconstruction(spacepointFromMu, spacepointToHitMap, hitToSpacePointMap,ptrack, hits_from_track);
 
     std::vector<recob::Track> rebuildTrackList = orchestrator.getRebuildTrackList();
     std::vector<std::vector<art::Ptr<recob::Hit>>> trackHitLists = orchestrator.getHitLists();
+
+    //turn on if we need to print histogram    
+
+      TCanvas *c = (TCanvas*)gROOT->FindObject("c");
+      if (c) {
+      delete c;
+      }
+      c = new TCanvas("c", "Canvas", 800, 600);
+      orchestrator.drawHistograms(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, hit_pdg_map, c);
+    
 
     for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 
