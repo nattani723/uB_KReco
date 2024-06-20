@@ -42,7 +42,7 @@ namespace kaon_reconstruction
 
   TrackHitCollector::TrackHitCollector() :
       
-    m_hit_threshold_for_track(50),
+    m_hit_threshold_for_track(100),//50
     m_growing_fit_initial_length(10.f),
     m_initial_fit_distance_to_line(1.f),
     m_min_initial_hits_found(7),
@@ -56,7 +56,7 @@ namespace kaon_reconstruction
     m_trackall_hit_connection_distance(5),
     m_high_resolution_sliding_fit_window(5),
     m_high_resolution_distance_to_line(1),
-    m_high_resolution_hit_connection_distance(3)
+    m_high_resolution_hit_connection_distance(3)//3
   {
   }
 
