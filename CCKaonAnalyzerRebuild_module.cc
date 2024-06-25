@@ -1510,7 +1510,8 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     simb::MCParticle const* mcparticle = truthMatchTrack(hits_from_track, particles_per_hit);
     //if(mcparticle && mcparticle->PdgCode()==321) cout << "This is Primary Kaon" << endl;
 
-    if(mcparticle->PdgCode()!=321) continue;
+    //if(mcparticle->PdgCode()!=321) continue;
+    //if(true_kaon_end_process!=0 && true_kaon_end_process!=1) continue;
 
     //if(true_kaon_end_process!=0) continue;
     if(mcparticle) std::cout << mcparticle->PdgCode() << ": primary mcparticle->PdgCode()" << endl;
@@ -1558,14 +1559,14 @@ void CCKaonAnalyzerRebuild::analyze( const art::Event& evt){
     std::vector<std::vector<art::Ptr<recob::Hit>>> trackHitLists = orchestrator.getHitLists();
 
     //turn on if we need to print histogram    
-    
+    /*
       TCanvas *c = (TCanvas*)gROOT->FindObject("c");
       if (c) {
       delete c;
       }
       c = new TCanvas("c", "Canvas", 800, 600);
       orchestrator.drawHistograms(spacepointFromMap, spacepointToHitMap, hitToSpacePointMap, ptrack, hits_from_track, hit_pdg_map, c);
-    
+    */    
 
     for(unsigned int j=0; j < rebuildTrackList.size(); j++) {
 

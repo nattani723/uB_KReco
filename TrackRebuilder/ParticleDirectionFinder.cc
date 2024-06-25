@@ -8,7 +8,7 @@ namespace kaon_reconstruction
   ParticleDirectionFinder::ParticleDirectionFinder() :
 
     m_region_of_interest(120.),
-    m_peak_search_region(20.),
+    m_peak_search_region(20.),//20
     m_theta_bin_size(0.06),
     m_phi_bin_size(0.06),
     m_smoothing_window(1),
@@ -34,6 +34,10 @@ namespace kaon_reconstruction
     return sp_list_roi; 
   }
 
+  ParticleDirectionFinder::SPList& ParticleDirectionFinder::get_sp_list_peak_search() { 
+    return sp_list_peak_search; 
+  }
+
   const TVector3& ParticleDirectionFinder::get_k_end() const { 
     return k_end; 
   }
@@ -56,7 +60,7 @@ namespace kaon_reconstruction
 		return STATUS_CODE_NOT_FOUND;
 	
 	// get sp list for peak finder
-	SPList sp_list_peak_search;
+	//SPList sp_list_peak_search;
 	this->collect_sp_in_roi(sp_list_roi, k_end, m_peak_search_region, sp_list_peak_search, unavailable_hit_list, spacepointToHitMap);
 	std::cout << "sp_list_roi.size(): " << sp_list_roi.size() << ", sp_list_peak_search.size(): " << sp_list_peak_search.size() << std::endl;
 

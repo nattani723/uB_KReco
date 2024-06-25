@@ -138,6 +138,7 @@ namespace kaon_reconstruction
       }
 
       histogram->SetFillColor(fill_color);
+      histogram->SetFillStyle(1001);
       h_stack->Add(histogram);
     }
 

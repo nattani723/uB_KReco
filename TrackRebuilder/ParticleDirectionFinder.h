@@ -55,8 +55,12 @@ namespace kaon_reconstruction
     float get_phi_bin_size() const;
 
     SPList& get_sp_list_roi();
+    SPList& get_sp_list_peak_search();
     const TVector3& get_k_end() const;
-    void clearData(){ sp_list_roi.clear(); }
+    void clearData(){ 
+      sp_list_roi.clear(); 
+      sp_list_peak_search.clear();
+    }
     
   private:
     
@@ -125,6 +129,7 @@ namespace kaon_reconstruction
   size_t m_max_num_peak;
 
   SPList sp_list_roi;
+  SPList sp_list_peak_search;
   TVector3 k_end;
 
 };
